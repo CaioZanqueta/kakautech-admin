@@ -116,10 +116,10 @@ export default {
         filename: "filename",
         file: "attachment",
       },
-      validation: {
-        mimeTypes: ["image/png", "application/pdf", "application/zip"],
-        maxSize: 5 * 1024 * 1024,
-      },
+      // validation: {
+      //   mimeTypes: ["image/png", "image/gif", "image/jpeg", "image/vnd.adobe.photoshop", "application/pdf", "application/zip", "text/plain"],
+      //   maxSize: 5 * 1024 * 1024,
+      // },
     }),
   ],
 };
