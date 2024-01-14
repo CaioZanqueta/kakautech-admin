@@ -1,9 +1,9 @@
 export default {
   colors: {
     // Primary
-    primary100: "#ff9800",
-    primary80: "#ffa726",
-    primary60: "#ffb74d",
+    primary100: "#00bbff",
+    primary80: "#2f2f2f",
+    primary60: "#2f2f2f",
     primary40: "#ffcc80",
     primary20: "#ffe0b2",
 
@@ -15,8 +15,8 @@ export default {
     grey100: "#0C0D0F",
     grey80: "#1D1E21",
     grey60: "#64666B",
-    grey40: "#CED4DA",
-    grey20: "#E9ECEF",
+    grey40: "#2f2f2f",
+    grey20: "#2f2f2f",
     white: "#fff",
 
     // Alerts

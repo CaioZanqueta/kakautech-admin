@@ -28,7 +28,7 @@ const adminJS = new AdminJS({
   },
   resources: [UsersResource, ProjectsResource, TasksResource],
   branding: {
-    companyName: "Task Manager",
+    companyName: "GDV Inc",
     logo: false,
     softwareBrothers: false,
     theme,
