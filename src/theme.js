@@ -16,7 +16,7 @@ export default {
     grey80: "#1D1E21",
     grey60: "#64666B",
     grey40: "#2f2f2f",
-    grey20: "#2f2f2f",
+    grey20: "#E9ECEF",
     white: "#fff",
 
     // Alerts
