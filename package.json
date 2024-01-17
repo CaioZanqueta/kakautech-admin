@@ -23,6 +23,10 @@
     "tslib": "^2.3.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.23.4",
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.8",
+    "@babel/preset-react": "^7.23.3",
     "nodemon": "^2.0.15",
     "prettier": "^2.5.1",
     "sequelize-cli": "^6.3.0",
@@ -31,6 +35,8 @@
   "scripts": {
     "dev": "nodemon ./src/server.js",
     "db:migrate": "sequelize-cli db:migrate",
-    "db:undo": "sequelize-cli db:migrate:undo"
+    "db:undo": "sequelize-cli db:migrate:undo",
+    "build": "babel src -d dist --copy-files",
+    "start": "dist/server.js"
   }
 }
