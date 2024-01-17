@@ -7,7 +7,7 @@ module.exports = {
       [
         {
           name: "Admin User",
-          email: "admin@example.app",
+          email: "admin@gdvinc.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "admin",
@@ -17,7 +17,7 @@ module.exports = {
         },
         {
           name: "Manager User",
-          email: "manager@example.app",
+          email: "manager@gdvinc.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "manager",
@@ -27,7 +27,7 @@ module.exports = {
         },
         {
           name: "Dev User",
-          email: "dev@example.app",
+          email: "dev@gdvinc.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "developer",
