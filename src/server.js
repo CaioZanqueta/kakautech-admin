@@ -55,5 +55,5 @@ app.use(adminJS.options.rootPath, router);
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
-  console.log(`AdminJS is under http://localhost:${port}/admin`);
+  console.log(`AdminJS is under ${port}/admin`);
 });
