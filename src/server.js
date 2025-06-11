@@ -20,6 +20,8 @@ AdminJS.registerAdapter(AdminJSSequelize);
 
 const app = express();
 
+app.use("/public", express.static("public"));
+
 const adminJS = new AdminJS({
   databases: [],
   rootPath: "/admin",
@@ -28,8 +30,9 @@ const adminJS = new AdminJS({
   },
   resources: [UsersResource, ProjectsResource, TasksResource],
   branding: {
-    companyName: "GDV Inc",
-    logo: false,
+    companyName: "Kakau Tech",
+    logo: "/public/kakau.webp",
+    favicon: "/public/favicon.webp",
     softwareBrothers: false,
     theme,
   },

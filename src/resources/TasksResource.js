@@ -40,14 +40,17 @@ export default {
       due_date: {
         position: 4,
       },
-      effort: {
-        position: 5,
-      },
       order: {
-        position: 6,
+        position: 5,
+        isRequired: true,
+        availableValues: [
+          { value: "Low", label: "Baixa" },
+          { value: "Medium", label: "Média" },
+          { value: "High", label: "Alta" },
+        ],
       },
       status: {
-        position: 7,
+        position: 6,
         isRequired: true,
         availableValues: [
           { value: "backlog", label: "Backlog" },
@@ -58,24 +61,24 @@ export default {
         ],
       },
       projectId: {
-        position: 8,
+        position: 7,
         isRequired: true,
         isVisible: { list: false, filter: true, show: true, edit: true },
       },
       userId: {
-        position: 9,
+        position: 8,
         isRequired: true,
       },
       createdAt: {
-        position: 10,
+        position: 9,
         isVisible: { list: true, filter: true, show: true, edit: false },
       },
       updatedAt: {
-        position: 11,
+        position: 10,
         isVisible: { list: false, filter: true, show: true, edit: false },
       },
       attachment: {
-        position: 12,
+        position: 11,
       },
       user_id: {
         isVisible: false,
@@ -103,10 +106,10 @@ export default {
   features: [
     uploadFeature({
       provider: {
-        aws: credentials,
-        // local: {
-        //   bucket: path.join(__dirname, "../../uploads"),
-        // },
+        // aws: credentials,
+        local: {
+          bucket: path.join(__dirname, "../../uploads"),
+        },
       },
       properties: {
         key: "path",
@@ -116,10 +119,10 @@ export default {
         filename: "filename",
         file: "attachment",
       },
-      // validation: {
-      //   mimeTypes: ["image/png", "image/gif", "image/jpeg", "image/vnd.adobe.photoshop", "application/pdf", "application/zip", "text/plain"],
-      //   maxSize: 5 * 1024 * 1024,
-      // },
+      validation: {
+        mimeTypes: ["image/png", "image/gif", "image/jpeg", "image/vnd.adobe.photoshop", "application/pdf", "application/zip", "text/plain", "application/msword", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+        maxSize: 5 * 1024 * 1024,
+      },
     }),
   ],
 };

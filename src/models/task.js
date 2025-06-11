@@ -5,10 +5,13 @@ class Task extends Model {
     super.init(
       {
         due_date: Sequelize.DATE,
-        effort: Sequelize.INTEGER,
         title: Sequelize.STRING,
         description: Sequelize.TEXT,
-        order: Sequelize.INTEGER,
+        order: Sequelize.ENUM(
+          "Low",
+          "Medium",
+          "High"
+        ),
         status: Sequelize.ENUM(
           "backlog",
           "doing",

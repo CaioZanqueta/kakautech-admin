@@ -1,14 +1,14 @@
 export default {
   colors: {
     // Primary
-    primary100: "#00bbff",
+    primary100: "#1187BD",
     primary80: "#2f2f2f",
     primary60: "#2f2f2f",
     primary40: "#ffcc80",
     primary20: "#ffe0b2",
 
     // accent
-    accent: "#25BEFF",
+    accent: "#1187BD",
     love: "#E03131", // SoftwareBrothers logo color
 
     // grey

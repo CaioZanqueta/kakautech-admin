@@ -13,10 +13,6 @@ module.exports = {
         allowNull: true,
         type: Sequelize.DATE,
       },
-      effort: {
-        allowNull: true,
-        type: Sequelize.INTEGER,
-      },
       title: {
         type: Sequelize.STRING,
       },
@@ -25,8 +21,12 @@ module.exports = {
         type: Sequelize.TEXT,
       },
       order: {
-        defaultValue: 0,
-        type: Sequelize.INTEGER,
+        type: Sequelize.ENUM(
+          "Low",
+          "Medium",
+          "High"
+        ),
+        defaultValue: "Low",
       },
       status: {
         type: Sequelize.ENUM(

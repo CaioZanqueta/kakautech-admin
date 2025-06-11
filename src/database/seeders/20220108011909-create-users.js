@@ -7,7 +7,7 @@ module.exports = {
       [
         {
           name: "Admin User",
-          email: "admin@gdvinc.com",
+          email: "admin@kakautech.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "admin",
@@ -17,7 +17,7 @@ module.exports = {
         },
         {
           name: "Manager User",
-          email: "manager@gdvinc.com",
+          email: "manager@kakautech.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "manager",
@@ -27,7 +27,7 @@ module.exports = {
         },
         {
           name: "Dev User",
-          email: "dev@gdvinc.com",
+          email: "dev@kakautech.com",
           password_hash:
             "$2a$08$QkPpPHgYyxPcHlqLIIqCKuZ3NYFis7FoMDBLmceXV7/D/W3CBfMqG", // secret
           role: "developer",

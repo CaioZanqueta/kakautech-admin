@@ -4,7 +4,7 @@ import { ApiClient, useTranslation } from "adminjs";
 import { Box, H2, Text } from "@adminjs/design-system";
 
 import TaskType from "./cards/TaskType";
-import TaskEffort from "./cards/TaskEffort";
+// import TaskEffort from "./cards/TaskEffort";
 
 const api = new ApiClient();
 
@@ -40,12 +40,12 @@ const Dashboard = () => {
         flexWrap="wrap"
         width={[1, 1, 1, 1024]}
       >
-        <Box width={[1, 1 / 2, 1 / 2]} p="lg">
+        <Box width={[1, 1 / 2, 1 / 1]} p="lg">
           <TaskType />
         </Box>
-        <Box width={[1, 1 / 2, 1 / 2]} p="lg">
+        {/* <Box width={[1, 1 / 2, 1 / 2]} p="lg">
           <TaskEffort />
-        </Box>
+        </Box> */}
       </Box>
     </Box>
   );

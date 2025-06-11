@@ -24,7 +24,7 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    return Promisse.all([
+    return Promise.all([
       queryInterface.removeColumn("tasks", "path"),
       queryInterface.removeColumn("tasks", "folder"),
       queryInterface.removeColumn("tasks", "type"),

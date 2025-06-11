@@ -83,7 +83,7 @@ const translations = {
     newPasswordMessageError: 'Erro ao redefinir a senha automaticamente.',
     dashboardTitle: 'Bem-vindo(a) ao Task Manager',
     dashboardSubTitle: 'Controle todos seus projetos de uma forma simples',
-    taskTypeCardTitle: 'Tipos de Tarefas',
+    taskTypeCardTitle: 'Chamados',
     taskEffortCardTitle: 'Esforço por prazo',
   },
 };
