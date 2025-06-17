@@ -25,7 +25,7 @@ export default {
       description: {
         position: 3,
         isVisible: { list: false, filter: false, show: true, edit: true },
-        type: "richtext",
+        type: "textarea",
         props: {
           quill: {
             modules: {
