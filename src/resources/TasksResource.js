@@ -106,10 +106,10 @@ export default {
   features: [
     uploadFeature({
       provider: {
-        // aws: credentials,
-        local: {
-          bucket: path.join(__dirname, "../../uploads"),
-        },
+        aws: credentials,
+        // local: {
+        //   bucket: path.join(__dirname, "../../uploads"),
+        // },
       },
       properties: {
         key: "path",
