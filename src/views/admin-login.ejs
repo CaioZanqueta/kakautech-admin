@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login do Cliente - Kakau Tech</title>
+    <title>Login Admin - Kakau Tech</title>
     <link rel="icon" type="image/webp" href="/public/favicon.webp">
     <style>
         /* Reset e Estilos Globais */
@@ -32,12 +32,12 @@
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            overflow: hidden; /* Garante que o border-radius afete as colunas internas */
+            overflow: hidden;
         }
 
         /* Coluna da Esquerda (Branding) */
         .login-branding {
-            background-color: #1187BD; /* Cor primária do seu tema */
+            background-color: #1187BD; /* COR CORRIGIDA PARA O AZUL PADRÃO */
             color: #ffffff;
             padding: 48px;
             width: 45%;
@@ -68,6 +68,9 @@
         .login-form-wrapper {
             padding: 48px;
             width: 55%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
         .login-form-wrapper .logo {
@@ -123,7 +126,7 @@
         
         /* Mensagem de Erro */
         .error-message {
-            color: #e53935; /* Cor de erro do seu tema */
+            color: #e53935;
             background-color: #ffcdd2;
             border: 1px solid #e53935;
             border-radius: 4px;
@@ -132,27 +135,6 @@
             text-align: center;
         }
         
-        .register-link {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 14px;
-        }
-
-        .register-link p {
-            color: #6c757d;
-        }
-        
-        .register-link a {
-            color: #1187BD;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .register-link a:hover {
-            text-decoration: underline;
-        }
-
-        /* === INÍCIO: BLOCO DE CSS ADICIONADO PARA LOGIN SOCIAL === */
         .social-login-divider {
             text-align: center;
             margin: 24px 0;
@@ -201,7 +183,6 @@
             width: 20px;
             height: 20px;
         }
-        /* === FIM: BLOCO DE CSS ADICIONADO === */
         
         /* Media Query para telas menores */
         @media (max-width: 960px) {
@@ -209,23 +190,22 @@
                 flex-direction: column;
             }
             .login-branding {
-                display: none; /* Opcional: esconder a imagem em telas muito pequenas */
+                display: none;
             }
             .login-form-wrapper {
                 width: 100%;
                 padding: 24px;
             }
         }
-
     </style>
 </head>
 <body>
 
     <div class="login-wrapper">
         <div class="login-branding">
-            <h2>Bem vindo(a)</h2>
-            <p>Portal do Cliente Kakau Tech</p>
-            <img src="https://via.placeholder.com/300x250.png/1187BD/FFFFFF?text=Sua+Ilustração" alt="Ilustração de boas-vindas" class="illustration">
+            <h2>Área do Administrador</h2>
+            <p>Painel de Controle Kakau Tech</p>
+            <img src="https://via.placeholder.com/300x250.png/1187BD/FFFFFF?text=Admin+Area" alt="Ilustração da área de admin" class="illustration">
         </div>
 
         <div class="login-form-wrapper">
@@ -238,35 +218,29 @@
             <% } %>
 
             <div>
-                <a href="/auth/google" class="btn-social">
+                <a href="/admin/auth/google" class="btn-social">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo">
                     <span>Entrar com Google</span>
-                </a>
-                <a href="/auth/microsoft" class="btn-social">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft logo">
-                    <span>Entrar com Microsoft</span>
                 </a>
             </div>
 
             <div class="social-login-divider">
                 <span>OU</span>
             </div>
-            <form action="/portal/login" method="POST">
+            
+            <form action="/admin/login" method="POST">
                 <div class="form-group">
-                    <label for="email">* Email</label>
-                    <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="admin@kakautech.com" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">* Senha</label>
-                    <input type="password" id="password" name="password" placeholder="Sua senha" required>
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit" class="btn-submit">Entrar com Email</button>
             </form>
 
-            <div class="register-link">
-                <p>Não tem uma conta? <a href="/portal/register">Cadastre-se</a></p>
-            </div>
-            </div>
+        </div>
     </div>
 
 </body>
