@@ -26,32 +26,19 @@ import Ticket from "./models/ticket";
 import locale from "./locales";
 import theme from "./theme";
 
-console.log(">>>> SERVIDOR SENDO INICIADO COM A VERSÃO MAIS RECENTE DO CÓDIGO <<<<");
-
 AdminJS.registerAdapter(AdminJSSequelize);
 
 const app = express();
 
-// =================================================================
-// === INÍCIO: MIDDLEWARE DE DIAGNÓSTICO GLOBAL                  ===
-// =================================================================
-// Este middleware irá logar CADA requisição que chegar no servidor.
-// Ele deve ser o PRIMEIRO app.use() a ser declarado.
 app.use((req, res, next) => {
-  console.log(`[LOG GERAL] Requisição recebida: ${req.method} ${req.originalUrl}`);
+  // console.log(`[LOG GERAL] Requisição recebida: ${req.method} ${req.originalUrl}`);
   next();
 });
-// =================================================================
-// === FIM: MIDDLEWARE DE DIAGNÓSTICO GLOBAL                     ===
-// =================================================================
 
-
-// Configurações básicas do Express
 app.use("/public", express.static("public"));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Instância do AdminJS
 const adminJS = new AdminJS({
   databases: [],
   rootPath: "/admin",
@@ -75,50 +62,21 @@ const adminJS = new AdminJS({
   ...locale,
 });
 
-// Middlewares Globais
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
     secret: process.env.SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 1 dia
+    saveUninitialized: false,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 },
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
 
-// =================================================================
-// === LÓGICA DE AUTENTICAÇÃO PERSONALIZADA PARA ADMINJS (COM LOGS) ==
-// =================================================================
-
 const adminRouter = AdminJSExpress.buildRouter(adminJS);
 
-// Middleware de verificação de login do admin
-const checkAdminAuth = (req, res, next) => {
-  if (req.isAuthenticated() && req.user instanceof User) {
-    return next();
-  }
-  res.redirect("/admin/login");
-};
-
-// Aplicação do roteador e middleware para o AdminJS
-app.use(
-  adminJS.options.rootPath,
-  (req, res, next) => {
-    if (
-      req.originalUrl.startsWith("/admin/login") ||
-      req.originalUrl.startsWith("/admin/auth")
-    ) {
-      return next();
-    }
-    return checkAdminAuth(req, res, next);
-  },
-  adminRouter
-);
-
-// Rota para renderizar a página de login do admin
 app.get("/admin/login", (req, res) => {
   const messages = req.session.messages || [];
   req.session.messages = [];
@@ -126,85 +84,95 @@ app.get("/admin/login", (req, res) => {
   res.render("admin-login", { error });
 });
 
-// Rota para login tradicional (email/senha) do admin (COM LOGS DE DEPURAÇÃO)
 app.post("/admin/login", async (req, res, next) => {
-  console.log("--- LOG 1: Rota POST /admin/login foi acionada. ---");
   const { email, password } = req.body;
-  const adminUser = await User.findOne({ where: { email } });
 
-  if (!adminUser) {
-    console.log("--- LOG 2.1: Usuário não encontrado no banco de dados. ---");
-    return res.render("admin-login", { error: "Email ou senha inválidos." });
-  }
+  try {
+    const adminUser = await User.findOne({ where: { email } });
 
-  console.log("--- LOG 2: Usuário encontrado:", adminUser.email, "---");
-  const isPasswordCorrect = await adminUser.checkPassword(password);
+    if (!adminUser) {
+      return res.render("admin-login", { error: "Email ou senha inválidos." });
+    }
 
-  if (isPasswordCorrect) {
-    console.log("--- LOG 3: Senha está correta. Tentando chamar req.login(). ---");
-    // Usamos req.login() do Passport para registrar a sessão corretamente
-    req.login(adminUser, (err) => {
-      if (err) {
-        console.error(
-          "--- LOG 4.1 (ERRO): Erro dentro do callback de req.login():",
-          err,
-          "---"
-        );
-        return next(err);
-      }
-      console.log(
-        "--- LOG 4: Callback de req.login() executado com sucesso. Redirecionando... ---"
-      );
-      return res.redirect("/admin");
-    });
-  } else {
-    console.log("--- LOG 3.1: Senha incorreta. ---");
-    res.render("admin-login", { error: "Email ou senha inválidos." });
+    const isPasswordCorrect = await adminUser.checkPassword(password);
+
+    if (isPasswordCorrect) {
+      req.login(adminUser, (err) => {
+        if (err) { return next(err); }
+
+        req.session.adminUser = adminUser.toJSON();
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            return next(saveErr);
+          }
+          return res.redirect("/admin");
+        });
+      });
+    } else {
+      res.render("admin-login", { error: "Email ou senha inválidos." });
+    }
+  } catch (error) {
+    console.error("ERRO GERAL NO LOGIN:", error);
+    next(error);
   }
 });
 
-// Rotas de autenticação social para o admin
-app.get("/admin/auth/google", passport.authenticate("google-admin"));
+const checkAdminAuth = (req, res, next) => {
+    if (req.session.adminUser) {
+        return next();
+    }
+    if (req.isAuthenticated() && req.user instanceof User) {
+        return next();
+    }
+    return res.redirect("/admin/login");
+};
 
-// Callback do Google Admin (SIMPLIFICADO)
+const mainAdminRouter = (req, res, next) => {
+    if (req.originalUrl.startsWith('/admin/login') || req.originalUrl.startsWith('/admin/auth')) {
+        return adminRouter(req, res, next);
+    }
+    return checkAdminAuth(req, res, () => adminRouter(req, res, next));
+}
+
+app.use(adminJS.options.rootPath, mainAdminRouter);
+
+app.get("/admin/auth/google", passport.authenticate("google-admin"));
 app.get(
   "/admin/auth/google/callback",
   passport.authenticate("google-admin", {
     failureRedirect: "/admin/login",
     failureMessage: true,
   }),
-  (req, res) => {
-    // O passport.authenticate já chama req.login() internamente, então só precisamos redirecionar.
-    res.redirect("/admin");
+  (req, res, next) => {
+    if (req.user) {
+        req.session.adminUser = req.user.toJSON();
+        req.session.save(() => res.redirect('/admin'));
+    } else {
+        res.redirect('/admin/login');
+    }
   }
 );
 
-// Rota de logout para o admin (CORRIGIDO)
 app.get("/admin/logout", (req, res, next) => {
-  // Usamos req.logout() do Passport
   req.logout((err) => {
     if (err) {
       return next(err);
     }
+    delete req.session.adminUser;
     req.session.destroy(() => {
       res.redirect("/");
     });
   });
 });
 
-// =================================================================
-// === ROTAS DO PORTAL DO CLIENTE                                ===
-// =================================================================
 const requireClientAuth = (req, res, next) => {
-  // ATUALIZADO: Usando o sistema do Passport também para o cliente
   if (req.isAuthenticated() && req.user instanceof Client) {
     next();
   } else {
     res.redirect("/portal/login");
   }
 };
-
-// Autenticação social para o PORTAL DO CLIENTE
 app.get(
   "/auth/google",
   passport.authenticate("google-client", { scope: ["profile", "email"] })
@@ -212,10 +180,10 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google-client", { failureRedirect: "/portal/login" }),
-  (req, res) => {
-    req.login(req.user, (err) => { // Alinhando com o fluxo do passport
-        if (err) { return next(err); }
-        res.redirect("/portal/tickets/new");
+  (req, res, next) => {
+    req.login(req.user, (err) => {
+      if (err) { return next(err); }
+      res.redirect("/portal/tickets/new");
     });
   }
 );
@@ -225,15 +193,13 @@ app.get(
   passport.authenticate("microsoft-client", {
     failureRedirect: "/portal/login",
   }),
-  (req, res) => {
-     req.login(req.user, (err) => { // Alinhando com o fluxo do passport
-        if (err) { return next(err); }
-        res.redirect("/portal/tickets/new");
+  (req, res, next) => {
+      req.login(req.user, (err) => {
+      if (err) { return next(err); }
+      res.redirect("/portal/tickets/new");
     });
   }
 );
-
-// Rotas normais do portal
 app.get("/portal", (req, res) => {
   if (req.isAuthenticated() && req.user instanceof Client) {
     res.redirect("/portal/tickets/new");
@@ -244,20 +210,11 @@ app.get("/portal", (req, res) => {
 app.get("/portal/login", (req, res) => {
   res.render("client-login", { error: null });
 });
-// Login tradicional do cliente AGORA USANDO PASSPORT
-app.post("/portal/login", (req, res, next) => {
-  // Para o login do cliente, precisamos de uma estratégia 'local-client' no passport.js
-  passport.authenticate("local-client", (err, client, info) => {
-    if (err) { return next(err); }
-    if (!client) {
-      return res.render("client-login", { error: "Email ou senha inválidos." });
-    }
-    req.login(client, (err) => {
-      if (err) { return next(err); }
-      return res.redirect("/portal/tickets/new");
-    });
-  })(req, res, next);
-});
+app.post("/portal/login", passport.authenticate("local-client", {
+    successRedirect: "/portal/tickets/new",
+    failureRedirect: "/portal/login",
+    failureMessage: true,
+}));
 app.get("/portal/register", (req, res) => {
   res.render("client-register", { error: null });
 });
@@ -282,8 +239,6 @@ app.post("/portal/register", async (req, res, next) => {
     });
   }
 });
-
-// Logout do cliente
 app.get("/portal/logout", (req, res, next) => {
   req.logout(function (err) {
     if (err) {
@@ -294,8 +249,6 @@ app.get("/portal/logout", (req, res, next) => {
     });
   });
 });
-
-// Rota de download
 app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res) => {
   try {
     const { recordId } = req.params;
@@ -324,11 +277,14 @@ app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res)
     res.status(500).send("Erro ao processar o download.");
   }
 });
-
-// Rotas de tickets
 app.get("/portal/tickets/new", requireClientAuth, (req, res) => {
-  res.render("new-ticket", { message: null, error: null });
+  res.render("new-ticket", {
+    message: null,
+    error: null,
+    user: req.user // <<-- LINHA ADICIONADA
+  });
 });
+
 app.post(
   "/portal/tickets",
   requireClientAuth,
@@ -339,7 +295,7 @@ app.post(
       const ticketData = {
         title,
         description,
-        clientId: req.user.id, // Usando req.user.id
+        clientId: req.user.id,
         status: "open",
       };
       if (req.file) {

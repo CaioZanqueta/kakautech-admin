@@ -1,21 +1,15 @@
 import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import Client from '../models/client';
-import User from '../models/user'; // -> 1. IMPORTAÇÃO ADICIONADA
+import User from '../models/user';
 
-// =================================================================
-// === INÍCIO: BLOCO DE SERIALIZAÇÃO ATUALIZADO                   ===
-// =================================================================
-// Serialização do usuário para a sessão.
-// Agora armazena o tipo de usuário ('client' ou 'user') junto com o ID.
 passport.serializeUser((user, done) => {
   const userType = user instanceof Client ? 'client' : 'user';
   done(null, { id: user.id, type: userType });
 });
 
-// Deserialização do usuário a partir da sessão.
-// Lê o tipo de usuário e busca no modelo correto (Client ou User).
 passport.deserializeUser(async (sessionData, done) => {
   try {
     if (!sessionData || !sessionData.type) {
@@ -28,15 +22,60 @@ passport.deserializeUser(async (sessionData, done) => {
     done(error, null);
   }
 });
-// =================================================================
-// === FIM: BLOCO DE SERIALIZAÇÃO ATUALIZADO                      ===
-// =================================================================
 
+passport.use('local-admin', new LocalStrategy(
+  {
+    usernameField: 'email',
+    passwordField: 'password',
+  },
+  async (email, password, done) => {
+    try {
+      const user = await User.findOne({ where: { email } });
 
-// --- ESTRATÉGIAS PARA O PORTAL DO CLIENTE ---
+      if (!user) {
+        return done(null, false, { message: 'Email ou senha inválidos.' });
+      }
 
-// Estratégia do Google para Clientes
-passport.use('google-client', new GoogleStrategy({ // -> 2. ESTRATÉGIA NOMEADA
+      const isPasswordCorrect = await user.checkPassword(password);
+
+      if (!isPasswordCorrect) {
+        return done(null, false, { message: 'Email ou senha inválidos.' });
+      }
+
+      return done(null, user);
+    } catch (error) {
+      return done(error);
+    }
+  }
+));
+
+passport.use('local-client', new LocalStrategy(
+  {
+    usernameField: 'email',
+    passwordField: 'password',
+  },
+  async (email, password, done) => {
+    try {
+      const client = await Client.findOne({ where: { email } });
+
+      if (!client) {
+        return done(null, false, { message: 'Email ou senha inválidos.' });
+      }
+
+      const isPasswordCorrect = await client.checkPassword(password);
+
+      if (!isPasswordCorrect) {
+        return done(null, false, { message: 'Email ou senha inválidos.' });
+      }
+      
+      return done(null, client);
+    } catch (error) {
+      return done(error);
+    }
+  }
+));
+
+passport.use('google-client', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback",
@@ -68,8 +107,7 @@ passport.use('google-client', new GoogleStrategy({ // -> 2. ESTRATÉGIA NOMEADA
   }
 ));
 
-// Estratégia da Microsoft para Clientes
-passport.use('microsoft-client', new MicrosoftStrategy({ // -> 2. ESTRATÉGIA NOMEADA
+passport.use('microsoft-client', new MicrosoftStrategy({
     clientID: process.env.MICROSOFT_CLIENT_ID,
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
     callbackURL: "/auth/microsoft/callback",
@@ -104,50 +142,36 @@ passport.use('microsoft-client', new MicrosoftStrategy({ // -> 2. ESTRATÉGIA NO
   }
 ));
 
-
-// ==========================================================
-// === INÍCIO: NOVA ESTRATÉGIA PARA LOGIN ADMINJS         ===
-// ==========================================================
 passport.use('google-admin', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/admin/auth/google/callback", // URL de Callback exclusiva para o admin
+    callbackURL: "/admin/auth/google/callback",
     scope: ['profile', 'email']
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
       const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
-      // -> 3. RESTRIÇÃO DE DOMÍNIO
       if (!email || !email.endsWith('@kakautech.com')) {
         return done(null, false, { message: 'Acesso permitido apenas para contas @kakautech.com.' });
       }
       
-      // Procura um usuário administrador existente pelo e-mail
       let adminUser = await User.findOne({ where: { email } });
 
-      // Por segurança, NUNCA criamos um usuário admin automaticamente. Ele deve existir no banco.
       if (!adminUser) {
         return done(null, false, { message: 'Este email não está registrado como um administrador.' });
       }
 
-      // Se o usuário existe, vinculamos o ID do Google a ele (caso ainda não esteja vinculado)
       if (!adminUser.google_id) {
         adminUser.google_id = profile.id;
         await adminUser.save();
       }
-
-      // Login bem-sucedido
+      
       return done(null, adminUser);
-
     } catch (error) {
       return done(error, false);
     }
   }
 ));
-// ==========================================================
-// === FIM: NOVA ESTRATÉGIA PARA LOGIN ADMINJS            ===
-// ==========================================================
-
 
 export default passport;

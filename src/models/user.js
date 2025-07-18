@@ -22,7 +22,7 @@ class User extends Model {
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
         password_hash: Sequelize.STRING,
-        google_id: Sequelize.STRING, // -> CAMPO ADICIONADO
+        google_id: Sequelize.STRING,
         role: Sequelize.ENUM("admin", "manager", "developer"),
         status: Sequelize.ENUM("active", "archived"),
       },
@@ -47,9 +47,12 @@ class User extends Model {
     this.hasMany(models.Task);
   }
 
-  checkPassword(password) {
-    return checkPassword(this, password);
-  }
+  checkPassword(password) {
+    if (!this.password_hash) {
+      return false;
+    }
+    return checkPassword(this, password);
+  }
 }
 
 export default User;

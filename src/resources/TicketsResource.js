@@ -9,7 +9,6 @@ export default {
     parent: {
       icon: 'Ticket',
     },
-    // Definindo explicitamente todas as propriedades, assim como em TasksResource
     properties: {
       id: { position: 1 },
       title: { position: 2, isRequired: true },
@@ -29,9 +28,8 @@ export default {
       },
       clientId: {
         position: 5,
-        label: 'Cliente' // AdminJS usará a relação para mostrar o nome
+        label: 'Cliente'
       },
-      // Este é o campo de upload principal que o AdminJS usará
       attachment: {
         position: 6,
       },
@@ -43,9 +41,6 @@ export default {
         position: 8,
         isVisible: { list: false, show: true, edit: false },
       },
-
-      // --- CAMPOS OCULTOS PARA EVITAR DUPLICAÇÃO ---
-      // Escondendo as chaves estrangeiras e os campos de dados do upload
       client_id: { isVisible: false },
       userId: { isVisible: false },
       user_id: { isVisible: false },
@@ -56,7 +51,6 @@ export default {
       size: { isVisible: false },
     },
   },
-  // A chave 'features' fica aqui fora, no mesmo nível de 'options'
   features: [
     uploadFeature({
       provider: { aws: credentials },

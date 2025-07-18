@@ -6675,6 +6675,13 @@ passport-google-oauth20@^2.0.0:
   dependencies:
     passport-oauth2 "1.x.x"
 
+passport-local@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/passport-local/-/passport-local-1.0.0.tgz#1fe63268c92e75606626437e3b906662c15ba6ee"
+  integrity sha512-9wCE6qKznvf9mQYYbgJ3sVOHmCWoUNMVFoZzNoznmISbhnNNPhN9xfY3sLmScHMetEJeoY7CXwfhCe7argfQow==
+  dependencies:
+    passport-strategy "1.x.x"
+
 passport-microsoft@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/passport-microsoft/-/passport-microsoft-2.1.0.tgz#7ff80219fd9fd3f572f0900d7dd3f477e37d66cb"

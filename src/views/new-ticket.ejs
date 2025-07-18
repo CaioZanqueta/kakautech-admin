@@ -3,204 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abrir Novo Chamado</title>
+    <title>Novo Chamado - Portal do Cliente</title>
     <link rel="icon" type="image/webp" href="/public/favicon.webp">
     <style>
-        /* Reset e Estilos Globais */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --grey-100: #0C0D0F; --grey-80: #1D1E21; --grey-60: #6c757d;
+            --grey-20: #e9ecef; --white: #ffffff; --primary-100: #1187BD;
+            --primary-hover: #0e6a94; --border-color: #dee2e6;
+            --focus-ring: rgba(17, 135, 189, 0.25); --sidebar-text: #495057;
+            --sidebar-active-text: #0C0D0F;
         }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f8f9fa; /* Um cinza bem claro, padrão do AdminJS */
-            color: #495057;
-            line-height: 1.5;
+            background-color: #fafafa; color: var(--grey-100); margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
-
-        /* Container Principal */
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
+        .app-layout {
+            display: grid; grid-template-columns: 240px 1fr;
+            grid-template-rows: 64px 1fr; grid-template-areas: "sidebar topbar" "sidebar content";
+            height: 100vh;
         }
-
-        /* Card do Formulário */
-        .card {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 32px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #dee2e6;
-        }
-
-        .card-header {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: #212529;
-        }
-
-        /* Grupos de Formulário (Label + Input) */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .form-group input[type="text"],
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 16px;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .form-group input[type="text"]:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #80bdff;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        .sidebar {
+            grid-area: sidebar; background-color: var(--white);
+            border-right: 1px solid var(--border-color); padding: 16px;
+            display: flex; flex-direction: column;
         }
         
-        .form-group textarea {
-            min-height: 120px;
-            resize: vertical;
+        /* AJUSTE: Espaçamento do logo para corresponder ao AdminJS */
+        .sidebar-header {
+            padding: 16px 8px; /* Aumenta o espaçamento vertical */
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color); /* Adiciona a linha divisória */
         }
+        
+        .sidebar-header .logo { height: 28px; width: auto; } /* Ajusta o tamanho do logo */
 
-        /* Estilos para o campo de Upload */
-        .upload-zone {
-            border: 2px dashed #ced4da;
-            border-radius: 4px;
-            padding: 24px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.2s ease;
+        .sidebar-nav-title {
+            font-size: 11px; font-weight: bold; text-transform: uppercase;
+            padding: 0 8px; margin: 16px 0 8px 0; color: var(--grey-60);
         }
-        .upload-zone:hover {
-            border-color: #1187BD;
-        }
-        .upload-zone p {
-            margin: 0;
-            color: #6c757d;
-        }
-        .upload-zone input[type="file"] {
-            display: none; /* O input original fica escondido */
-        }
-        #file-name {
-            margin-top: 10px;
-            font-style: italic;
-            color: #495057;
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 10px; color: var(--sidebar-text);
+            text-decoration: none; padding: 10px 12px; border-radius: 4px;
+            font-size: 14px; font-weight: 500; margin-bottom: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         
-        /* Botão Principal */
-        .btn-submit {
-            display: inline-block;
-            background-color: #1187BD; /* Cor primária do seu tema */
-            color: #ffffff;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        .btn-submit:hover {
-            background-color: #0e6a94; /* Um tom mais escuro para o hover */
-        }
-        
-        .form-footer {
-            margin-top: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        /* Link de Sair */
-        .logout-link {
-            font-size: 14px;
-            color: #6c757d;
-            text-decoration: none;
+        /* AJUSTE: Ícone SVG dentro do link */
+        .sidebar-nav a svg {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2px;
+            color: var(--grey-60); /* Cor padrão do ícone */
             transition: color 0.2s ease;
         }
-        
-        .logout-link:hover {
-            color: #212529;
-            text-decoration: underline;
+
+        .sidebar-nav a:hover {
+            background-color: var(--grey-20); color: var(--sidebar-active-text);
         }
-        
-        /* Mensagens de feedback */
-        .success-message {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
-            padding: 16px;
-            margin-bottom: 20px;
-            text-align: center;
+        .sidebar-nav a:hover svg {
+            color: var(--sidebar-active-text);
         }
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
+
+        /* AJUSTE: Estilo do link ativo para texto e ícone azul */
+        .sidebar-nav a.active {
+            background-color: transparent;
+            color: var(--primary-100);
+            font-weight: bold;
         }
+        .sidebar-nav a.active svg {
+            color: var(--primary-100);
+        }
+
+        /* O resto dos estilos permanece o mesmo */
+        .topbar {
+            grid-area: topbar; background-color: var(--white);
+            border-bottom: 1px solid var(--border-color); display: flex;
+            align-items: center; justify-content: space-between; padding: 0 32px;
+        }
+        .breadcrumbs { font-size: 14px; color: var(--grey-60); }
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-toggle {
+            cursor: pointer; font-size: 14px; font-weight: 500;
+            color: var(--grey-100); display: flex; align-items: center; gap: 8px;
+        }
+        .dropdown-toggle::after {
+            content: '⋮'; font-size: 20px; font-weight: bold; line-height: 1;
+        }
+        .dropdown-content {
+            display: none; position: absolute; right: 0; top: 100%;
+            background-color: var(--white); min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1); z-index: 1;
+            border: 1px solid var(--border-color); border-radius: 4px;
+            padding: 8px 0; margin-top: 8px;
+        }
+        .dropdown-content.is-open { display: block; }
+        .dropdown-content a {
+            color: var(--grey-100); padding: 12px 16px; text-decoration: none;
+            display: block; font-size: 14px;
+        }
+        .dropdown-content a:hover { background-color: var(--grey-20); }
+        .content { grid-area: content; overflow-y: auto; padding: 32px; }
+        .card {
+            background-color: var(--white); border-radius: 1px; padding: 32px;
+            border: 1px solid var(--border-color);
+        }
+        .card-header { margin-bottom: 32px; }
+        .card-header h1 { font-size: 24px; font-weight: 300; color: var(--grey-100); }
+        .form-group { margin-bottom: 24px; }
+        .form-group label {
+            display: block; font-weight: 400; margin-bottom: 8px; font-size: 12px;
+            color: var(--grey-60);
+        }
+        .form-group input[type="text"], .form-group textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px;
+            font-size: 14px; color: var(--grey-100); background-color: var(--white);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .form-group input[type="text"]:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--primary-100);
+            box-shadow: 0 0 0 2px var(--focus-ring);
+        }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .upload-zone {
+            border: 1px dashed #ccc; border-radius: 4px; padding: 32px;
+            text-align: center; cursor: pointer; transition: border-color 0.2s ease;
+        }
+        .upload-zone:hover { border-color: var(--primary-100); }
+        .upload-zone p { margin: 0; color: var(--grey-60); font-size: 14px; }
+        .upload-zone .upload-info { font-size: 12px; color: #aaa; margin-top: 8px; }
+        #attachment { display: none; }
+        #file-name {
+            margin-top: 12px; font-style: italic; font-size: 12px;
+            color: var(--grey-100);
+        }
+        .form-footer { margin-top: 32px; text-align: center; }
+        .btn-submit {
+            background-color: var(--primary-100); color: var(--white);
+            padding: 10px 24px; border: none; border-radius: 4px;
+            font-size: 14px; font-weight: 500; cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-submit:hover { background-color: var(--primary-hover); }
+        .feedback-message {
+            padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 14px;
+        }
+        .success-message { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error-message { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="card">
-            <h1 class="card-header">Abrir Novo Chamado</h1>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="/public/kakau.webp" alt="Logo Kakau Tech" class="logo">
+            </div>
+            <nav class="sidebar-nav">
+                <h3 class="sidebar-nav-title">Navegação</h3>
+                <a href="/portal/tickets/new" class="active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    Novo Chamado
+                </a>
+            </nav>
+        </aside>
 
-            <% if (typeof message !== 'undefined' && message) { %>
-                <div class="success-message"><%= message %></div>
-            <% } %>
-            <% if (typeof error !== 'undefined' && error) { %>
-                <div class="error-message"><%= error %></div>
-            <% } %>
+        <header class="topbar">
+            <div class="breadcrumbs">
+                Portal / Chamados / Criar novo
+            </div>
+            <div class="dropdown">
+                <div class="dropdown-toggle" id="user-menu-toggle">
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <span><%= user.email %></span>
+                    <% } %>
+                </div>
+                <div class="dropdown-content" id="user-menu-content">
+                    <a href="/portal/logout">Sair</a>
+                </div>
+            </div>
+        </header>
 
-            <form action="/portal/tickets" method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="title">* Título</label>
-                    <input type="text" id="title" name="title" required>
+        <main class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h1>Abrir Novo Chamado</h1>
                 </div>
-                <div class="form-group">
-                    <label for="description">* Descrição</label>
-                    <textarea id="description" name="description" rows="5" required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="attachment">Anexo</label>
-                    <label for="attachment" class="upload-zone">
-                        <p>Clique ou arraste um arquivo aqui</p>
-                        <p id="file-name"></p>
-                    </label>
-                    <input type="file" id="attachment" name="attachment">
-                </div>
-                
-                <div class="form-footer">
-                    <button type="submit" class="btn-submit">Enviar Chamado</button>
-                    <a href="/portal/logout" class="logout-link">Sair</a>
-                </div>
-            </form>
-        </div>
+                <% if (typeof message !== 'undefined' && message) { %>
+                    <div class="feedback-message success-message"><%= message %></div>
+                <% } %>
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="feedback-message error-message"><%= error %></div>
+                <% } %>
+                <form action="/portal/tickets" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="title">* Título</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">* Descrição</label>
+                        <textarea id="description" name="description" rows="5" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="attachment">Anexo</label>
+                        <label for="attachment" class="upload-zone">
+                            <p>Arraste e solte um arquivo aqui para fazer o upload</p>
+                            <div class="upload-info">TAMANHO MÁX: 5MB</div>
+                            <p id="file-name"></p>
+                        </label>
+                        <input type="file" id="attachment" name="attachment">
+                    </div>
+                    <div class="form-footer">
+                        <button type="submit" class="btn-submit">Enviar Chamado</button>
+                    </div>
+                </form>
+            </div>
+        </main>
     </div>
 
     <script>
+        // Scripts existentes (sem alterações)
         const fileInput = document.getElementById('attachment');
         const fileNameDisplay = document.getElementById('file-name');
         fileInput.addEventListener('change', function() {
@@ -208,6 +236,24 @@
                 fileNameDisplay.textContent = 'Arquivo selecionado: ' + this.files[0].name;
             } else {
                 fileNameDisplay.textContent = '';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.getElementById('user-menu-toggle');
+            const menuContent = document.getElementById('user-menu-content');
+
+            if (menuToggle && menuContent) {
+                menuToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    menuContent.classList.toggle('is-open');
+                });
+
+                window.addEventListener('click', () => {
+                    if (menuContent.classList.contains('is-open')) {
+                        menuContent.classList.remove('is-open');
+                    }
+                });
             }
         });
     </script>

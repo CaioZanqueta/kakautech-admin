@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import path from 'path';
 import 'dotenv/config';
 
-// Configuração do cliente S3 usando as variáveis de ambiente
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -14,14 +13,11 @@ const s3 = new S3Client({
   },
 });
 
-// Opções de armazenamento para o Multer
 const storage = multerS3({
   s3: s3,
   bucket: process.env.AWS_BUCKET,
   contentType: multerS3.AUTO_CONTENT_TYPE,
-  // acl: 'public-read', // <<< LINHA REMOVIDA
   key: (req, file, cb) => {
-    // Gera um nome de arquivo único para evitar sobreposição
     crypto.randomBytes(16, (err, hash) => {
       if (err) cb(err);
 
@@ -31,14 +27,12 @@ const storage = multerS3({
   },
 });
 
-// Exporta a configuração do Multer
 export default {
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // Limite de 5MB por arquivo
+    fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    // Validação de tipos de arquivo (opcional, mas recomendado)
     const allowedMimes = [
         "image/png", 
         "image/gif", 

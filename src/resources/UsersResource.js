@@ -1,7 +1,5 @@
 import AdminJS from "adminjs";
-
 import User from "../models/user";
-
 import { hasAdminPermission } from "../services/auth";
 
 export default {
