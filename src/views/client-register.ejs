@@ -17,56 +17,60 @@
         .login-form-wrapper .logo { display: block; max-width: 150px; margin: 0 auto 32px auto; }
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
-        .form-group input { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 16px; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-        .form-group input:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 16px; background-color: #fff; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #80bdff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); }
         .btn-submit { width: 100%; background-color: #1187BD; color: #ffffff; padding: 12px; border: none; border-radius: 4px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease; margin-top: 8px; }
         .btn-submit:hover { background-color: #0e6a94; }
-        .error-message { color: #e53935; background-color: #ffcdd2; border: 1px solid #e53935; border-radius: 4px; padding: 12px; margin-bottom: 20px; text-align: center; }
+        .message, .error-message { border-radius: 4px; padding: 12px; margin-bottom: 20px; text-align: center; }
+        .error-message { color: #e53935; background-color: #ffcdd2; border: 1px solid #e53935; }
+        .message { color: #0f5132; background-color: #d1e7dd; border: 1px solid #badbcc; }
         .login-link { text-align: center; margin-top: 20px; font-size: 14px; }
         .login-link a { color: #1187BD; text-decoration: none; font-weight: 500; }
         .login-link a:hover { text-decoration: underline; }
-        @media (max-width: 768px) { .login-wrapper { flex-direction: column; } .login-branding, .login-form-wrapper { width: 100%; } }
     </style>
 </head>
 <body>
-
     <div class="login-wrapper">
         <div class="login-branding">
             <h2>Crie sua Conta</h2>
             <p>Acesso rápido e fácil para abrir e gerenciar seus chamados.</p>
-            <img src="https://via.placeholder.com/300x250.png/1187BD/FFFFFF?text=Sua+Ilustração" alt="Ilustração de boas-vindas" class="illustration">
         </div>
-
         <div class="login-form-wrapper">
             <img src="/public/kakau.webp" alt="Logo Kakau Tech" class="logo">
-
             <% if (typeof error !== 'undefined' && error) { %>
-                <div class="error-message">
-                    <%= error %>
-                </div>
+                <div class="error-message"><%= error %></div>
             <% } %>
-
+            <% if (typeof message !== 'undefined' && message) { %>
+                <div class="message"><%= message %></div>
+            <% } %>
             <form action="/portal/register" method="POST">
                 <div class="form-group">
                     <label for="name">* Nome Completo</label>
-                    <input type="text" id="name" name="name" placeholder="Seu nome" required>
+                    <input type="text" id="name" name="name" required>
                 </div>
                 <div class="form-group">
                     <label for="email">* Email</label>
-                    <input type="email" id="email" name="email" placeholder="seu@email.com" required>
+                    <input type="email" id="email" name="email" required>
                 </div>
                 <div class="form-group">
                     <label for="password">* Senha</label>
-                    <input type="password" id="password" name="password" placeholder="Crie uma senha forte" required>
+                    <input type="password" id="password" name="password" required>
                 </div>
-                <button type="submit" class="btn-submit">Cadastrar</button>
+                <div class="form-group">
+                    <label for="projectId">* Projeto</label>
+                    <select id="projectId" name="projectId" required>
+                        <option value="" disabled selected>Selecione um projeto</option>
+                        <% projects.forEach(project => { %>
+                            <option value="<%= project.id %>"><%= project.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Solicitar Cadastro</button>
             </form>
-            
             <div class="login-link">
                 <p>Já tem uma conta? <a href="/portal/login">Faça o login</a></p>
             </div>
         </div>
     </div>
-
 </body>
 </html>

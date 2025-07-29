@@ -11,6 +11,8 @@ class Ticket extends Model {
           "in_progress",
           "closed"
         ),
+        // CAMPO ADICIONADO
+        project_id: Sequelize.INTEGER,
         path: Sequelize.STRING,
         folder: Sequelize.STRING,
         type: Sequelize.STRING,
@@ -31,10 +33,11 @@ class Ticket extends Model {
     this.belongsTo(models.Client, {
       foreignKey: "client_id",
     });
-
     this.belongsTo(models.User, {
       foreignKey: "user_id",
     });
+    // ASSOCIAÇÃO ADICIONADA
+    this.belongsTo(models.Project, { foreignKey: 'project_id' });
   }
 }
 

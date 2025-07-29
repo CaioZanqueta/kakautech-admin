@@ -22,6 +22,7 @@ import ClientsResource from "./resources/ClientsResource";
 import TicketsResource from "./resources/TicketsResource";
 import Client from "./models/client";
 import Ticket from "./models/ticket";
+import Project from "./models/project"; // <<-- MUDANÇA: Importação adicionada
 
 import locale from "./locales";
 import theme from "./theme";
@@ -31,7 +32,6 @@ AdminJS.registerAdapter(AdminJSSequelize);
 const app = express();
 
 app.use((req, res, next) => {
-  // console.log(`[LOG GERAL] Requisição recebida: ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -86,22 +86,16 @@ app.get("/admin/login", (req, res) => {
 
 app.post("/admin/login", async (req, res, next) => {
   const { email, password } = req.body;
-
   try {
     const adminUser = await User.findOne({ where: { email } });
-
     if (!adminUser) {
       return res.render("admin-login", { error: "Email ou senha inválidos." });
     }
-
     const isPasswordCorrect = await adminUser.checkPassword(password);
-
     if (isPasswordCorrect) {
       req.login(adminUser, (err) => {
         if (err) { return next(err); }
-
         req.session.adminUser = adminUser.toJSON();
-
         req.session.save((saveErr) => {
           if (saveErr) {
             return next(saveErr);
@@ -119,12 +113,8 @@ app.post("/admin/login", async (req, res, next) => {
 });
 
 const checkAdminAuth = (req, res, next) => {
-    if (req.session.adminUser) {
-        return next();
-    }
-    if (req.isAuthenticated() && req.user instanceof User) {
-        return next();
-    }
+    if (req.session.adminUser) { return next(); }
+    if (req.isAuthenticated() && req.user instanceof User) { return next(); }
     return res.redirect("/admin/login");
 };
 
@@ -156,9 +146,7 @@ app.get(
 
 app.get("/admin/logout", (req, res, next) => {
   req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
+    if (err) { return next(err); }
     delete req.session.adminUser;
     req.session.destroy(() => {
       res.redirect("/");
@@ -168,15 +156,12 @@ app.get("/admin/logout", (req, res, next) => {
 
 const requireClientAuth = (req, res, next) => {
   if (req.isAuthenticated() && req.user instanceof Client) {
-    next();
-  } else {
-    res.redirect("/portal/login");
+    return next();
   }
+  return res.redirect("/portal/login");
 };
-app.get(
-  "/auth/google",
-  passport.authenticate("google-client", { scope: ["profile", "email"] })
-);
+
+app.get("/auth/google", passport.authenticate("google-client", { scope: ["profile", "email"] }));
 app.get(
   "/auth/google/callback",
   passport.authenticate("google-client", { failureRedirect: "/portal/login" }),
@@ -187,6 +172,7 @@ app.get(
     });
   }
 );
+
 app.get("/auth/microsoft", passport.authenticate("microsoft-client"));
 app.get(
   "/auth/microsoft/callback",
@@ -200,6 +186,7 @@ app.get(
     });
   }
 );
+
 app.get("/portal", (req, res) => {
   if (req.isAuthenticated() && req.user instanceof Client) {
     res.redirect("/portal/tickets/new");
@@ -207,48 +194,61 @@ app.get("/portal", (req, res) => {
     res.redirect("/portal/login");
   }
 });
+
 app.get("/portal/login", (req, res) => {
   res.render("client-login", { error: null });
 });
+
 app.post("/portal/login", passport.authenticate("local-client", {
     successRedirect: "/portal/tickets/new",
     failureRedirect: "/portal/login",
     failureMessage: true,
 }));
-app.get("/portal/register", (req, res) => {
-  res.render("client-register", { error: null });
+
+// <<-- MUDANÇA: Rota GET de registro agora busca os projetos -->>
+app.get("/portal/register", async (req, res) => {
+  const projects = await Project.findAll({ where: { status: 'active' } });
+  res.render("client-register", { error: null, projects, message: null });
 });
+
+// <<-- MUDANÇA: Rota POST de registro agora salva o projeto e status pendente -->>
 app.post("/portal/register", async (req, res, next) => {
+  const { name, email, password, projectId } = req.body;
+  const projects = await Project.findAll({ where: { status: 'active' } });
   try {
-    const { name, email, password } = req.body;
     const existingClient = await Client.findOne({ where: { email } });
     if (existingClient) {
       return res.render("client-register", {
         error: "Este e-mail já está cadastrado. Tente fazer o login.",
+        projects,
+        message: null
       });
     }
-    const newClient = await Client.create({ name, email, password });
-    req.login(newClient, (err) => {
-      if (err) { return next(err); }
-      return res.redirect("/portal/tickets/new");
+    await Client.create({ name, email, password, projectId, status: 'pending' });
+    return res.render("client-register", {
+      message: "Solicitação de cadastro enviada com sucesso! Você será notificado quando sua conta for aprovada.",
+      projects,
+      error: null
     });
   } catch (error) {
     console.error("Erro no cadastro do cliente:", error);
     res.render("client-register", {
       error: "Ocorreu um erro inesperado. Tente novamente.",
+      projects,
+      message: null
     });
   }
 });
+
 app.get("/portal/logout", (req, res, next) => {
   req.logout(function (err) {
-    if (err) {
-      return next(err);
-    }
+    if (err) { return next(err); }
     req.session.destroy(() => {
       res.redirect("/portal/login");
     });
   });
 });
+
 app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res) => {
   try {
     const { recordId } = req.params;
@@ -261,15 +261,9 @@ app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res)
     }
     const s3 = new S3Client({
       region: credentials.region,
-      credentials: {
-        accessKeyId: credentials.accessKeyId,
-        secretAccessKey: credentials.secretAccessKey,
-      },
+      credentials: { accessKeyId: credentials.accessKeyId, secretAccessKey: credentials.secretAccessKey },
     });
-    const command = new GetObjectCommand({
-      Bucket: ticket.folder,
-      Key: ticket.path,
-    });
+    const command = new GetObjectCommand({ Bucket: ticket.folder, Key: ticket.path });
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
     res.redirect(signedUrl);
   } catch (error) {
@@ -277,14 +271,12 @@ app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res)
     res.status(500).send("Erro ao processar o download.");
   }
 });
+
 app.get("/portal/tickets/new", requireClientAuth, (req, res) => {
-  res.render("new-ticket", {
-    message: null,
-    error: null,
-    user: req.user // <<-- LINHA ADICIONADA
-  });
+  res.render("new-ticket", { message: null, error: null, user: req.user });
 });
 
+// <<-- MUDANÇA: Rota POST de criação de ticket agora vincula o projeto -->>
 app.post(
   "/portal/tickets",
   requireClientAuth,
@@ -296,6 +288,7 @@ app.post(
         title,
         description,
         clientId: req.user.id,
+        projectId: req.user.projectId,
         status: "open",
       };
       if (req.file) {
@@ -312,15 +305,15 @@ app.post(
       res.render("new-ticket", {
         message: "Chamado aberto com sucesso!",
         error: null,
+        user: req.user
       });
     } catch (error) {
       console.error("Erro ao criar chamado:", error);
-      res
-        .status(500)
-        .render("new-ticket", {
+      res.status(500).render("new-ticket", {
           message: null,
           error: `Erro ao criar chamado: ${error.message}`,
-        });
+          user: req.user
+      });
     }
   }
 );

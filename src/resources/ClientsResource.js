@@ -8,7 +8,6 @@ export default {
       icon: "User",
     },
     actions: {
-      // É uma boa prática restringir o acesso aos dados dos clientes
       list: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
       show: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
       new: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
@@ -19,7 +18,21 @@ export default {
       id: { position: 1 },
       name: { isRequired: true, position: 2 },
       email: { isRequired: true, position: 3 },
-      password: { isVisible: { list: false, filter: false, show: false, edit: true }, position: 4 },
+      // CAMPOS ADICIONADOS PARA GESTÃO
+      projectId: {
+        position: 4,
+        isRequired: true,
+      },
+      status: {
+        position: 5,
+        isRequired: true,
+        availableValues: [
+          { value: 'pending', label: 'Pendente' },
+          { value: 'active', label: 'Ativo' },
+          { value: 'inactive', label: 'Inativo' },
+        ],
+      },
+      password: { isVisible: { list: false, filter: false, show: false, edit: true }, position: 6 },
       password_hash: { isVisible: false },
     },
   },

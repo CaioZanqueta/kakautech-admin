@@ -30,20 +30,26 @@ export default {
         position: 5,
         label: 'Cliente'
       },
-      attachment: {
+      // <<-- MUDANÇA: Adicionada propriedade projectId -->>
+      projectId: {
         position: 6,
+        label: 'Projeto'
+      },
+      attachment: {
+        position: 7,
       },
       createdAt: {
-        position: 7,
+        position: 8,
         isVisible: { list: true, show: true, edit: false },
       },
       updatedAt: {
-        position: 8,
+        position: 9,
         isVisible: { list: false, show: true, edit: false },
       },
       client_id: { isVisible: false },
       userId: { isVisible: false },
       user_id: { isVisible: false },
+      project_id: { isVisible: false }, // Esconde a chave estrangeira crua
       path: { isVisible: false },
       folder: { isVisible: false },
       type: { isVisible: false },

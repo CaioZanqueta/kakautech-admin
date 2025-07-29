@@ -62,6 +62,11 @@ passport.use('local-client', new LocalStrategy(
         return done(null, false, { message: 'Email ou senha inválidos.' });
       }
 
+      // <<-- MUDANÇA: Adicionada verificação de status do cliente -->>
+      if (client.status !== 'active') {
+        return done(null, false, { message: 'Sua conta está pendente de aprovação ou inativa.' });
+      }
+
       const isPasswordCorrect = await client.checkPassword(password);
 
       if (!isPasswordCorrect) {

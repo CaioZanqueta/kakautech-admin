@@ -1,4 +1,3 @@
-// src/models/client.js
 import Sequelize, { Model } from "sequelize";
 import bcrypt from "bcryptjs";
 
@@ -10,9 +9,11 @@ class Client extends Model {
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
         password_hash: Sequelize.STRING,
-        // Novos campos
         google_id: Sequelize.STRING,
         microsoft_id: Sequelize.STRING,
+        // CAMPOS ADICIONADOS
+        project_id: Sequelize.INTEGER,
+        status: Sequelize.ENUM('pending', 'active', 'inactive'),
       },
       {
         sequelize,
@@ -34,10 +35,11 @@ class Client extends Model {
 
   static associate(models) {
     this.hasMany(models.Ticket);
+    // ASSOCIAÇÃO ADICIONADA
+    this.belongsTo(models.Project, { foreignKey: 'project_id' });
   }
 
   checkPassword(password) {
-    // Adiciona uma verificação para garantir que o hash exista
     if (!this.password_hash) return false;
     return bcrypt.compare(password, this.password_hash);
   }
