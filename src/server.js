@@ -13,7 +13,9 @@ import passport from "./config/passport";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "./config/credentials";
-import MailService from "./services/mail"; // <<-- MUDANÇA: Importa o serviço de email
+import MailService from "./services/mail";
+import ejs from 'ejs'; // <<-- ADICIONADO para renderizar templates
+import { fileURLToPath } from 'url'; // Adicionado para __dirname em ESM
 
 import UsersResource from "./resources/UsersResource";
 import ProjectsResource from "./resources/ProjectsResource";
@@ -27,6 +29,9 @@ import Project from "./models/project";
 
 import locale from "./locales";
 import theme from "./theme";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 AdminJS.registerAdapter(AdminJSSequelize);
 
@@ -269,6 +274,8 @@ app.get("/portal/tickets", requireClientAuth, async (req, res) => {
 app.get("/portal/tickets/new", requireClientAuth, (req, res) => {
   res.render("new-ticket", { message: null, error: null, user: req.user });
 });
+
+// <<-- MUDANÇA: Lógica para renderizar template de email -->>
 app.post(
   "/portal/tickets",
   requireClientAuth,
@@ -292,25 +299,24 @@ app.post(
       }
       const newTicket = await Ticket.create(ticketData);
 
-      // <<-- MUDANÇA: Envia email de notificação para o admin -->>
       try {
+        const emailHtml = await ejs.renderFile(
+          path.join(__dirname, 'views/emails/newTicketNotification.ejs'),
+          { 
+            clientName: req.user.name,
+            clientEmail: req.user.email,
+            ticketId: newTicket.id,
+            ticketTitle: newTicket.title
+          }
+        );
+
         await MailService.sendMail(
           process.env.ADMIN_EMAIL,
           `Novo Chamado Aberto: #${newTicket.id} - ${newTicket.title}`,
-          `
-            <h1>Novo Chamado Recebido</h1>
-            <p>Um novo chamado foi aberto pelo cliente ${req.user.name} (${req.user.email}).</p>
-            <ul>
-              <li><strong>ID do Chamado:</strong> ${newTicket.id}</li>
-              <li><strong>Título:</strong> ${newTicket.title}</li>
-              <li><strong>Descrição:</strong> ${newTicket.description}</li>
-            </ul>
-            <p>Acesse o painel de administração para ver mais detalhes e atribuir um responsável.</p>
-          `
+          emailHtml
         );
       } catch (mailError) {
         console.error("Falha ao enviar email de notificação do novo chamado:", mailError);
-        // Não quebra a aplicação, apenas regista o erro
       }
 
       res.redirect("/portal/tickets");
@@ -325,10 +331,8 @@ app.post(
   }
 );
 
-// <<-- MUDANÇA: Inicializa o serviço de email ao arrancar o servidor -->>
-// <<-- MUDANÇA: Altere a função 'startServer' para usar o novo inicializador -->>
 const startServer = async () => {
-  MailService.initialize(); // Prepara o serviço de email
+  await MailService.initialize();
 
   const port = process.env.PORT || 5000;
   app.listen(port, () => {

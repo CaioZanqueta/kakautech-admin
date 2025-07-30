@@ -1,6 +1,11 @@
 import Client from "../models/client";
 import { hasAdminPermission } from "../services/auth";
 import MailService from '../services/mail';
+import ejs from 'ejs'; // <<-- ADICIONADO
+import path from 'path'; // <<-- ADICIONADO
+import { fileURLToPath } from 'url'; // <<-- ADICIONADO para __dirname em ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default {
   resource: Client,
@@ -12,32 +17,26 @@ export default {
       list: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
       show: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
       new: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
-
-      // <<-- MUDANÇA: Lógica de verificação de status corrigida -->>
+      
       edit: {
         isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin),
-
-        // Passo 1: Antes de salvar, guardamos o status original
-        before: async (request, context) => {
-          if (context.record && context.record.isValid()) {
-            // Guardamos o status original no contexto para usá-lo depois
-            context.originalStatus = context.record.get('status');
-          }
-          return request;
-        },
-
-        // Passo 2: Depois de salvar, comparamos o status original com o novo
         after: async (response, request, context) => {
           const { record } = context;
-          const originalStatus = context.originalStatus;
+          const originalRecordStatus = context.record.previous('status');
           const newStatus = record.get('status');
 
-          if (originalStatus === 'pending' && newStatus === 'active') {
+          if (originalRecordStatus === 'pending' && newStatus === 'active') {
             try {
+              // <<-- MUDANÇA: Renderiza o template EJS -->>
+              const emailHtml = await ejs.renderFile(
+                path.join(__dirname, '../views/emails/clientApproved.ejs'),
+                { name: record.get('name') } // Passa os dados para o template
+              );
+
               await MailService.sendMail(
                 record.get('email'), 
                 'Sua conta foi aprovada!',
-                `<p>Olá, ${record.get('name')}!</p><p>Sua conta no portal Kakau Tech foi aprovada. Já pode fazer o login e abrir os seus chamados.</p>`
+                emailHtml
               );
             } catch (error) {
                 console.error("Falha ao enviar email de aprovação:", error);
@@ -53,10 +52,7 @@ export default {
       id: { position: 1 },
       name: { isRequired: true, position: 2 },
       email: { isRequired: true, position: 3 },
-      projectId: {
-        position: 4,
-        isRequired: true,
-      },
+      projectId: { position: 4, isRequired: true },
       status: {
         position: 5,
         isRequired: true,
@@ -68,9 +64,7 @@ export default {
       },
       password: { isVisible: { list: false, filter: false, show: false, edit: true }, position: 6 },
       password_hash: { isVisible: false },
-      project_id: {
-        isVisible: false,
-      },
+      project_id: { isVisible: false },
     },
   },
 };
