@@ -1,5 +1,4 @@
 import Sequelize, { Model } from "sequelize";
-
 import { createPasswordHash, checkPassword } from "../services/auth";
 
 class User extends Model {
@@ -10,7 +9,6 @@ class User extends Model {
           type: Sequelize.VIRTUAL,
           get() {
             const match = this.name.split(" ");
-
             if (match.length > 1) {
               return `${match[0][0]}${match[match.length - 1][0]}`;
             } else {
@@ -40,19 +38,23 @@ class User extends Model {
         user.password_hash = await createPasswordHash(user.password);
       }
     });
+
+    return this; // <<-- MUDANÇA: Adicionado return que faltava
   }
 
   static associate(models) {
     this.hasMany(models.Project);
     this.hasMany(models.Task);
+    // <<-- MUDANÇA: Adicionada associação com Tickets -->>
+    this.hasMany(models.Ticket, { foreignKey: 'userId' });
   }
 
-  checkPassword(password) {
-    if (!this.password_hash) {
-      return false;
-    }
-    return checkPassword(this, password);
-  }
+  checkPassword(password) {
+    if (!this.password_hash) {
+      return false;
+    }
+    return checkPassword(this, password);
+  }
 }
 
 export default User;

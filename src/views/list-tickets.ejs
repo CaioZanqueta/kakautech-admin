@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Chamado - Portal do Cliente</title>
+    <title>Meus Chamados - Portal do Cliente</title>
     <link rel="icon" type="image/webp" href="/public/favicon.webp">
     <style>
         :root {
@@ -57,9 +57,7 @@
         }
         .sidebar-nav a:hover { background-color: var(--bg-hover); color: var(--text-primary); }
         .sidebar-nav a:hover svg { color: var(--text-primary); }
-        .sidebar-nav a.active {
-            background-color: transparent; color: var(--primary-100); font-weight: bold;
-        }
+        .sidebar-nav a.active { background-color: transparent; color: var(--primary-100); font-weight: bold; }
         .sidebar-nav a.active svg { color: var(--primary-100); }
         .topbar {
             grid-area: topbar; background-color: var(--bg-topbar);
@@ -100,44 +98,42 @@
             background-color: var(--bg-card); border-radius: 1px; padding: 32px;
             border: 1px solid var(--border-color);
         }
-        .card-header { margin-bottom: 32px; }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px;
+        }
         .card-header h1 { font-size: 24px; font-weight: 300; color: var(--text-primary); }
-        .form-group { margin-bottom: 24px; }
-        .form-group label {
-            display: block; font-weight: 400; margin-bottom: 8px; font-size: 12px;
-            color: var(--grey-60);
-        }
-        .form-group input[type="text"], .form-group textarea {
-            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 4px;
-            font-size: 14px; color: var(--text-primary); background-color: var(--bg-input);
-        }
-        .form-group input[type="text"]:focus, .form-group textarea:focus {
-            outline: none; border-color: var(--primary-100);
-            box-shadow: 0 0 0 2px var(--focus-ring);
-        }
-        .form-group textarea { min-height: 120px; resize: vertical; }
-        .upload-zone {
-            border: 1px dashed var(--border-color); border-radius: 4px; padding: 32px;
-            text-align: center; cursor: pointer;
-        }
-        .upload-zone:hover { border-color: var(--primary-100); }
-        .upload-zone p { margin: 0; color: var(--grey-60); font-size: 14px; }
-        .upload-zone .upload-info { font-size: 12px; color: #aaa; margin-top: 8px; }
-        #attachment { display: none; }
-        #file-name { margin-top: 12px; font-style: italic; font-size: 12px; color: var(--text-primary); }
-        .form-footer { margin-top: 32px; text-align: center; }
-        .btn-submit {
+        .btn-primary {
             background-color: var(--primary-100); color: var(--white);
-            padding: 10px 24px; border: none; border-radius: 4px;
-            font-size: 14px; font-weight: 500; cursor: pointer;
+            padding: 10px 20px; border: none; border-radius: 4px;
+            font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none;
+            transition: background-color 0.2s ease;
         }
-        .btn-submit:hover { background-color: var(--primary-hover); }
-        .feedback-message { padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; }
-        .success-message { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error-message { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+
+        table {
+            width: 100%; border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 16px; text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { font-size: 12px; color: var(--grey-60); text-transform: uppercase; }
+        .status {
+            padding: 4px 8px; border-radius: 12px; font-size: 12px;
+            font-weight: bold; text-transform: capitalize;
+        }
+        .status-open { background-color: #cfe2ff; color: #084298; }
+        .status-in_progress { background-color: #fff3cd; color: #664d03; }
+        .status-closed { background-color: #e2e3e5; color: #41464b; }
+        body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
+        body.dark-mode .status-in_progress { background-color: #533f03; color: #ffda6a; }
+        body.dark-mode .status-closed { background-color: #343a40; color: #adb5bd; }
+        .no-tickets { text-align: center; padding: 40px; color: var(--grey-60); }
     </style>
 </head>
 <body>
+
     <div class="app-layout">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -149,7 +145,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                     Meus Chamados
                 </a>
-                <a href="/portal/tickets/new" class="active">
+                <a href="/portal/tickets/new">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
                     Novo Chamado
                 </a>
@@ -158,7 +154,7 @@
 
         <header class="topbar">
             <div class="breadcrumbs">
-                Portal / Chamados / Criar novo
+                Portal / Meus Chamados
             </div>
             <div class="topbar-right-controls">
                 <div class="theme-switch" id="theme-switcher" title="Alterar tema"><div class="theme-switch-toggle"></div></div>
@@ -173,34 +169,40 @@
 
         <main class="content">
             <div class="card">
-                <div class="card-header"><h1>Abrir Novo Chamado</h1></div>
-                 <% if (typeof message !== 'undefined' && message) { %>
-                    <div class="feedback-message success-message"><%= message %></div>
+                <div class="card-header">
+                    <h1>Meus Chamados</h1>
+                    <a href="/portal/tickets/new" class="btn-primary">Abrir Novo Chamado</a>
+                </div>
+
+                <% if (tickets.length === 0) { %>
+                    <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
+                <% } else { %>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Título</th>
+                                <th>Status</th>
+                                <th>Última Atualização</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% tickets.forEach(ticket => { %>
+                                <tr>
+                                    <td>#<%= ticket.id %></td>
+                                    <td><%= ticket.title %></td>
+                                    <td><span class="status status-<%= ticket.status %>"><%= ticket.status.replace('_', ' ') %></span></td>
+                                    <td><%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
                 <% } %>
-                <% if (typeof error !== 'undefined' && error) { %>
-                    <div class="feedback-message error-message"><%= error %></div>
-                <% } %>
-                <form action="/portal/tickets" method="POST" enctype="multipart/form-data">
-                    <div class="form-group"><label for="title">* Título</label><input type="text" id="title" name="title" required></div>
-                    <div class="form-group"><label for="description">* Descrição</label><textarea id="description" name="description" rows="5" required></textarea></div>
-                    <div class="form-group"><label for="attachment">Anexo</label><label for="attachment" class="upload-zone"><p>Arraste e solte um arquivo aqui para fazer o upload</p><div class="upload-info">TAMANHO MÁX: 5MB</div><p id="file-name"></p></label><input type="file" id="attachment" name="attachment"></div>
-                    <div class="form-footer"><button type="submit" class="btn-submit">Enviar Chamado</button></div>
-                </form>
             </div>
         </main>
     </div>
 
     <script>
-        const fileInput = document.getElementById('attachment');
-        const fileNameDisplay = document.getElementById('file-name');
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                fileNameDisplay.textContent = 'Arquivo selecionado: ' + this.files[0].name;
-            } else {
-                fileNameDisplay.textContent = '';
-            }
-        });
-
         document.addEventListener('DOMContentLoaded', () => {
             const menuToggle = document.getElementById('user-menu-toggle');
             const menuContent = document.getElementById('user-menu-content');
@@ -216,7 +218,6 @@
                 });
             }
         });
-
         const themeSwitcher = document.getElementById('theme-switcher');
         const body = document.body;
         const logo = document.getElementById('sidebar-logo');

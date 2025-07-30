@@ -13,6 +13,7 @@ import passport from "./config/passport";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "./config/credentials";
+import MailService from "./services/mail"; // <<-- MUDANÇA: Importa o serviço de email
 
 import UsersResource from "./resources/UsersResource";
 import ProjectsResource from "./resources/ProjectsResource";
@@ -25,7 +26,7 @@ import Ticket from "./models/ticket";
 import Project from "./models/project";
 
 import locale from "./locales";
-import theme from "./theme"; // Garanta que está a importar o tema claro original
+import theme from "./theme";
 
 AdminJS.registerAdapter(AdminJSSequelize);
 
@@ -60,7 +61,6 @@ const adminJS = new AdminJS({
     theme,
   },
   ...locale,
-  // A secção 'assets' foi removida daqui
 });
 
 app.use(express.json());
@@ -161,33 +161,28 @@ const requireClientAuth = (req, res, next) => {
   }
   return res.redirect("/portal/login");
 };
-
 app.get("/portal", (req, res) => {
   if (req.isAuthenticated() && req.user instanceof Client && req.user.status === 'active') {
-    res.redirect("/portal/tickets/new");
+    res.redirect("/portal/tickets");
   } else {
     res.redirect("/portal/login");
   }
 });
-
 app.get("/portal/login", (req, res) => {
   const messages = req.session.messages || [];
   req.session.messages = [];
   const error = messages.length > 0 ? messages[0] : null;
   res.render("client-login", { error });
 });
-
 app.post("/portal/login", passport.authenticate("local-client", {
-    successRedirect: "/portal/tickets/new",
+    successRedirect: "/portal/tickets",
     failureRedirect: "/portal/login",
     failureMessage: true,
 }));
-
 app.get("/portal/register", async (req, res) => {
   const projects = await Project.findAll({ where: { status: 'active' } });
   res.render("client-register", { error: null, projects, message: null });
 });
-
 app.post("/portal/register", async (req, res, next) => {
   const { name, email, password, projectId } = req.body;
   const projects = await Project.findAll({ where: { status: 'active' } });
@@ -212,7 +207,6 @@ app.post("/portal/register", async (req, res, next) => {
     });
   }
 });
-
 const socialAuthCallback = (req, res, next) => {
     if (req.session.messages && req.session.messages.includes('PENDING_APPROVAL')) {
         req.session.messages = [];
@@ -220,20 +214,16 @@ const socialAuthCallback = (req, res, next) => {
     }
     req.login(req.user, (err) => {
       if (err) { return next(err); }
-      return res.redirect("/portal/tickets/new");
+      return res.redirect("/portal/tickets");
     });
 };
-
 app.get("/auth/google", passport.authenticate("google-client", { scope: ["profile", "email"] }));
 app.get("/auth/google/callback", passport.authenticate("google-client", { failureRedirect: "/portal/login", failureMessage: true }), socialAuthCallback);
-
 app.get("/auth/microsoft", passport.authenticate("microsoft-client"));
 app.get("/auth/microsoft/callback", passport.authenticate("microsoft-client", { failureRedirect: "/portal/login", failureMessage: true }), socialAuthCallback);
-
 app.get("/portal/pending-approval", (req, res) => {
     res.render("pending-approval");
 });
-
 app.get("/portal/logout", (req, res, next) => {
   req.logout(function (err) {
     if (err) { return next(err); }
@@ -242,7 +232,6 @@ app.get("/portal/logout", (req, res, next) => {
     });
   });
 });
-
 app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res) => {
   try {
     const { recordId } = req.params;
@@ -265,11 +254,21 @@ app.get("/portal/download/ticket/:recordId", requireClientAuth, async (req, res)
     res.status(500).send("Erro ao processar o download.");
   }
 });
-
+app.get("/portal/tickets", requireClientAuth, async (req, res) => {
+  try {
+    const tickets = await Ticket.findAll({
+      where: { clientId: req.user.id },
+      order: [['createdAt', 'DESC']]
+    });
+    res.render("list-tickets", { user: req.user, tickets });
+  } catch (error) {
+    console.error("Erro ao buscar chamados:", error);
+    res.status(500).send("Erro ao carregar seus chamados.");
+  }
+});
 app.get("/portal/tickets/new", requireClientAuth, (req, res) => {
   res.render("new-ticket", { message: null, error: null, user: req.user });
 });
-
 app.post(
   "/portal/tickets",
   requireClientAuth,
@@ -287,19 +286,34 @@ app.post(
       if (req.file) {
         const { key, size, mimetype, originalname } = req.file;
         Object.assign(ticketData, {
-          path: key,
-          folder: process.env.AWS_BUCKET,
-          type: mimetype,
-          filename: originalname,
-          size: size,
+          path: key, folder: process.env.AWS_BUCKET,
+          type: mimetype, filename: originalname, size: size,
         });
       }
-      await Ticket.create(ticketData);
-      res.render("new-ticket", {
-        message: "Chamado aberto com sucesso!",
-        error: null,
-        user: req.user
-      });
+      const newTicket = await Ticket.create(ticketData);
+
+      // <<-- MUDANÇA: Envia email de notificação para o admin -->>
+      try {
+        await MailService.sendMail(
+          process.env.ADMIN_EMAIL,
+          `Novo Chamado Aberto: #${newTicket.id} - ${newTicket.title}`,
+          `
+            <h1>Novo Chamado Recebido</h1>
+            <p>Um novo chamado foi aberto pelo cliente ${req.user.name} (${req.user.email}).</p>
+            <ul>
+              <li><strong>ID do Chamado:</strong> ${newTicket.id}</li>
+              <li><strong>Título:</strong> ${newTicket.title}</li>
+              <li><strong>Descrição:</strong> ${newTicket.description}</li>
+            </ul>
+            <p>Acesse o painel de administração para ver mais detalhes e atribuir um responsável.</p>
+          `
+        );
+      } catch (mailError) {
+        console.error("Falha ao enviar email de notificação do novo chamado:", mailError);
+        // Não quebra a aplicação, apenas regista o erro
+      }
+
+      res.redirect("/portal/tickets");
     } catch (error) {
       console.error("Erro ao criar chamado:", error);
       res.status(500).render("new-ticket", {
@@ -311,8 +325,17 @@ app.post(
   }
 );
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  console.log(`AdminJS está rodando em http://localhost:${port}/admin`);
-  console.log(`Portal do Cliente em http://localhost:${port}/portal`);
-});
+// <<-- MUDANÇA: Inicializa o serviço de email ao arrancar o servidor -->>
+// <<-- MUDANÇA: Altere a função 'startServer' para usar o novo inicializador -->>
+const startServer = async () => {
+  MailService.initialize(); // Prepara o serviço de email
+
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    console.log(`🚀 Servidor a todo vapor!`);
+    console.log(`AdminJS está rodando em http://localhost:${port}/admin`);
+    console.log(`Portal do Cliente em http://localhost:${port}/portal`);
+  });
+}
+
+startServer();
