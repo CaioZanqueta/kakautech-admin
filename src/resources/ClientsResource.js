@@ -1,11 +1,10 @@
-import Client from "../models/client";
-import { hasAdminPermission } from "../services/auth";
-import MailService from '../services/mail';
-import ejs from 'ejs'; // <<-- ADICIONADO
-import path from 'path'; // <<-- ADICIONADO
-import { fileURLToPath } from 'url'; // <<-- ADICIONADO para __dirname em ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import Client from "../models/client.js";
+import { hasAdminPermission } from "../services/auth.js";
+import MailService from '../services/mail.js';
+import ejs from 'ejs';
+import path from 'path';
+
+// <<-- MUDANÇA: Removida a lógica de __dirname do ES Modules, que não é necessária aqui -->>
 
 export default {
   resource: Client,
@@ -20,17 +19,24 @@ export default {
       
       edit: {
         isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin),
+        // A lógica do before/after hook está correta para v5
+        before: async (request, context) => {
+          if (context.record && context.record.isValid()) {
+            context.originalStatus = context.record.get('status');
+          }
+          return request;
+        },
         after: async (response, request, context) => {
           const { record } = context;
-          const originalRecordStatus = context.record.previous('status');
+          const originalStatus = context.originalStatus;
           const newStatus = record.get('status');
 
-          if (originalRecordStatus === 'pending' && newStatus === 'active') {
+          if (originalStatus === 'pending' && newStatus === 'active') {
             try {
-              // <<-- MUDANÇA: Renderiza o template EJS -->>
+              // <<-- MUDANÇA: __dirname funciona por defeito em projetos CommonJS -->>
               const emailHtml = await ejs.renderFile(
                 path.join(__dirname, '../views/emails/clientApproved.ejs'),
-                { name: record.get('name') } // Passa os dados para o template
+                { name: record.get('name') }
               );
 
               await MailService.sendMail(
@@ -45,14 +51,16 @@ export default {
           return response;
         }
       },
-
       delete: { isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin) },
     },
     properties: {
       id: { position: 1 },
       name: { isRequired: true, position: 2 },
       email: { isRequired: true, position: 3 },
-      projectId: { position: 4, isRequired: true },
+      projectId: {
+        position: 4,
+        isRequired: true,
+      },
       status: {
         position: 5,
         isRequired: true,
@@ -64,7 +72,9 @@ export default {
       },
       password: { isVisible: { list: false, filter: false, show: false, edit: true }, position: 6 },
       password_hash: { isVisible: false },
-      project_id: { isVisible: false },
+      project_id: {
+        isVisible: false,
+      },
     },
   },
 };

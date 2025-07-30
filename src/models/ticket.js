@@ -6,34 +6,22 @@ class Ticket extends Model {
       {
         title: Sequelize.STRING,
         description: Sequelize.TEXT,
-        status: Sequelize.ENUM(
-          "open",
-          "in_progress",
-          "closed"
-        ),
-        
-        // <<-- CORREÇÃO: Definição explícita do campo projectId -->>
+        status: Sequelize.ENUM("open", "in_progress", "closed"),
         projectId: {
           type: Sequelize.INTEGER,
           field: 'project_id',
-          references: {
-            model: 'projects',
-            key: 'id'
-          },
+          references: { model: 'projects', key: 'id' },
           onUpdate: 'CASCADE',
           onDelete: 'SET NULL'
         },
-        
-        clientId: { // Adicionado para consistência
+        clientId: {
           type: Sequelize.INTEGER,
           field: 'client_id'
         },
-        
-        userId: { // Adicionado para consistência
+        userId: {
           type: Sequelize.INTEGER,
           field: 'user_id'
         },
-
         path: Sequelize.STRING,
         folder: Sequelize.STRING,
         type: Sequelize.STRING,
@@ -48,18 +36,14 @@ class Ticket extends Model {
         },
       }
     );
+    return this; // <<-- ADICIONADO
   }
 
   static associate(models) {
-    this.belongsTo(models.Client, {
-      foreignKey: "clientId",
-    });
-    this.belongsTo(models.User, {
-      foreignKey: "userId",
-    });
-    this.belongsTo(models.Project, {
-      foreignKey: "projectId",
-    });
+    this.belongsTo(models.Client, { foreignKey: "clientId" });
+    this.belongsTo(models.User, { foreignKey: "userId" });
+    this.belongsTo(models.Project, { foreignKey: "projectId" });
+    this.hasMany(models.Comment, { foreignKey: 'ticket_id' }); // <<-- ADICIONADO
   }
 }
 

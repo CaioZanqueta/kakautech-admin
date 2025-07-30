@@ -39,14 +39,14 @@ class User extends Model {
       }
     });
 
-    return this; // <<-- MUDANÇA: Adicionado return que faltava
+    return this;
   }
 
   static associate(models) {
     this.hasMany(models.Project);
     this.hasMany(models.Task);
-    // <<-- MUDANÇA: Adicionada associação com Tickets -->>
     this.hasMany(models.Ticket, { foreignKey: 'userId' });
+    this.hasMany(models.Comment, { foreignKey: 'user_id' }); // <<-- ADICIONADO
   }
 
   checkPassword(password) {

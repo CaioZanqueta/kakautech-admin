@@ -1,14 +1,14 @@
 import Sequelize from "sequelize";
-
 import config from "../config/database";
 
 import User from "../models/user";
 import Project from "../models/project";
 import Task from "../models/task";
-import Client from "../models/client"; // Adicionar
-import Ticket from "../models/ticket"; // Adicionar
+import Client from "../models/client";
+import Ticket from "../models/ticket";
+import Comment from "../models/comment"; // <<-- ADICIONADO
 
-const models = [User, Project, Task, Client, Ticket]; // Adicionar Client e Ticket
+const models = [User, Project, Task, Client, Ticket, Comment]; // <<-- ADICIONADO
 
 class Database {
   constructor() {
