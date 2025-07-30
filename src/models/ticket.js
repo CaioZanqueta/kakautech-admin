@@ -11,8 +11,29 @@ class Ticket extends Model {
           "in_progress",
           "closed"
         ),
-        // CAMPO ADICIONADO
-        project_id: Sequelize.INTEGER,
+        
+        // <<-- CORREÇÃO: Definição explícita do campo projectId -->>
+        projectId: {
+          type: Sequelize.INTEGER,
+          field: 'project_id',
+          references: {
+            model: 'projects',
+            key: 'id'
+          },
+          onUpdate: 'CASCADE',
+          onDelete: 'SET NULL'
+        },
+        
+        clientId: { // Adicionado para consistência
+          type: Sequelize.INTEGER,
+          field: 'client_id'
+        },
+        
+        userId: { // Adicionado para consistência
+          type: Sequelize.INTEGER,
+          field: 'user_id'
+        },
+
         path: Sequelize.STRING,
         folder: Sequelize.STRING,
         type: Sequelize.STRING,
@@ -31,13 +52,14 @@ class Ticket extends Model {
 
   static associate(models) {
     this.belongsTo(models.Client, {
-      foreignKey: "client_id",
+      foreignKey: "clientId",
     });
     this.belongsTo(models.User, {
-      foreignKey: "user_id",
+      foreignKey: "userId",
     });
-    // ASSOCIAÇÃO ADICIONADA
-    this.belongsTo(models.Project, { foreignKey: 'project_id' });
+    this.belongsTo(models.Project, {
+      foreignKey: "projectId",
+    });
   }
 }
 

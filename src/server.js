@@ -22,10 +22,10 @@ import ClientsResource from "./resources/ClientsResource";
 import TicketsResource from "./resources/TicketsResource";
 import Client from "./models/client";
 import Ticket from "./models/ticket";
-import Project from "./models/project"; // <<-- MUDANÇA: Importação adicionada
+import Project from "./models/project";
 
 import locale from "./locales";
-import theme from "./theme";
+import theme from "./theme"; // Garanta que está a importar o tema claro original
 
 AdminJS.registerAdapter(AdminJSSequelize);
 
@@ -60,6 +60,7 @@ const adminJS = new AdminJS({
     theme,
   },
   ...locale,
+  // A secção 'assets' foi removida daqui
 });
 
 app.use(express.json());
@@ -149,46 +150,20 @@ app.get("/admin/logout", (req, res, next) => {
     if (err) { return next(err); }
     delete req.session.adminUser;
     req.session.destroy(() => {
-      res.redirect("/");
+      res.redirect("/admin/login");
     });
   });
 });
 
 const requireClientAuth = (req, res, next) => {
-  if (req.isAuthenticated() && req.user instanceof Client) {
+  if (req.isAuthenticated() && req.user instanceof Client && req.user.status === 'active') {
     return next();
   }
   return res.redirect("/portal/login");
 };
 
-app.get("/auth/google", passport.authenticate("google-client", { scope: ["profile", "email"] }));
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google-client", { failureRedirect: "/portal/login" }),
-  (req, res, next) => {
-    req.login(req.user, (err) => {
-      if (err) { return next(err); }
-      res.redirect("/portal/tickets/new");
-    });
-  }
-);
-
-app.get("/auth/microsoft", passport.authenticate("microsoft-client"));
-app.get(
-  "/auth/microsoft/callback",
-  passport.authenticate("microsoft-client", {
-    failureRedirect: "/portal/login",
-  }),
-  (req, res, next) => {
-      req.login(req.user, (err) => {
-      if (err) { return next(err); }
-      res.redirect("/portal/tickets/new");
-    });
-  }
-);
-
 app.get("/portal", (req, res) => {
-  if (req.isAuthenticated() && req.user instanceof Client) {
+  if (req.isAuthenticated() && req.user instanceof Client && req.user.status === 'active') {
     res.redirect("/portal/tickets/new");
   } else {
     res.redirect("/portal/login");
@@ -196,7 +171,10 @@ app.get("/portal", (req, res) => {
 });
 
 app.get("/portal/login", (req, res) => {
-  res.render("client-login", { error: null });
+  const messages = req.session.messages || [];
+  req.session.messages = [];
+  const error = messages.length > 0 ? messages[0] : null;
+  res.render("client-login", { error });
 });
 
 app.post("/portal/login", passport.authenticate("local-client", {
@@ -205,13 +183,11 @@ app.post("/portal/login", passport.authenticate("local-client", {
     failureMessage: true,
 }));
 
-// <<-- MUDANÇA: Rota GET de registro agora busca os projetos -->>
 app.get("/portal/register", async (req, res) => {
   const projects = await Project.findAll({ where: { status: 'active' } });
   res.render("client-register", { error: null, projects, message: null });
 });
 
-// <<-- MUDANÇA: Rota POST de registro agora salva o projeto e status pendente -->>
 app.post("/portal/register", async (req, res, next) => {
   const { name, email, password, projectId } = req.body;
   const projects = await Project.findAll({ where: { status: 'active' } });
@@ -220,24 +196,42 @@ app.post("/portal/register", async (req, res, next) => {
     if (existingClient) {
       return res.render("client-register", {
         error: "Este e-mail já está cadastrado. Tente fazer o login.",
-        projects,
-        message: null
+        projects, message: null
       });
     }
     await Client.create({ name, email, password, projectId, status: 'pending' });
     return res.render("client-register", {
       message: "Solicitação de cadastro enviada com sucesso! Você será notificado quando sua conta for aprovada.",
-      projects,
-      error: null
+      projects, error: null
     });
   } catch (error) {
     console.error("Erro no cadastro do cliente:", error);
     res.render("client-register", {
       error: "Ocorreu um erro inesperado. Tente novamente.",
-      projects,
-      message: null
+      projects, message: null
     });
   }
+});
+
+const socialAuthCallback = (req, res, next) => {
+    if (req.session.messages && req.session.messages.includes('PENDING_APPROVAL')) {
+        req.session.messages = [];
+        return res.redirect('/portal/pending-approval');
+    }
+    req.login(req.user, (err) => {
+      if (err) { return next(err); }
+      return res.redirect("/portal/tickets/new");
+    });
+};
+
+app.get("/auth/google", passport.authenticate("google-client", { scope: ["profile", "email"] }));
+app.get("/auth/google/callback", passport.authenticate("google-client", { failureRedirect: "/portal/login", failureMessage: true }), socialAuthCallback);
+
+app.get("/auth/microsoft", passport.authenticate("microsoft-client"));
+app.get("/auth/microsoft/callback", passport.authenticate("microsoft-client", { failureRedirect: "/portal/login", failureMessage: true }), socialAuthCallback);
+
+app.get("/portal/pending-approval", (req, res) => {
+    res.render("pending-approval");
 });
 
 app.get("/portal/logout", (req, res, next) => {
@@ -276,7 +270,6 @@ app.get("/portal/tickets/new", requireClientAuth, (req, res) => {
   res.render("new-ticket", { message: null, error: null, user: req.user });
 });
 
-// <<-- MUDANÇA: Rota POST de criação de ticket agora vincula o projeto -->>
 app.post(
   "/portal/tickets",
   requireClientAuth,

@@ -11,9 +11,23 @@ class Client extends Model {
         password_hash: Sequelize.STRING,
         google_id: Sequelize.STRING,
         microsoft_id: Sequelize.STRING,
-        // CAMPOS ADICIONADOS
-        project_id: Sequelize.INTEGER,
-        status: Sequelize.ENUM('pending', 'active', 'inactive'),
+        
+        // <<-- CORREÇÃO: Definição explícita do campo projectId -->>
+        projectId: {
+          type: Sequelize.INTEGER,
+          field: 'project_id', // Mapeia este campo para a coluna 'project_id' no DB
+          references: {
+            model: 'projects',
+            key: 'id'
+          },
+          onUpdate: 'CASCADE',
+          onDelete: 'SET NULL'
+        },
+
+        status: {
+          type: Sequelize.ENUM('pending', 'active', 'inactive'),
+          defaultValue: 'pending',
+        },
       },
       {
         sequelize,
@@ -34,9 +48,9 @@ class Client extends Model {
   }
 
   static associate(models) {
-    this.hasMany(models.Ticket);
-    // ASSOCIAÇÃO ADICIONADA
-    this.belongsTo(models.Project, { foreignKey: 'project_id' });
+    this.hasMany(models.Ticket, { foreignKey: 'clientId' }); // Adicionado para clareza
+    // A chave estrangeira é `projectId` no modelo Client
+    this.belongsTo(models.Project, { foreignKey: 'projectId' });
   }
 
   checkPassword(password) {

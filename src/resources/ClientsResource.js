@@ -18,7 +18,6 @@ export default {
       id: { position: 1 },
       name: { isRequired: true, position: 2 },
       email: { isRequired: true, position: 3 },
-      // CAMPOS ADICIONADOS PARA GESTÃO
       projectId: {
         position: 4,
         isRequired: true,
@@ -34,6 +33,11 @@ export default {
       },
       password: { isVisible: { list: false, filter: false, show: false, edit: true }, position: 6 },
       password_hash: { isVisible: false },
+      
+      // <<-- ADICIONADO: Esconde a coluna duplicada -->>
+      project_id: {
+        isVisible: false,
+      },
     },
   },
 };

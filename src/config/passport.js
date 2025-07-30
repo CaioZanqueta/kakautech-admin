@@ -31,17 +31,13 @@ passport.use('local-admin', new LocalStrategy(
   async (email, password, done) => {
     try {
       const user = await User.findOne({ where: { email } });
-
       if (!user) {
         return done(null, false, { message: 'Email ou senha inválidos.' });
       }
-
       const isPasswordCorrect = await user.checkPassword(password);
-
       if (!isPasswordCorrect) {
         return done(null, false, { message: 'Email ou senha inválidos.' });
       }
-
       return done(null, user);
     } catch (error) {
       return done(error);
@@ -57,22 +53,16 @@ passport.use('local-client', new LocalStrategy(
   async (email, password, done) => {
     try {
       const client = await Client.findOne({ where: { email } });
-
       if (!client) {
         return done(null, false, { message: 'Email ou senha inválidos.' });
       }
-
-      // <<-- MUDANÇA: Adicionada verificação de status do cliente -->>
       if (client.status !== 'active') {
         return done(null, false, { message: 'Sua conta está pendente de aprovação ou inativa.' });
       }
-
       const isPasswordCorrect = await client.checkPassword(password);
-
       if (!isPasswordCorrect) {
         return done(null, false, { message: 'Email ou senha inválidos.' });
       }
-      
       return done(null, client);
     } catch (error) {
       return done(error);
@@ -88,24 +78,29 @@ passport.use('google-client', new GoogleStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      let client = await Client.findOne({ where: { google_id: profile.id } });
-      if (client) return done(null, client);
-      
       const email = profile.emails[0].value;
-      client = await Client.findOne({ where: { email } });
+      let client = await Client.findOne({ where: { email } });
 
       if (client) {
-        client.google_id = profile.id;
-        await client.save();
+        if (client.status !== 'active') {
+          return done(null, false, { message: 'Sua conta está pendente de aprovação ou inativa.' });
+        }
+        if (!client.google_id) {
+          client.google_id = profile.id;
+          await client.save();
+        }
         return done(null, client);
       }
       
-      const newClient = await Client.create({
+      await Client.create({
         google_id: profile.id,
         name: profile.displayName,
         email: email,
+        status: 'pending',
+        projectId: null
       });
-      return done(null, newClient);
+      
+      return done(null, false, { message: 'PENDING_APPROVAL' });
     } catch (error) {
       return done(error, false);
     }
@@ -125,28 +120,35 @@ passport.use('microsoft-client', new MicrosoftStrategy({
           return done(new Error("Não foi possível obter o e-mail da Microsoft."), false);
       }
 
-      let client = await Client.findOne({ where: { microsoft_id: profile.id } });
-      if (client) return done(null, client);
+      let client = await Client.findOne({ where: { email } });
 
-      client = await Client.findOne({ where: { email } });
       if (client) {
-        client.microsoft_id = profile.id;
-        await client.save();
+        if (client.status !== 'active') {
+          return done(null, false, { message: 'Sua conta está pendente de aprovação ou inativa.' });
+        }
+        if (!client.microsoft_id) {
+          client.microsoft_id = profile.id;
+          await client.save();
+        }
         return done(null, client);
       }
       
-      const newClient = await Client.create({
+      await Client.create({
         microsoft_id: profile.id,
         name: profile.displayName,
         email: email,
+        status: 'pending',
+        projectId: null
       });
-      return done(null, newClient);
+
+      return done(null, false, { message: 'PENDING_APPROVAL' });
     } catch (error) {
       return done(error, false);
     }
   }
 ));
 
+// <<-- MUDANÇA PRINCIPAL: Lógica de cadastro automático para admins -->>
 passport.use('google-admin', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -157,21 +159,30 @@ passport.use('google-admin', new GoogleStrategy({
     try {
       const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
+      // 1. Garante que o email é válido e pertence ao domínio correto
       if (!email || !email.endsWith('@kakautech.com')) {
         return done(null, false, { message: 'Acesso permitido apenas para contas @kakautech.com.' });
       }
       
       let adminUser = await User.findOne({ where: { email } });
 
+      // 2. Se o utilizador NÃO for encontrado, cria um novo
       if (!adminUser) {
-        return done(null, false, { message: 'Este email não está registrado como um administrador.' });
+        adminUser = await User.create({
+          name: profile.displayName,
+          email: email,
+          google_id: profile.id,
+          role: 'developer', // Perfil padrão para novos cadastros
+          status: 'active'   // Status ativo por defeito para admins
+        });
       }
-
-      if (!adminUser.google_id) {
+      // 3. Se o utilizador já existe mas nunca logou com Google, atualiza o google_id
+      else if (!adminUser.google_id) {
         adminUser.google_id = profile.id;
         await adminUser.save();
       }
       
+      // 4. Retorna o utilizador encontrado ou o recém-criado para o login
       return done(null, adminUser);
     } catch (error) {
       return done(error, false);

@@ -27,6 +27,7 @@
         .login-link { text-align: center; margin-top: 20px; font-size: 14px; }
         .login-link a { color: #1187BD; text-decoration: none; font-weight: 500; }
         .login-link a:hover { text-decoration: underline; }
+        @media (max-width: 768px) { .login-wrapper { flex-direction: column; } .login-branding, .login-form-wrapper { width: 100%; } }
     </style>
 </head>
 <body>
@@ -34,13 +35,14 @@
         <div class="login-branding">
             <h2>Crie sua Conta</h2>
             <p>Acesso rápido e fácil para abrir e gerenciar seus chamados.</p>
+            <img src="https://via.placeholder.com/300x250.png/1187BD/FFFFFF?text=Sua+Ilustração" alt="Ilustração de boas-vindas" class="illustration">
         </div>
         <div class="login-form-wrapper">
             <img src="/public/kakau.webp" alt="Logo Kakau Tech" class="logo">
-            <% if (typeof error !== 'undefined' && error) { %>
+            <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
                 <div class="error-message"><%= error %></div>
             <% } %>
-            <% if (typeof message !== 'undefined' && message) { %>
+            <% if (typeof message !== 'undefined' && message && message.length > 0) { %>
                 <div class="message"><%= message %></div>
             <% } %>
             <form action="/portal/register" method="POST">
@@ -60,9 +62,11 @@
                     <label for="projectId">* Projeto</label>
                     <select id="projectId" name="projectId" required>
                         <option value="" disabled selected>Selecione um projeto</option>
-                        <% projects.forEach(project => { %>
-                            <option value="<%= project.id %>"><%= project.name %></option>
-                        <% }) %>
+                        <% if (typeof projects !== 'undefined' && projects) { %>
+                            <% projects.forEach(project => { %>
+                                <option value="<%= project.id %>"><%= project.name %></option>
+                            <% }) %>
+                        <% } %>
                     </select>
                 </div>
                 <button type="submit" class="btn-submit">Solicitar Cadastro</button>
