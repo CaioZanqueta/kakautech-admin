@@ -1,0 +1,6 @@
+# Ignorar dependências
+node_modules
+
+# Ignorar arquivos de build
+build
+dist

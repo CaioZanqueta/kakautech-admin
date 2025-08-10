@@ -21,11 +21,7 @@ module.exports = {
         type: Sequelize.TEXT,
       },
       order: {
-        type: Sequelize.ENUM(
-          "Low",
-          "Medium",
-          "High"
-        ),
+        type: Sequelize.ENUM("Low", "Medium", "High"),
         defaultValue: "Low",
       },
       status: {

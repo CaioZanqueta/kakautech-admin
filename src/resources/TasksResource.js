@@ -120,7 +120,17 @@ export default {
         file: "attachment",
       },
       validation: {
-        mimeTypes: ["image/png", "image/gif", "image/jpeg", "image/vnd.adobe.photoshop", "application/pdf", "application/zip", "text/plain", "application/msword", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+        mimeTypes: [
+          "image/png",
+          "image/gif",
+          "image/jpeg",
+          "image/vnd.adobe.photoshop",
+          "application/pdf",
+          "application/zip",
+          "text/plain",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ],
         maxSize: 5 * 1024 * 1024,
       },
     }),

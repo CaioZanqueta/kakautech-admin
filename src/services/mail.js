@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 class MailService {
   constructor() {
@@ -11,10 +11,12 @@ class MailService {
     }
 
     if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
-      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      console.error('!!! ERRO: Credenciais de email (MAIL_USER, MAIL_PASS) não encontradas no .env !!!');
-      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-      throw new Error('Credenciais de email não configuradas.');
+      console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      console.error(
+        "!!! ERRO: Credenciais de email (MAIL_USER, MAIL_PASS) não encontradas no .env !!!"
+      );
+      console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      throw new Error("Credenciais de email não configuradas.");
     }
 
     this.transporter = nodemailer.createTransport({
@@ -27,7 +29,7 @@ class MailService {
       },
     });
 
-    console.log('📧 Serviço de email inicializado com sucesso. 📧');
+    console.log("📧 Serviço de email inicializado com sucesso. 📧");
   }
 
   async sendMail(to, subject, html) {

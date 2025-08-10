@@ -18,11 +18,7 @@ module.exports = {
         allowNull: false,
       },
       status: {
-        type: Sequelize.ENUM(
-          "open",
-          "in_progress",
-          "closed"
-        ),
+        type: Sequelize.ENUM("open", "in_progress", "closed"),
         defaultValue: "open",
         allowNull: false,
       },

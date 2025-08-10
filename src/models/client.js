@@ -13,14 +13,14 @@ class Client extends Model {
         microsoft_id: Sequelize.STRING,
         projectId: {
           type: Sequelize.INTEGER,
-          field: 'project_id',
-          references: { model: 'projects', key: 'id' },
-          onUpdate: 'CASCADE',
-          onDelete: 'SET NULL'
+          field: "project_id",
+          references: { model: "projects", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
         },
         status: {
-          type: Sequelize.ENUM('pending', 'active', 'inactive'),
-          defaultValue: 'pending',
+          type: Sequelize.ENUM("pending", "active", "inactive"),
+          defaultValue: "pending",
         },
       },
       {
@@ -42,9 +42,9 @@ class Client extends Model {
   }
 
   static associate(models) {
-    this.hasMany(models.Ticket, { foreignKey: 'clientId' });
-    this.belongsTo(models.Project, { foreignKey: 'projectId' });
-    this.hasMany(models.Comment, { foreignKey: 'client_id' }); // <<-- ADICIONADO
+    this.hasMany(models.Ticket, { foreignKey: "clientId" });
+    this.belongsTo(models.Project, { foreignKey: "projectId" });
+    this.hasMany(models.Comment, { foreignKey: "client_id" }); // <<-- ADICIONADO
   }
 
   checkPassword(password) {

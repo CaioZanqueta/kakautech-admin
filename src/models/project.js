@@ -25,7 +25,7 @@ class Project extends Model {
     });
     this.hasMany(models.Task);
     // ASSOCIAÇÃO ADICIONADA
-    this.hasMany(models.Client, { foreignKey: 'project_id' });
+    this.hasMany(models.Client, { foreignKey: "project_id" });
   }
 }
 

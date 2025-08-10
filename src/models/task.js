@@ -7,11 +7,7 @@ class Task extends Model {
         due_date: Sequelize.DATE,
         title: Sequelize.STRING,
         description: Sequelize.TEXT,
-        order: Sequelize.ENUM(
-          "Low",
-          "Medium",
-          "High"
-        ),
+        order: Sequelize.ENUM("Low", "Medium", "High"),
         status: Sequelize.ENUM(
           "backlog",
           "doing",

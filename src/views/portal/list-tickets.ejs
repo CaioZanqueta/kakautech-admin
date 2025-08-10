@@ -1,184 +1,442 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meus Chamados - Portal do Cliente</title>
-    <link rel="icon" type="image/webp" href="/public/favicon.webp">
+    <link rel="icon" type="image/webp" href="/public/favicon.webp" />
     <style>
-        :root {
-            --primary-100: #1187BD; --primary-hover: #0e6a94;
-            --focus-ring: rgba(17, 135, 189, 0.25); --white: #ffffff;
-            --grey-60: #6c757d; --bg-body: #fafafa; --bg-sidebar: #ffffff;
-            --bg-topbar: #ffffff; --bg-card: #ffffff; --bg-input: #ffffff;
-            --bg-hover: #e9ecef; --text-primary: #0C0D0F;
-            --text-secondary: #495057; --border-color: #dee2e6;
-        }
-        body.dark-mode {
-            --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-topbar: #1e1e1e;
-            --bg-card: #1e1e1e; --bg-input: #2f2f2f; --bg-hover: #343a40;
-            --text-primary: #e9ecef; --text-secondary: #adb5bd;
-            --border-color: #343a40;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-body); color: var(--text-primary);
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-        .app-layout { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 64px 1fr; grid-template-areas: "sidebar topbar" "sidebar content"; height: 100vh; }
-        .sidebar { grid-area: sidebar; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 16px; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 16px 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: center; }
-        .sidebar-header .logo { height: 28px; width: auto; }
-        .sidebar-nav-title { font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 0 8px; margin: 16px 0 8px 0; color: var(--grey-60); }
-        .sidebar-nav a { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); text-decoration: none; padding: 10px 12px; border-radius: 4px; font-size: 14px; font-weight: 500; margin-bottom: 4px; transition: background-color 0.2s ease, color 0.2s ease; }
-        .sidebar-nav a svg { width: 16px; height: 16px; stroke-width: 2px; color: var(--grey-60); transition: color 0.2s ease; }
-        .sidebar-nav a:hover { background-color: var(--bg-hover); color: var(--text-primary); }
-        .sidebar-nav a:hover svg { color: var(--text-primary); }
-        .sidebar-nav a.active { background-color: transparent; color: var(--primary-100); font-weight: bold; }
-        .sidebar-nav a.active svg { color: var(--primary-100); }
-        .topbar { grid-area: topbar; background-color: var(--bg-topbar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
-        .topbar-right-controls { display: flex; align-items: center; gap: 24px; }
-        .breadcrumbs { font-size: 14px; color: var(--grey-60); }
-        .dropdown { position: relative; display: inline-block; }
-        .dropdown-toggle { cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
-        .dropdown-toggle::after { content: '⋮'; font-size: 20px; font-weight: bold; line-height: 1; }
-        .dropdown-content { display: none; position: absolute; right: 0; top: 100%; background-color: var(--bg-card); min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1); z-index: 1; border: 1px solid var(--border-color); border-radius: 4px; padding: 8px 0; margin-top: 8px; }
-        .dropdown-content.is-open { display: block; }
-        .dropdown-content a { color: var(--text-primary); padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; }
-        .dropdown-content a:hover { background-color: var(--bg-hover); }
-        .theme-switch { cursor: pointer; width: 40px; height: 20px; background-color: var(--grey-60); border-radius: 10px; position: relative; }
-        .theme-switch-toggle { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s ease; }
-        body.dark-mode .theme-switch-toggle { transform: translateX(20px); }
-        .content { grid-area: content; overflow-y: auto; padding: 32px; }
-        .card { background-color: var(--bg-card); border-radius: 1px; padding: 32px; border: 1px solid var(--border-color); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .card-header h1 { font-size: 24px; font-weight: 300; color: var(--text-primary); }
-        .btn-primary { background-color: var(--primary-100); color: var(--white); padding: 10px 20px; border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background-color 0.2s ease; }
-        .btn-primary:hover { background-color: var(--primary-hover); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
-        th { font-size: 12px; color: var(--grey-60); text-transform: uppercase; }
-        td a { color: var(--primary-100); text-decoration: none; font-weight: 500; }
-        td a:hover { text-decoration: underline; }
-        .status { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: capitalize; }
-        .status-open { background-color: #cfe2ff; color: #084298; }
-        .status-in_progress { background-color: #fff3cd; color: #664d03; }
-        .status-closed { background-color: #e2e3e5; color: #41464b; }
-        body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
-        body.dark-mode .status-in_progress { background-color: #533f03; color: #ffda6a; }
-        body.dark-mode .status-closed { background-color: #343a40; color: #adb5bd; }
-        .no-tickets { text-align: center; padding: 40px; color: var(--grey-60); }
+      :root {
+        --primary-100: #1187bd;
+        --primary-hover: #0e6a94;
+        --focus-ring: rgba(17, 135, 189, 0.25);
+        --white: #ffffff;
+        --grey-60: #6c757d;
+        --bg-body: #fafafa;
+        --bg-sidebar: #ffffff;
+        --bg-topbar: #ffffff;
+        --bg-card: #ffffff;
+        --bg-input: #ffffff;
+        --bg-hover: #e9ecef;
+        --text-primary: #0c0d0f;
+        --text-secondary: #495057;
+        --border-color: #dee2e6;
+      }
+      body.dark-mode {
+        --bg-body: #121212;
+        --bg-sidebar: #1e1e1e;
+        --bg-topbar: #1e1e1e;
+        --bg-card: #1e1e1e;
+        --bg-input: #2f2f2f;
+        --bg-hover: #343a40;
+        --text-primary: #e9ecef;
+        --text-secondary: #adb5bd;
+        --border-color: #343a40;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--bg-body);
+        color: var(--text-primary);
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+      .app-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        grid-template-rows: 64px 1fr;
+        grid-template-areas: "sidebar topbar" "sidebar content";
+        height: 100vh;
+      }
+      .sidebar {
+        grid-area: sidebar;
+        background-color: var(--bg-sidebar);
+        border-right: 1px solid var(--border-color);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar-header {
+        padding: 16px 8px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: center;
+      }
+      .sidebar-header .logo {
+        height: 28px;
+        width: auto;
+      }
+      .sidebar-nav-title {
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 0 8px;
+        margin: 16px 0 8px 0;
+        color: var(--grey-60);
+      }
+      .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+      .sidebar-nav a svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2px;
+        color: var(--grey-60);
+        transition: color 0.2s ease;
+      }
+      .sidebar-nav a:hover {
+        background-color: var(--bg-hover);
+        color: var(--text-primary);
+      }
+      .sidebar-nav a:hover svg {
+        color: var(--text-primary);
+      }
+      .sidebar-nav a.active {
+        background-color: transparent;
+        color: var(--primary-100);
+        font-weight: bold;
+      }
+      .sidebar-nav a.active svg {
+        color: var(--primary-100);
+      }
+      .topbar {
+        grid-area: topbar;
+        background-color: var(--bg-topbar);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+      }
+      .topbar-right-controls {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .breadcrumbs {
+        font-size: 14px;
+        color: var(--grey-60);
+      }
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      .dropdown-toggle {
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .dropdown-toggle::after {
+        content: "⋮";
+        font-size: 20px;
+        font-weight: bold;
+        line-height: 1;
+      }
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: var(--bg-card);
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 8px 0;
+        margin-top: 8px;
+      }
+      .dropdown-content.is-open {
+        display: block;
+      }
+      .dropdown-content a {
+        color: var(--text-primary);
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        font-size: 14px;
+      }
+      .dropdown-content a:hover {
+        background-color: var(--bg-hover);
+      }
+      .theme-switch {
+        cursor: pointer;
+        width: 40px;
+        height: 20px;
+        background-color: var(--grey-60);
+        border-radius: 10px;
+        position: relative;
+      }
+      .theme-switch-toggle {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+      }
+      body.dark-mode .theme-switch-toggle {
+        transform: translateX(20px);
+      }
+      .content {
+        grid-area: content;
+        overflow-y: auto;
+        padding: 32px;
+      }
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 1px;
+        padding: 32px;
+        border: 1px solid var(--border-color);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .card-header h1 {
+        font-size: 24px;
+        font-weight: 300;
+        color: var(--text-primary);
+      }
+      .btn-primary {
+        background-color: var(--primary-100);
+        color: var(--white);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+      }
+      .btn-primary:hover {
+        background-color: var(--primary-hover);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+      th {
+        font-size: 12px;
+        color: var(--grey-60);
+        text-transform: uppercase;
+      }
+      td a {
+        color: var(--primary-100);
+        text-decoration: none;
+        font-weight: 500;
+      }
+      td a:hover {
+        text-decoration: underline;
+      }
+      .status {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: capitalize;
+      }
+      .status-open {
+        background-color: #cfe2ff;
+        color: #084298;
+      }
+      .status-in_progress {
+        background-color: #fff3cd;
+        color: #664d03;
+      }
+      .status-closed {
+        background-color: #e2e3e5;
+        color: #41464b;
+      }
+      body.dark-mode .status-open {
+        background-color: #03285a;
+        color: #a6cfff;
+      }
+      body.dark-mode .status-in_progress {
+        background-color: #533f03;
+        color: #ffda6a;
+      }
+      body.dark-mode .status-closed {
+        background-color: #343a40;
+        color: #adb5bd;
+      }
+      .no-tickets {
+        text-align: center;
+        padding: 40px;
+        color: var(--grey-60);
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div class="app-layout">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="/public/kakau.webp" alt="Logo Kakau Tech" class="logo" id="sidebar-logo">
-            </div>
-            <nav class="sidebar-nav">
-                <h3 class="sidebar-nav-title">Navegação</h3>
-                <a href="/portal/tickets" class="active">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                    Meus Chamados
-                </a>
-                <a href="/portal/tickets/new">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                    Novo Chamado
-                </a>
-            </nav>
-        </aside>
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="/public/kakau.webp"
+            alt="Logo Kakau Tech"
+            class="logo"
+            id="sidebar-logo"
+          />
+        </div>
+        <nav class="sidebar-nav">
+          <h3 class="sidebar-nav-title">Navegação</h3>
+          <a href="/portal/tickets" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+              ></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+            Meus Chamados
+          </a>
+          <a href="/portal/tickets/new">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              ></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            Novo Chamado
+          </a>
+        </nav>
+      </aside>
 
-        <header class="topbar">
-            <div class="breadcrumbs">
-                Portal / Meus Chamados
+      <header class="topbar">
+        <div class="breadcrumbs">Portal / Meus Chamados</div>
+        <div class="topbar-right-controls">
+          <div class="theme-switch" id="theme-switcher" title="Alterar tema">
+            <div class="theme-switch-toggle"></div>
+          </div>
+          <div class="dropdown">
+            <div class="dropdown-toggle" id="user-menu-toggle">
+              <% if (typeof user !== 'undefined' && user) { %><span
+                ><%= user.email %></span
+              ><% } %>
             </div>
-            <div class="topbar-right-controls">
-                <div class="theme-switch" id="theme-switcher" title="Alterar tema"><div class="theme-switch-toggle"></div></div>
-                <div class="dropdown">
-                    <div class="dropdown-toggle" id="user-menu-toggle">
-                        <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
-                    </div>
-                    <div class="dropdown-content" id="user-menu-content"><a href="/portal/logout">Sair</a></div>
-                </div>
+            <div class="dropdown-content" id="user-menu-content">
+              <a href="/portal/logout">Sair</a>
             </div>
-        </header>
+          </div>
+        </div>
+      </header>
 
-        <main class="content">
-            <div class="card">
-                <div class="card-header">
-                    <h1>Meus Chamados</h1>
-                    <a href="/portal/tickets/new" class="btn-primary">Abrir Novo Chamado</a>
-                </div>
+      <main class="content">
+        <div class="card">
+          <div class="card-header">
+            <h1>Meus Chamados</h1>
+            <a href="/portal/tickets/new" class="btn-primary"
+              >Abrir Novo Chamado</a
+            >
+          </div>
 
-                <% if (tickets.length === 0) { %>
-                    <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
-                <% } else { %>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Título</th>
-                                <th>Status</th>
-                                <th>Última Atualização</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% tickets.forEach(ticket => { %>
-                                <tr>
-                                    <td>#<%= ticket.id %></td>
-                                    >
-                                    <td><a href="/portal/tickets/<%= ticket.id %>"><%= ticket.title %></a></td>
-                                    <td><span class="status status-<%= ticket.status %>"><%= ticket.status.replace('_', ' ') %></span></td>
-                                    <td><%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %></td>
-                                </tr>
-                            <% }) %>
-                        </tbody>
-                    </table>
-                <% } %>
-            </div>
-        </main>
+          <% if (tickets.length === 0) { %>
+          <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
+          <% } else { %>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Status</th>
+                <th>Última Atualização</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% tickets.forEach(ticket => { %>
+              <tr>
+                <td>#<%= ticket.id %></td>
+                >
+                <td>
+                  <a href="/portal/tickets/<%= ticket.id %>"
+                    ><%= ticket.title %></a
+                  >
+                </td>
+                <td>
+                  <span class="status status-<%= ticket.status %>"
+                    ><%= ticket.status.replace('_', ' ') %></span
+                  >
+                </td>
+                <td>
+                  <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <% } %>
+        </div>
+      </main>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const menuToggle = document.getElementById('user-menu-toggle');
-            const menuContent = document.getElementById('user-menu-content');
-            if (menuToggle && menuContent) {
-                menuToggle.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    menuContent.classList.toggle('is-open');
-                });
-                window.addEventListener('click', () => {
-                    if (menuContent.classList.contains('is-open')) {
-                        menuContent.classList.remove('is-open');
-                    }
-                });
+      document.addEventListener("DOMContentLoaded", () => {
+        const menuToggle = document.getElementById("user-menu-toggle");
+        const menuContent = document.getElementById("user-menu-content");
+        if (menuToggle && menuContent) {
+          menuToggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            menuContent.classList.toggle("is-open");
+          });
+          window.addEventListener("click", () => {
+            if (menuContent.classList.contains("is-open")) {
+              menuContent.classList.remove("is-open");
             }
-        });
-        const themeSwitcher = document.getElementById('theme-switcher');
-        const body = document.body;
-        const logo = document.getElementById('sidebar-logo');
-        const applyTheme = (theme) => {
-            if (theme === 'dark') {
-                body.classList.add('dark-mode');
-                if (logo) logo.src = '/public/kakauWhite.webp';
-            } else {
-                body.classList.remove('dark-mode');
-                if (logo) logo.src = '/public/kakau.webp';
-            }
-        };
-        const toggleTheme = () => {
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            localStorage.setItem('theme', newTheme);
-            applyTheme(newTheme);
-        };
-        themeSwitcher.addEventListener('click', toggleTheme);
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        applyTheme(savedTheme);
+          });
+        }
+      });
+      const themeSwitcher = document.getElementById("theme-switcher");
+      const body = document.body;
+      const logo = document.getElementById("sidebar-logo");
+      const applyTheme = (theme) => {
+        if (theme === "dark") {
+          body.classList.add("dark-mode");
+          if (logo) logo.src = "/public/kakauWhite.webp";
+        } else {
+          body.classList.remove("dark-mode");
+          if (logo) logo.src = "/public/kakau.webp";
+        }
+      };
+      const toggleTheme = () => {
+        const currentTheme = localStorage.getItem("theme") || "light";
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", newTheme);
+        applyTheme(newTheme);
+      };
+      themeSwitcher.addEventListener("click", toggleTheme);
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
     </script>
-</body>
+  </body>
 </html>

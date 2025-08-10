@@ -308,7 +308,7 @@
         padding: 10px;
         margin-bottom: 16px;
       }
-      
+
       /* === INÍCIO: REFINAMENTOS DE ESTILO DA PÁGINA === */
 
       /* 1. Padroniza os Títulos das Seções (h3) */
@@ -420,9 +420,9 @@
             <div class="comment <%= comment.client ? 'client-comment' : '' %>">
               <div class="comment-header">
                 <span class="comment-author">
-                  <% if (comment.client) { %> <%= comment.client.name %>
-                  (Você) <% } else if (comment.user) { %> <%= comment.user.name
-                  %> (Equipa) <% } else { %> Anónimo <% } %>
+                  <% if (comment.client) { %> <%= comment.client.name %> (Você)
+                  <% } else if (comment.user) { %> <%= comment.user.name %>
+                  (Equipa) <% } else { %> Anónimo <% } %>
                 </span>
                 <span class="comment-date"
                   ><%= new Date(comment.createdAt).toLocaleString('pt-BR')

@@ -1,9 +1,9 @@
-import multer from 'multer';
-import multerS3 from 'multer-s3';
-import { S3Client } from '@aws-sdk/client-s3';
-import crypto from 'crypto';
-import path from 'path';
-import 'dotenv/config';
+import multer from "multer";
+import multerS3 from "multer-s3";
+import { S3Client } from "@aws-sdk/client-s3";
+import crypto from "crypto";
+import path from "path";
+import "dotenv/config";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -21,7 +21,7 @@ const storage = multerS3({
     crypto.randomBytes(16, (err, hash) => {
       if (err) cb(err);
 
-      const fileName = `${hash.toString('hex')}-${file.originalname}`;
+      const fileName = `${hash.toString("hex")}-${file.originalname}`;
       cb(null, fileName);
     });
   },
@@ -34,14 +34,14 @@ export default {
   },
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
-        "image/png", 
-        "image/gif", 
-        "image/jpeg", 
-        "application/pdf", 
-        "application/zip", 
-        "text/plain", 
-        "application/msword", 
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "image/png",
+      "image/gif",
+      "image/jpeg",
+      "application/pdf",
+      "application/zip",
+      "text/plain",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
 
     if (allowedMimes.includes(file.mimetype)) {

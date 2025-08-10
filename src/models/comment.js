@@ -18,9 +18,9 @@ class Comment extends Model {
   }
 
   static associate(models) {
-    this.belongsTo(models.Ticket, { foreignKey: 'ticket_id' });
-    this.belongsTo(models.User, { foreignKey: 'user_id' });
-    this.belongsTo(models.Client, { foreignKey: 'client_id' });
+    this.belongsTo(models.Ticket, { foreignKey: "ticket_id" });
+    this.belongsTo(models.User, { foreignKey: "user_id" });
+    this.belongsTo(models.Client, { foreignKey: "client_id" });
   }
 }
 

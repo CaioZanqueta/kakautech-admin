@@ -9,18 +9,18 @@ class Ticket extends Model {
         status: Sequelize.ENUM("open", "in_progress", "closed"),
         projectId: {
           type: Sequelize.INTEGER,
-          field: 'project_id',
-          references: { model: 'projects', key: 'id' },
-          onUpdate: 'CASCADE',
-          onDelete: 'SET NULL'
+          field: "project_id",
+          references: { model: "projects", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
         },
         clientId: {
           type: Sequelize.INTEGER,
-          field: 'client_id'
+          field: "client_id",
         },
         userId: {
           type: Sequelize.INTEGER,
-          field: 'user_id'
+          field: "user_id",
         },
         path: Sequelize.STRING,
         folder: Sequelize.STRING,
@@ -43,7 +43,7 @@ class Ticket extends Model {
     this.belongsTo(models.Client, { foreignKey: "clientId" });
     this.belongsTo(models.User, { foreignKey: "userId" });
     this.belongsTo(models.Project, { foreignKey: "projectId" });
-    this.hasMany(models.Comment, { foreignKey: 'ticket_id' }); // <<-- ADICIONADO
+    this.hasMany(models.Comment, { foreignKey: "ticket_id" }); // <<-- ADICIONADO
   }
 }
 

@@ -45,8 +45,8 @@ class User extends Model {
   static associate(models) {
     this.hasMany(models.Project);
     this.hasMany(models.Task);
-    this.hasMany(models.Ticket, { foreignKey: 'userId' });
-    this.hasMany(models.Comment, { foreignKey: 'user_id' }); // <<-- ADICIONADO
+    this.hasMany(models.Ticket, { foreignKey: "userId" });
+    this.hasMany(models.Comment, { foreignKey: "user_id" }); // <<-- ADICIONADO
   }
 
   checkPassword(password) {
