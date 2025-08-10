@@ -145,6 +145,10 @@ router.get("/portal/tickets", requireClientAuth, async (req, res) => {
   }
 });
 
+router.get("/portal/tickets/new", requireClientAuth, (req, res) => {
+  res.render("portal/new-ticket", { message: null, error: null, user: req.user });
+});
+
 // <<-- NOVA ROTA: Para ver detalhes de um chamado -->>
 router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
   try {
@@ -152,15 +156,22 @@ router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
       where: { id: req.params.id, clientId: req.user.id },
       include: [{
         model: Comment,
+        required: false, // Boa prática para garantir LEFT JOIN
         include: [
-          { model: User, attributes: ['name'] },
-          { model: Client, attributes: ['name'] }
+          { model: User, attributes: ['name'], required: false },
+          { model: Client, attributes: ['name'], required: false }
         ]
       }],
+      // Mantendo a referência ao Model aqui, que é a forma mais robusta
       order: [[Comment, 'createdAt', 'ASC']]
     });
-    if (!ticket) { return res.status(404).render('errors/404', { context: 'portal' }); }
+
+    if (!ticket) { 
+      return res.status(404).render('errors/404', { context: 'portal' });
+    }
+    
     res.render("portal/ticket-detail", { user: req.user, ticket, error: null });
+
   } catch (error) {
     console.error("Erro ao buscar detalhes do chamado:", error);
     res.status(500).render('errors/500');
@@ -197,11 +208,6 @@ router.post("/portal/tickets/:id/comments", requireClientAuth, async (req, res) 
     console.error("Erro ao adicionar comentário:", error);
     res.status(500).render('errors/500');
   }
-});
-
-
-router.get("/portal/tickets/new", requireClientAuth, (req, res) => {
-  res.render("portal/new-ticket", { message: null, error: null, user: req.user });
 });
 
 router.post(
