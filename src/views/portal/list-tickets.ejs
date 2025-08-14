@@ -356,9 +356,7 @@
         <div class="card">
           <div class="card-header">
             <h1>Meus Chamados</h1>
-            <a href="/portal/tickets/new" class="btn-primary"
-              >Abrir Novo Chamado</a
-            >
+            <a href="/portal/tickets/new" class="btn-primary">Abrir Novo Chamado</a>
           </div>
 
           <% if (tickets.length === 0) { %>
@@ -377,7 +375,6 @@
               <% tickets.forEach(ticket => { %>
               <tr>
                 <td>#<%= ticket.id %></td>
-                >
                 <td>
                   <a href="/portal/tickets/<%= ticket.id %>"
                     ><%= ticket.title %></a
