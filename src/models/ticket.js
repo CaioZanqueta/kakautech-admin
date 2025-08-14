@@ -36,14 +36,14 @@ class Ticket extends Model {
         },
       }
     );
-    return this; // <<-- ADICIONADO
+    return this;
   }
 
   static associate(models) {
     this.belongsTo(models.Client, { foreignKey: "clientId" });
     this.belongsTo(models.User, { foreignKey: "userId" });
     this.belongsTo(models.Project, { foreignKey: "projectId" });
-    this.hasMany(models.Comment, { foreignKey: "ticket_id" }); // <<-- ADICIONADO
+    this.hasMany(models.Comment, { foreignKey: "ticket_id" });
   }
 }
 

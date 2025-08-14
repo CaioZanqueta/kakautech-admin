@@ -6,9 +6,9 @@ import Project from "../models/project";
 import Task from "../models/task";
 import Client from "../models/client";
 import Ticket from "../models/ticket";
-import Comment from "../models/comment"; // <<-- ADICIONADO
+import Comment from "../models/comment";
 
-const models = [User, Project, Task, Client, Ticket, Comment]; // <<-- ADICIONADO
+const models = [User, Project, Task, Client, Ticket, Comment];
 
 class Database {
   constructor() {

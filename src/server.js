@@ -10,6 +10,7 @@ import path from "path";
 import passport from "./config/passport";
 import MailService from "./services/mail";
 import portalRoutes from "./routes/portal.routes";
+import apiRoutes from "./routes/api.routes.js";
 
 import UsersResource from "./resources/UsersResource";
 import ProjectsResource from "./resources/ProjectsResource";
@@ -53,6 +54,7 @@ const adminJS = new AdminJS({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(
   session({
     secret: process.env.SECRET,
@@ -64,13 +66,14 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use('/api', apiRoutes);
+
 const adminRouter = AdminJSExpress.buildRouter(adminJS);
 
 app.get("/admin/login", (req, res) => {
   const messages = req.session.messages || [];
   req.session.messages = [];
   const error = messages.length > 0 ? messages[0] : null;
-  // <<-- MUDANÇA: Atualizado o caminho da view -->>
   res.render("admin/admin-login", { error });
 });
 
@@ -160,13 +163,11 @@ app.use(portalRoutes);
 
 app.use((req, res, next) => {
   const context = req.originalUrl.startsWith("/admin") ? "admin" : "portal";
-  // <<-- MUDANÇA: Atualizado o caminho da view -->>
   res.status(404).render("errors/404", { context });
 });
 
 app.use((err, req, res, next) => {
   console.error("ERRO GERAL CAPTURADO:", err.stack);
-  // <<-- MUDANÇA: Atualizado o caminho da view -->>
   res.status(500).render("errors/500");
 });
 

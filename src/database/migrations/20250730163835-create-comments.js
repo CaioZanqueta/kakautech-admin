@@ -20,7 +20,6 @@ module.exports = {
         onDelete: "CASCADE",
       },
       user_id: {
-        // Para comentários de admins/devs
         type: Sequelize.INTEGER,
         allowNull: true,
         references: { model: "users", key: "id" },
@@ -28,7 +27,6 @@ module.exports = {
         onDelete: "SET NULL",
       },
       client_id: {
-        // Para comentários de clientes
         type: Sequelize.INTEGER,
         allowNull: true,
         references: { model: "clients", key: "id" },

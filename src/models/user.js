@@ -46,7 +46,7 @@ class User extends Model {
     this.hasMany(models.Project);
     this.hasMany(models.Task);
     this.hasMany(models.Ticket, { foreignKey: "userId" });
-    this.hasMany(models.Comment, { foreignKey: "user_id" }); // <<-- ADICIONADO
+    this.hasMany(models.Comment, { foreignKey: "user_id" });
   }
 
   checkPassword(password) {

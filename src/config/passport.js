@@ -174,7 +174,6 @@ passport.use(
   )
 );
 
-// <<-- MUDANÇA PRINCIPAL: Lógica de cadastro automático para admins -->>
 passport.use(
   "google-admin",
   new GoogleStrategy(
@@ -189,7 +188,6 @@ passport.use(
         const email =
           profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
-        // 1. Garante que o email é válido e pertence ao domínio correto
         if (!email || !email.endsWith("@kakautech.com")) {
           return done(null, false, {
             message: "Acesso permitido apenas para contas @kakautech.com.",
@@ -198,23 +196,19 @@ passport.use(
 
         let adminUser = await User.findOne({ where: { email } });
 
-        // 2. Se o utilizador NÃO for encontrado, cria um novo
         if (!adminUser) {
           adminUser = await User.create({
             name: profile.displayName,
             email: email,
             google_id: profile.id,
-            role: "developer", // Perfil padrão para novos cadastros
-            status: "active", // Status ativo por defeito para admins
+            role: "developer",
+            status: "active", 
           });
         }
-        // 3. Se o utilizador já existe mas nunca logou com Google, atualiza o google_id
         else if (!adminUser.google_id) {
           adminUser.google_id = profile.id;
           await adminUser.save();
         }
-
-        // 4. Retorna o utilizador encontrado ou o recém-criado para o login
         return done(null, adminUser);
       } catch (error) {
         return done(error, false);

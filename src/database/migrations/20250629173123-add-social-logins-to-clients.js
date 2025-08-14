@@ -12,7 +12,7 @@ module.exports = {
       allowNull: true,
       unique: true,
     });
-    // Tornar o password_hash opcional
+    
     await queryInterface.changeColumn("clients", "password_hash", {
       type: Sequelize.STRING,
       allowNull: true,
@@ -24,7 +24,7 @@ module.exports = {
     await queryInterface.removeColumn("clients", "microsoft_id");
     await queryInterface.changeColumn("clients", "password_hash", {
       type: Sequelize.STRING,
-      allowNull: false, // Reverte para o estado anterior
+      allowNull: false,
     });
   },
 };

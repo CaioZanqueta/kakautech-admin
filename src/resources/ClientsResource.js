@@ -4,8 +4,6 @@ import MailService from "../services/mail.js";
 import ejs from "ejs";
 import path from "path";
 
-// <<-- MUDANÇA: Removida a lógica de __dirname do ES Modules, que não é necessária aqui -->>
-
 export default {
   resource: Client,
   options: {
@@ -25,7 +23,6 @@ export default {
 
       edit: {
         isAccessible: ({ currentAdmin }) => hasAdminPermission(currentAdmin),
-        // A lógica do before/after hook está correta para v5
         before: async (request, context) => {
           if (context.record && context.record.isValid()) {
             context.originalStatus = context.record.get("status");
@@ -39,7 +36,6 @@ export default {
 
           if (originalStatus === "pending" && newStatus === "active") {
             try {
-              // <<-- MUDANÇA: __dirname funciona por defeito em projetos CommonJS -->>
               const emailHtml = await ejs.renderFile(
                 path.join(__dirname, "../views/emails/clientApproved.ejs"),
                 { name: record.get("name") }

@@ -12,7 +12,7 @@ module.exports = {
       references: { model: "projects", key: "id" },
       onUpdate: "CASCADE",
       onDelete: "SET NULL",
-      allowNull: true, // Pode ser true ou false dependendo da sua regra de negócio
+      allowNull: true, 
     });
   },
 

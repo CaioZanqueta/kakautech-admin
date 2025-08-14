@@ -44,7 +44,7 @@ class Client extends Model {
   static associate(models) {
     this.hasMany(models.Ticket, { foreignKey: "clientId" });
     this.belongsTo(models.Project, { foreignKey: "projectId" });
-    this.hasMany(models.Comment, { foreignKey: "client_id" }); // <<-- ADICIONADO
+    this.hasMany(models.Comment, { foreignKey: "client_id" });
   }
 
   checkPassword(password) {

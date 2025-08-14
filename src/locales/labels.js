@@ -4,5 +4,5 @@ export default {
   tasks: "Tarefas",
   clients: "Clientes",
   tickets: "Chamados",
-  comments: "Comentários", // <<-- ADICIONADO
+  comments: "Comentários",
 };

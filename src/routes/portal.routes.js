@@ -249,7 +249,6 @@ router.get("/portal/tickets/new", requireClientAuth, (req, res) => {
   });
 });
 
-// <<-- NOVA ROTA: Para ver detalhes de um chamado -->>
 router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
   try {
     const ticket = await Ticket.findOne({
@@ -257,14 +256,12 @@ router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
       include: [
         {
           model: Comment,
-          required: false, // Boa prática para garantir LEFT JOIN
           include: [
-            { model: User, attributes: ["name"], required: false },
-            { model: Client, attributes: ["name"], required: false },
+            { model: User, attributes: ["name"] },
+            { model: Client, attributes: ["name"] },
           ],
         },
       ],
-      // Mantendo a referência ao Model aqui, que é a forma mais robusta
       order: [[Comment, "createdAt", "ASC"]],
     });
 
@@ -279,7 +276,6 @@ router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
   }
 });
 
-// <<-- NOVA ROTA: Para postar um novo comentário -->>
 router.post(
   "/portal/tickets/:id/comments",
   requireClientAuth,
