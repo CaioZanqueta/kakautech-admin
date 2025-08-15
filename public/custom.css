@@ -1,0 +1,10 @@
+/* public/custom.css */
+
+/*
+  Esta regra força os componentes "Badge" do AdminJS
+  a nunca quebrarem o seu texto numa nova linha.
+  O !important garante que esta regra tenha prioridade máxima.
+*/
+.adminjs_Badge {
+  white-space: nowrap !important;
+}

@@ -49,6 +49,9 @@ const adminJS = new AdminJS({
     softwareBrothers: false,
     theme,
   },
+  assets: {
+    styles: ['/public/custom.css'],
+  },
   ...locale,
 });
 
