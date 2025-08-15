@@ -422,7 +422,7 @@
                 <span class="comment-author">
                   <% if (comment.client) { %> <%= comment.client.name %> (Você)
                   <% } else if (comment.user) { %> <%= comment.user.name %>
-                  (Equipa) <% } else { %> Anónimo <% } %>
+                  (Equipa) <% } else { %> Anônimo <% } %>
                 </span>
                 <span class="comment-date"
                   ><%= new Date(comment.createdAt).toLocaleString('pt-BR')

@@ -1,6 +1,7 @@
-// src/components/TicketShow.jsx (VERSÃO FINAL COM LAYOUT DE COLUNA ÚNICA)
+// src/components/TicketShow.jsx (VERSÃO FINAL)
 
 import React from 'react';
+import { useRecord } from 'adminjs';
 import { Box, H2, Label, Text, Badge } from '@adminjs/design-system';
 import TicketComments from './TicketComments';
 
@@ -12,10 +13,10 @@ const PropertyInView = ({ label, value }) => (
 );
 
 const TicketShow = (props) => {
-  const { record } = props;
+  const { record, resource, loading } = useRecord(props.record, props.resource.id);
 
-  if (!record) {
-    return <Text>Erro: Registro não encontrado.</Text>;
+  if (loading || !record) {
+    return <Box>Carregando...</Box>;
   }
 
   return (
@@ -25,9 +26,7 @@ const TicketShow = (props) => {
         <Badge variant="primary">{record.params.status}</Badge>
       </Box>
       
-      {/* Layout de Coluna Única */}
       <Box>
-        {/* Card de Detalhes e Descrição */}
         <Box variant="white" boxShadow="card" p="lg">
           <PropertyInView label="Cliente" value={record.populated.clientId?.title} />
           <PropertyInView label="Projeto" value={record.populated.projectId?.title} />
@@ -41,9 +40,8 @@ const TicketShow = (props) => {
           </Box>
         </Box>
 
-        {/* Card de Comentários, agora posicionado abaixo */}
         <Box variant="white" boxShadow="card" p="lg" mt="lg">
-          <TicketComments {...props} />
+          <TicketComments {...props} record={record} resource={resource} />
         </Box>
       </Box>
     </Box>

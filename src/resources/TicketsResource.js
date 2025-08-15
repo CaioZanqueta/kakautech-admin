@@ -1,3 +1,5 @@
+// src/resources/TicketsResource.js (VERSÃO FINAL)
+
 import AdminJS from "adminjs";
 import Ticket from "../models/ticket";
 import uploadFeature from "@adminjs/upload";
@@ -17,18 +19,35 @@ export default {
       edit: {
         isAccessible: ({ currentAdmin }) => hasManagerPermission(currentAdmin)
       },
+      assignToMe: {
+        actionType: 'record',
+        icon: 'UserPlus',
+        label: 'Atribuir a Mim',
+        component: false,
+        handler: async (request, response, context) => {
+          const { record, currentAdmin } = context;
+          try {
+            await record.update({ userId: currentAdmin.id });
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: { message: 'Chamado atribuído a você com sucesso!', type: 'success' },
+            };
+          } catch (error) {
+            console.error("Erro ao atribuir chamado:", error);
+            return {
+              record: record.toJSON(currentAdmin),
+              notice: { message: 'Ocorreu um erro ao atribuir o chamado.', type: 'error' },
+            };
+          }
+        },
+        isAccessible: ({ record, currentAdmin }) =>
+          hasManagerPermission(currentAdmin) && record.params.userId !== currentAdmin.id,
+      },
     },
     properties: {
       id: { position: 1 },
-      title: { 
-        position: 2, 
-        isRequired: true, 
-        isTitle: true 
-      },
-      description: { 
-        position: 3, 
-        type: "textarea" 
-      },
+      title: { position: 2, isRequired: true, isTitle: true },
+      description: { position: 3, type: "textarea" },
       status: {
         position: 4, isRequired: true,
         availableValues: [
