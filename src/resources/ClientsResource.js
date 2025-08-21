@@ -78,6 +78,10 @@ export default {
         isVisible: { list: false, filter: false, show: false, edit: true },
         position: 6,
       },
+      createdAt: { isVisible: false },
+      updatedAt: { isVisible: false },
+      microsoft_id: { isVisible: false },
+      google_id: { isVisible: false },
       password_hash: { isVisible: false },
       project_id: {
         isVisible: false,

@@ -1,3 +1,5 @@
+// src/locales/resources.js
+
 const commonProps = {
   status: "Situação",
   createdAt: "Criação",
@@ -25,6 +27,7 @@ export default {
       id: "ID",
       name: "Nome",
       description: "Descrição",
+      support_hours_limit: "Limite de Horas",
       userId: "Responsável",
       ...commonProps,
     },
@@ -40,6 +43,27 @@ export default {
       attachment: "Anexo",
       projectId: "Projeto",
       userId: "Responsável",
+      ...commonProps,
+    },
+  },
+  clients: {
+    properties: {
+      id: "ID",
+      name: "Nome",
+      email: "Email",
+      projectId: "Projeto",
+      ...commonProps,
+    },
+  },
+  tickets: {
+    properties: {
+      id: "ID",
+      title: "Título",
+      description: "Descrição",
+      clientId: "Cliente",
+      projectId: "Projeto",
+      userId: "Responsável",
+      attachment: "Anexo",
       ...commonProps,
     },
   },

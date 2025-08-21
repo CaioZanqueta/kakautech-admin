@@ -128,6 +128,14 @@
         align-items: center;
         gap: 24px;
       }
+      .support-hours-badge {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 16px;
+        background-color: var(--bg-hover);
+        color: var(--text-secondary);
+      }
       .breadcrumbs {
         font-size: 14px;
         color: var(--grey-60);
@@ -347,18 +355,20 @@
           </a>
         </nav>
       </aside>
-
       <header class="topbar">
         <div class="breadcrumbs">Portal / Chamados / Criar novo</div>
         <div class="topbar-right-controls">
+          <% if (supportHoursLimit) { %>
+            <div class="support-hours-badge">
+              Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
+            </div>
+          <% } %>
           <div class="theme-switch" id="theme-switcher" title="Alterar tema">
             <div class="theme-switch-toggle"></div>
           </div>
           <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-              <% if (typeof user !== 'undefined' && user) { %><span
-                ><%= user.email %></span
-              ><% } %>
+              <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
             </div>
             <div class="dropdown-content" id="user-menu-content">
               <a href="/portal/logout">Sair</a>
@@ -366,14 +376,13 @@
           </div>
         </div>
       </header>
-
       <main class="content">
         <div class="card">
           <div class="card-header"><h1>Abrir Novo Chamado</h1></div>
           <% if (typeof message !== 'undefined' && message) { %>
-          <div class="feedback-message success-message"><%= message %></div>
+            <div class="feedback-message success-message"><%= message %></div>
           <% } %> <% if (typeof error !== 'undefined' && error) { %>
-          <div class="feedback-message error-message"><%= error %></div>
+            <div class="feedback-message error-message"><%= error %></div>
           <% } %>
           <form
             action="/portal/tickets"
@@ -381,25 +390,21 @@
             enctype="multipart/form-data"
           >
             <div class="form-group">
-              <label for="title">* Título</label
-              ><input type="text" id="title" name="title" required />
+              <label for="title">* Título</label>
+              <input type="text" id="title" name="title" required />
             </div>
             <div class="form-group">
-              <label for="description">* Descrição</label
-              ><textarea
-                id="description"
-                name="description"
-                rows="5"
-                required
-              ></textarea>
+              <label for="description">* Descrição</label>
+              <textarea id="description" name="description" rows="5" required></textarea>
             </div>
             <div class="form-group">
-              <label for="attachment">Anexo</label
-              ><label for="attachment" class="upload-zone"
-                ><p>Arraste e solte um arquivo aqui para fazer o upload</p>
+              <label for="attachment">Anexo</label>
+              <label for="attachment" class="upload-zone">
+                <p>Arraste e solte um arquivo aqui para fazer o upload</p>
                 <div class="upload-info">TAMANHO MÁX: 5MB</div>
-                <p id="file-name"></p></label
-              ><input type="file" id="attachment" name="attachment" />
+                <p id="file-name"></p>
+              </label>
+              <input type="file" id="attachment" name="attachment" />
             </div>
             <div class="form-footer">
               <button type="submit" class="btn-submit">Enviar Chamado</button>
@@ -408,19 +413,16 @@
         </div>
       </main>
     </div>
-
     <script>
       const fileInput = document.getElementById("attachment");
       const fileNameDisplay = document.getElementById("file-name");
       fileInput.addEventListener("change", function () {
         if (this.files.length > 0) {
-          fileNameDisplay.textContent =
-            "Arquivo selecionado: " + this.files[0].name;
+          fileNameDisplay.textContent = "Arquivo selecionado: " + this.files[0].name;
         } else {
           fileNameDisplay.textContent = "";
         }
       });
-
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.getElementById("user-menu-toggle");
         const menuContent = document.getElementById("user-menu-content");
@@ -436,7 +438,6 @@
           });
         }
       });
-
       const themeSwitcher = document.getElementById("theme-switcher");
       const body = document.body;
       const logo = document.getElementById("sidebar-logo");

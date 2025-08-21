@@ -128,6 +128,14 @@
         align-items: center;
         gap: 24px;
       }
+      .support-hours-badge {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 16px;
+        background-color: var(--bg-hover);
+        color: var(--text-secondary);
+      }
       .breadcrumbs {
         font-size: 14px;
         color: var(--grey-60);
@@ -270,7 +278,6 @@
       .status-pending { background-color: #fff3cd; color: #664d03; }
       .status-in_progress { background-color: #ffc107; color: #333; }
       .status-closed { background-color: #d1e7dd; color: #0f5132; }
-      
       body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
       body.dark-mode .status-pending { background-color: #533f03; color: #ffda6a; }
       body.dark-mode .status-in_progress { background-color: #ffc107; color: #111; }
@@ -317,18 +324,20 @@
           </a>
         </nav>
       </aside>
-
       <header class="topbar">
         <div class="breadcrumbs">Portal / Meus Chamados</div>
         <div class="topbar-right-controls">
+          <% if (supportHoursLimit) { %>
+            <div class="support-hours-badge">
+              Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
+            </div>
+          <% } %>
           <div class="theme-switch" id="theme-switcher" title="Alterar tema">
             <div class="theme-switch-toggle"></div>
           </div>
           <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-              <% if (typeof user !== 'undefined' && user) { %><span
-                ><%= user.email %></span
-              ><% } %>
+              <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
             </div>
             <div class="dropdown-content" id="user-menu-content">
               <a href="/portal/logout">Sair</a>
@@ -336,52 +345,43 @@
           </div>
         </div>
       </header>
-
       <main class="content">
         <div class="card">
           <div class="card-header">
             <h1>Meus Chamados</h1>
             <a href="/portal/tickets/new" class="btn-primary">Abrir Novo Chamado</a>
           </div>
-
           <% if (tickets.length === 0) { %>
-          <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
+            <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
           <% } else { %>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Status</th>
-                <th>Última Atualização</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% tickets.forEach(ticket => { %>
-              <tr>
-                <td>#<%= ticket.id %></td>
-                <td>
-                  <a href="/portal/tickets/<%= ticket.id %>"
-                    ><%= ticket.title %></a
-                  >
-                </td>
-                <td>
-                  <span class="status status-<%= ticket.status %>">
-                    <%= statusTranslations[ticket.status] || ticket.status %>
-                  </span>
-                </td>
-                <td>
-                  <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %>
-                </td>
-              </tr>
-              <% }) %>
-            </tbody>
-          </table>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Título</th>
+                  <th>Status</th>
+                  <th>Última Atualização</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% tickets.forEach(ticket => { %>
+                  <tr>
+                    <td>#<%= ticket.id %></td>
+                    <td><a href="/portal/tickets/<%= ticket.id %>"><%= ticket.title %></a></td>
+                    <td>
+                      <span class="status status-<%= ticket.status %>">
+                        <%= statusTranslations[ticket.status] || ticket.status %>
+                      </span>
+                    </td>
+                    <td><%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
           <% } %>
         </div>
       </main>
     </div>
-
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.getElementById("user-menu-toggle");

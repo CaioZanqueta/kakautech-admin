@@ -1,10 +1,15 @@
-/* public/custom.css */
+/* public/custom.css (VERSÃO FINAL E CORRETA) */
 
-/*
-  Esta regra força os componentes "Badge" do AdminJS
-  a nunca quebrarem o seu texto numa nova linha.
-  O !important garante que esta regra tenha prioridade máxima.
-*/
+/* Regra para os badges (está correta e deve ser mantida) */
 .adminjs_Badge {
   white-space: nowrap !important;
+}
+
+/*
+  CORREÇÃO FINAL: Usando o atributo 'href' como seletor,
+  que é o que a sua imagem nos mostrou que existe.
+  Isto irá esconder o item da lista (li) que contém o link para os comentários.
+*/
+li:has(a[href="/admin/resources/comments"]) {
+  display: none !important;
 }

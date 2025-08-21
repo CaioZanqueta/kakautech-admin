@@ -132,6 +132,14 @@
         align-items: center;
         gap: 24px;
       }
+      .support-hours-badge {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 16px;
+        background-color: var(--bg-hover);
+        color: var(--text-secondary);
+      }
       .breadcrumbs {
         font-size: 14px;
         color: var(--grey-60);
@@ -223,11 +231,29 @@
       .card-header .subtitle {
         font-size: 14px;
         color: var(--grey-60);
+        display: flex;
+        align-items: center;
       }
       .ticket-content {
         margin-top: 24px;
         padding-top: 24px;
         border-top: 1px solid var(--border-color);
+      }
+      .attachment-link {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 8px 16px;
+        background-color: var(--bg-hover);
+        color: var(--text-primary);
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        border: 1px solid var(--border-color);
+      }
+      .attachment-link:hover {
+        background-color: var(--primary-100);
+        color: var(--white);
       }
       .comment {
         background-color: var(--comment-bg-admin);
@@ -292,12 +318,12 @@
         font-size: 12px;
         font-weight: bold;
         text-transform: capitalize;
+        margin-left: 8px;
       }
       .status-open { background-color: #cfe2ff; color: #084298; }
       .status-pending { background-color: #fff3cd; color: #664d03; }
       .status-in_progress { background-color: #ffc107; color: #333; }
       .status-closed { background-color: #d1e7dd; color: #0f5132; }
-
       body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
       body.dark-mode .status-pending { background-color: #533f03; color: #ffda6a; }
       body.dark-mode .status-in_progress { background-color: #ffc107; color: #111; }
@@ -309,7 +335,6 @@
         padding: 10px;
         margin-bottom: 16px;
       }
-
       .ticket-content h3,
       .comments-section h3,
       .new-comment-form h3 {
@@ -372,14 +397,17 @@
           Portal / Meus Chamados / Detalhes do Chamado
         </div>
         <div class="topbar-right-controls">
+          <% if (supportHoursLimit) { %>
+            <div class="support-hours-badge">
+              Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
+            </div>
+          <% } %>
           <div class="theme-switch" id="theme-switcher" title="Alterar tema">
             <div class="theme-switch-toggle"></div>
           </div>
           <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-              <% if (typeof user !== 'undefined' && user) { %><span
-                ><%= user.email %></span
-              ><% } %>
+              <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
             </div>
             <div class="dropdown-content" id="user-menu-content">
               <a href="/portal/logout">Sair</a>
@@ -387,7 +415,6 @@
           </div>
         </div>
       </header>
-
       <main class="content">
         <div class="card">
           <div class="card-header">
@@ -404,6 +431,15 @@
           <div class="ticket-content">
             <h3>Descrição</h3>
             <p><%= ticket.description %></p>
+            
+            <% if (ticket.filename) { %>
+              <div style="margin-top: 24px;">
+                <h4 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Anexo Principal:</h4>
+                <a href="/portal/download/ticket/<%= ticket.id %>" class="attachment-link" target="_blank">
+                  <%= ticket.filename %>
+                </a>
+              </div>
+            <% } %>
           </div>
           <div class="comments-section">
             <h3>Histórico de Comentários</h3>
@@ -414,7 +450,7 @@
                 <span class="comment-author">
                   <% if (comment.client) { %> <%= comment.client.name %> (Você)
                   <% } else if (comment.user) { %> <%= comment.user.name %>
-                  (Equipe) <% } else { %> Anônimo <% } %>
+                  (Equipa) <% } else { %> Anônimo <% } %>
                 </span>
                 <span class="comment-date"
                   ><%= new Date(comment.createdAt).toLocaleString('pt-BR')
