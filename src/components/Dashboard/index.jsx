@@ -1,7 +1,10 @@
+// src/components/Dashboard/index.jsx
+
 import React, { useEffect, useState } from "react";
 import { ApiClient, useTranslation } from "adminjs";
 import { Box, H2, Text } from "@adminjs/design-system";
 import TaskType from "./cards/TaskType";
+import TicketType from "./cards/TicketType"; // Importamos o novo card
 
 const api = new ApiClient();
 
@@ -37,8 +40,14 @@ const Dashboard = () => {
         flexWrap="wrap"
         width={[1, 1, 1, 1024]}
       >
-        <Box width={[1, 1 / 2, 1 / 1]} p="lg">
+        {/* Card de Tarefas Internas */}
+        <Box width={[1, 1, 1/2]} p="lg">
           <TaskType />
+        </Box>
+
+        {/* Card de Chamados de Clientes */}
+        <Box width={[1, 1, 1/2]} p="lg">
+          <TicketType />
         </Box>
       </Box>
     </Box>
