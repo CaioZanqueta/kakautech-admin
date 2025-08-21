@@ -260,36 +260,21 @@
         text-decoration: underline;
       }
       .status {
-        padding: 4px 8px;
-        border-radius: 12px;
+        padding: 4px 12px;
+        border-radius: 16px;
         font-size: 12px;
         font-weight: bold;
         text-transform: capitalize;
       }
-      .status-open {
-        background-color: #cfe2ff;
-        color: #084298;
-      }
-      .status-in_progress {
-        background-color: #fff3cd;
-        color: #664d03;
-      }
-      .status-closed {
-        background-color: #e2e3e5;
-        color: #41464b;
-      }
-      body.dark-mode .status-open {
-        background-color: #03285a;
-        color: #a6cfff;
-      }
-      body.dark-mode .status-in_progress {
-        background-color: #533f03;
-        color: #ffda6a;
-      }
-      body.dark-mode .status-closed {
-        background-color: #343a40;
-        color: #adb5bd;
-      }
+      .status-open { background-color: #cfe2ff; color: #084298; }
+      .status-pending { background-color: #fff3cd; color: #664d03; }
+      .status-in_progress { background-color: #ffc107; color: #333; }
+      .status-closed { background-color: #d1e7dd; color: #0f5132; }
+      
+      body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
+      body.dark-mode .status-pending { background-color: #533f03; color: #ffda6a; }
+      body.dark-mode .status-in_progress { background-color: #ffc107; color: #111; }
+      body.dark-mode .status-closed { background-color: #0b5345; color: #a3e4d7; }
       .no-tickets {
         text-align: center;
         padding: 40px;
@@ -381,9 +366,9 @@
                   >
                 </td>
                 <td>
-                  <span class="status status-<%= ticket.status %>"
-                    ><%= ticket.status.replace('_', ' ') %></span
-                  >
+                  <span class="status status-<%= ticket.status %>">
+                    <%= statusTranslations[ticket.status] || ticket.status %>
+                  </span>
                 </td>
                 <td>
                   <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %>

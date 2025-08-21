@@ -1,7 +1,6 @@
-import AdminJS from "adminjs";
+// src/resources/ProjectsResource.js
 
 import Project from "../models/project";
-
 import { hasManagerPermission } from "../services/auth";
 
 export default {
@@ -33,14 +32,18 @@ export default {
         position: 3,
         type: "textarea",
       },
-      userId: {
+      support_hours_limit: { // ADICIONADO AQUI
         position: 4,
+        label: 'Limite de Horas de Suporte',
+      },
+      userId: {
+        position: 5,
       },
       user_id: {
         isVisible: false,
       },
       status: {
-        position: 5,
+        position: 6,
         isRequired: true,
         availableValues: [
           { value: "active", label: "Ativo" },

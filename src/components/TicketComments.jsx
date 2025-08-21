@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ApiClient } from 'adminjs';
 import { Box, H3, Text, Button, Loader } from '@adminjs/design-system';
 import axios from 'axios';
 
@@ -14,16 +15,17 @@ const TicketComments = (props) => {
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [error, setError] = useState(null);
-  
+  const api = new ApiClient(); 
+
   const fetchComments = async () => {
     setLoading(true);
     try {
-      // Usamos o endpoint padrão do AdminJS para listar os comentários
-      const response = await axios.get(`/admin/api/resources/comments/actions/list?filters.ticket_id=${record.id}`);
+      const response = await api.resourceAction({
+        resourceId: 'comments', actionName: 'list', params: { 'filters.ticket_id': record.id },
+      });
       const sortedComments = response.data.records.sort((a, b) => new Date(a.params.createdAt) - new Date(b.params.createdAt));
       setComments(sortedComments);
     } catch (err) {
-      // Não mostramos erros de fetch para o usuário, apenas no console
       console.error("Erro ao buscar comentários:", err);
     } finally {
       setLoading(false);
@@ -43,7 +45,7 @@ const TicketComments = (props) => {
       
       if (response.data) {
         setNewComment('');
-        fetchComments(); // Sucesso, atualiza a lista de comentários
+        fetchComments();
       }
     } catch (err) {
       const message = err.response?.data?.message || 'Ocorreu um erro ao enviar o comentário.';
@@ -61,8 +63,9 @@ const TicketComments = (props) => {
           comments.map(comment => (
             <Box key={comment.id} style={comment.params.user_id ? adminCommentCss : clientCommentCss}>
               <Text fontWeight="bold">
-                {comment.populated.user_id ? comment.populated.user_id.title : comment.populated.client_id.title}
-                {comment.params.user_id ? ' (Equipa)' : ' (Cliente)'}
+                {/* CÓDIGO MAIS SEGURO AQUI com '?.' */}
+                {comment.populated.user_id?.title || comment.populated.client_id?.title || 'Autor Desconhecido'}
+                {comment.params.user_id ? ' (Equipe)' : ' (Cliente)'}
               </Text>
               <Text color="grey60" fontSize="sm" mb="md">
                 {new Date(comment.params.createdAt).toLocaleString('pt-BR')}
@@ -85,7 +88,7 @@ const TicketComments = (props) => {
         />
         {error && <Text style={errorTextStyles}>{error}</Text>}
         <Button type="submit" variant="primary" mt="lg">
-          Enviar Comentário
+          Enviar Comentar
         </Button>
       </Box>
     </Box>

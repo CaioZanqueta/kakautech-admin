@@ -287,20 +287,21 @@
         background-color: var(--primary-hover);
       }
       .status {
-        padding: 4px 8px;
-        border-radius: 12px;
+        padding: 4px 12px;
+        border-radius: 16px;
         font-size: 12px;
         font-weight: bold;
         text-transform: capitalize;
       }
-      .status-open {
-        background-color: #cfe2ff;
-        color: #084298;
-      }
-      body.dark-mode .status-open {
-        background-color: #03285a;
-        color: #a6cfff;
-      }
+      .status-open { background-color: #cfe2ff; color: #084298; }
+      .status-pending { background-color: #fff3cd; color: #664d03; }
+      .status-in_progress { background-color: #ffc107; color: #333; }
+      .status-closed { background-color: #d1e7dd; color: #0f5132; }
+
+      body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
+      body.dark-mode .status-pending { background-color: #533f03; color: #ffda6a; }
+      body.dark-mode .status-in_progress { background-color: #ffc107; color: #111; }
+      body.dark-mode .status-closed { background-color: #0b5345; color: #a3e4d7; }
       .error-message {
         color: #721c24;
         background-color: #f8d7da;
@@ -309,9 +310,6 @@
         margin-bottom: 16px;
       }
 
-      /* === INÍCIO: REFINAMENTOS DE ESTILO DA PÁGINA === */
-
-      /* 1. Padroniza os Títulos das Seções (h3) */
       .ticket-content h3,
       .comments-section h3,
       .new-comment-form h3 {
@@ -321,14 +319,10 @@
         font-size: 18px;
         font-weight: 500;
       }
-
-      /* 2. Adiciona Espaçamento VERTICAL ENTRE as Seções */
       .comments-section,
       .new-comment-form {
         margin-top: 40px;
       }
-
-      /* 3. Estiliza o Bloco de Descrição do Chamado */
       .ticket-content p {
         line-height: 1.6;
         color: var(--text-secondary);
@@ -336,8 +330,6 @@
         white-space: pre-wrap;
         word-wrap: break-word;
       }
-
-      /* === FIM: REFINAMENTOS DE ESTILO DA PÁGINA === */
     </style>
   </head>
   <body>
@@ -403,9 +395,9 @@
               <h1><%= ticket.title %></h1>
               <div class="subtitle">
                 Chamado #<%= ticket.id %> - Status:
-                <span class="status status-<%= ticket.status %>"
-                  ><%= ticket.status.replace('_', ' ') %></span
-                >
+                <span class="status status-<%= ticket.status %>">
+                  <%= statusTranslations[ticket.status] || ticket.status %>
+                </span>
               </div>
             </div>
           </div>

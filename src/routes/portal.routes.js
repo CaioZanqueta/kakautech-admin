@@ -18,6 +18,14 @@ import MailService from "../services/mail";
 
 const router = express.Router();
 
+// Dicionário de traduções que vamos usar
+const statusTranslations = {
+  open: 'Aberto',
+  pending: 'Pendente',
+  in_progress: 'Em Andamento',
+  closed: 'Fechado',
+};
+
 const registerSchema = yup.object().shape({
   name: yup.string().required("O nome é obrigatório."),
   email: yup
@@ -234,7 +242,7 @@ router.get("/portal/tickets", requireClientAuth, async (req, res) => {
       where: { clientId: req.user.id },
       order: [["updatedAt", "DESC"]],
     });
-    res.render("portal/list-tickets", { user: req.user, tickets });
+    res.render("portal/list-tickets", { user: req.user, tickets, statusTranslations });
   } catch (error) {
     console.error("Erro ao buscar chamados:", error);
     res.status(500).render("errors/500");
@@ -269,7 +277,7 @@ router.get("/portal/tickets/:id", requireClientAuth, async (req, res) => {
       return res.status(404).render("errors/404", { context: "portal" });
     }
 
-    res.render("portal/ticket-detail", { user: req.user, ticket, error: null });
+    res.render("portal/ticket-detail", { user: req.user, ticket, error: null, statusTranslations });
   } catch (error) {
     console.error("Erro ao buscar detalhes do chamado:", error);
     res.status(500).render("errors/500");
@@ -328,14 +336,35 @@ router.post(
   async (req, res) => {
     try {
       const { title, description } = req.body;
+      const client = req.user;
+
+      const project = await Project.findByPk(client.projectId);
+
+      if (project && project.support_hours_limit !== null) {
+        const totalSpentSeconds = await Ticket.sum('time_spent_seconds', {
+          where: { projectId: project.id }
+        }) || 0;
+
+        const limitInSeconds = project.support_hours_limit * 3600;
+
+        if (totalSpentSeconds >= limitInSeconds) {
+          return res.status(403).render("portal/new-ticket", {
+            message: null,
+            error: `O limite de horas de suporte para este projeto foi atingido. Por favor, entre em contacto com o gestor.`,
+            user: client,
+          });
+        }
+      }
+      
       await ticketSchema.validate({ title, description });
       const ticketData = {
         title,
         description,
-        clientId: req.user.id,
-        projectId: req.user.projectId,
+        clientId: client.id,
+        projectId: client.projectId,
         status: "open",
       };
+      
       if (req.file) {
         const { key, size, mimetype, originalname } = req.file;
         Object.assign(ticketData, {
@@ -346,15 +375,16 @@ router.post(
           size: size,
         });
       }
+      
       const newTicket = await Ticket.create(ticketData);
+      
       try {
-        const project = await Project.findByPk(newTicket.projectId);
         const projectName = project ? project.name : "Não especificado";
         const emailHtml = await ejs.renderFile(
           path.join(__dirname, "../views/emails/newTicketNotification.ejs"),
           {
-            clientName: req.user.name,
-            clientEmail: req.user.email,
+            clientName: client.name,
+            clientEmail: client.email,
             ticketTitle: newTicket.title,
             ticketDescription: newTicket.description,
             projectName: projectName,
@@ -368,7 +398,9 @@ router.post(
       } catch (mailError) {
         console.error("Falha ao enviar email de notificação:", mailError);
       }
+      
       res.redirect("/portal/tickets");
+
     } catch (error) {
       if (error instanceof yup.ValidationError) {
         return res

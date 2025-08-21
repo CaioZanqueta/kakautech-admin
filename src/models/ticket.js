@@ -6,7 +6,10 @@ class Ticket extends Model {
       {
         title: Sequelize.STRING,
         description: Sequelize.TEXT,
-        status: Sequelize.ENUM("open", "in_progress", "closed"),
+        status: Sequelize.ENUM("open", "pending", "in_progress", "closed"),
+        time_spent_seconds: Sequelize.INTEGER,
+        // NOSSO NOVO CAMPO DE CONTROLO
+        in_progress_started_at: Sequelize.DATE,
         projectId: {
           type: Sequelize.INTEGER,
           field: "project_id",
@@ -36,6 +39,35 @@ class Ticket extends Model {
         },
       }
     );
+
+    // ===================================================================
+    // LÓGICA FINAL DO CRONÓMETRO (HOOK)
+    // ===================================================================
+    this.addHook("beforeUpdate", (ticket) => {
+      // Verificamos apenas se o campo 'status' foi o que mudou
+      if (ticket.changed('status')) {
+        const statusAnterior = ticket.previous('status');
+        const statusNovo = ticket.get('status');
+
+        // LÓGICA PARA PARAR O CRONÓMETRO
+        if (statusAnterior === 'in_progress' && ticket.in_progress_started_at) {
+          const timeNow = new Date();
+          const startTime = new Date(ticket.in_progress_started_at);
+          const durationInSeconds = Math.round((timeNow - startTime) / 1000);
+          
+          ticket.time_spent_seconds = (ticket.time_spent_seconds || 0) + durationInSeconds;
+          // Limpamos o timestamp de início para a próxima vez
+          ticket.in_progress_started_at = null;
+        }
+
+        // LÓGICA PARA INICIAR O CRONÓMETRO
+        if (statusNovo === 'in_progress') {
+          // Guardamos o momento exato em que o status mudou para 'in_progress'
+          ticket.in_progress_started_at = new Date();
+        }
+      }
+    });
+
     return this;
   }
 

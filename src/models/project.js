@@ -1,3 +1,5 @@
+// src/models/project.js
+
 import Sequelize, { Model } from "sequelize";
 
 class Project extends Model {
@@ -7,6 +9,7 @@ class Project extends Model {
         name: Sequelize.STRING,
         description: Sequelize.TEXT,
         status: Sequelize.ENUM("active", "archived"),
+        support_hours_limit: Sequelize.FLOAT, // ADICIONADO AQUI
         user_id: Sequelize.INTEGER,
       },
       {
@@ -17,6 +20,7 @@ class Project extends Model {
         },
       }
     );
+    return this; // Retorno adicionado para consistência
   }
 
   static associate(models) {
@@ -24,7 +28,6 @@ class Project extends Model {
       foreignKey: "user_id",
     });
     this.hasMany(models.Task);
-    // ASSOCIAÇÃO ADICIONADA
     this.hasMany(models.Client, { foreignKey: "project_id" });
   }
 }
