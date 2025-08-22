@@ -33,7 +33,6 @@ const statusTranslations = {
   closed: "Fechado",
 };
 
-// ... (schemas e middlewares permanecem os mesmos) ...
 const registerSchema = yup.object().shape({
   name: yup.string().required("O nome é obrigatório."),
   email: yup
@@ -85,7 +84,7 @@ const loadProjectData = async (req, res, next) => {
   next();
 };
 const clientPortalMiddlewares = [requireClientAuth, loadProjectData];
-// ... (rotas de /portal, login, register, auth, logout permanecem as mesmas) ...
+
 router.get("/portal", (req, res) => {
   if (
     req.isAuthenticated() &&
@@ -119,7 +118,8 @@ router.get("/portal/register", async (req, res) => {
     message: null,
   });
 });
-router.post("/portal/register", async (req, res, next) => {
+
+router.post("/portal/register", async (req, res) => {
   const { name, email, password, projectId } = req.body;
   const projects = await Project.findAll({ where: { status: "active" } });
   try {
@@ -137,18 +137,41 @@ router.post("/portal/register", async (req, res, next) => {
           message: null,
         });
     }
-    await Client.create({
+
+    const newClient = await Client.create({
       name,
       email,
       password,
       projectId,
       status: "pending",
     });
-    return res.render("client/client-register", {
-      message: "Solicitação de cadastro enviada com sucesso!",
-      projects,
-      error: null,
-    });
+
+    try {
+      const project = await Project.findByPk(projectId);
+      const emailHtml = await ejs.renderFile(
+        path.join(__dirname, "../views/emails/newClientPending.ejs"),
+        {
+          clientName: newClient.name,
+          clientEmail: newClient.email,
+          projectName: project ? project.name : "N/A",
+          adminUrl: `${req.protocol}://${req.get(
+            "host"
+          )}/admin/resources/clients`,
+        }
+      );
+      await MailService.sendMail(
+        process.env.ADMIN_EMAIL,
+        `Novo Cliente Pendente: ${newClient.name}`,
+        emailHtml
+      );
+    } catch (mailError) {
+      console.error(
+        "Falha ao enviar email de novo cliente pendente:",
+        mailError
+      );
+    }
+
+    return res.render("portal/pending-approval");
   } catch (error) {
     if (error instanceof yup.ValidationError) {
       return res
@@ -169,6 +192,7 @@ router.post("/portal/register", async (req, res, next) => {
       });
   }
 });
+
 const socialAuthCallback = (req, res, next) => {
   if (
     req.session.messages &&
@@ -218,8 +242,6 @@ router.get("/portal/logout", (req, res, next) => {
     });
   });
 });
-
-// Rota de download para anexo do TICKET (sem alterações)
 router.get(
   "/portal/download/ticket/:recordId",
   clientPortalMiddlewares,
@@ -245,10 +267,6 @@ router.get(
     }
   }
 );
-
-// ===================================================================
-//  ROTA CORRIGIDA
-// ===================================================================
 router.get(
   "/portal/download/comment/:commentId",
   requireClientAuth,
@@ -256,17 +274,13 @@ router.get(
     try {
       const { commentId } = req.params;
       const comment = await Comment.findByPk(commentId);
-
       if (!comment || !comment.path) {
         return res.status(404).send("Anexo não encontrado.");
       }
-
-      // Verificação de segurança corrigida
       const ticket = await Ticket.findByPk(comment.ticket_id);
       if (!ticket || ticket.clientId !== req.user.id) {
         return res.status(403).send("Acesso negado.");
       }
-
       const command = new GetObjectCommand({
         Bucket: comment.folder,
         Key: comment.path,
@@ -279,8 +293,6 @@ router.get(
     }
   }
 );
-// ===================================================================
-
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {
     const tickets = await Ticket.findAll({
@@ -297,7 +309,6 @@ router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
     res.status(500).render("errors/500");
   }
 });
-
 router.get("/portal/tickets/new", clientPortalMiddlewares, (req, res) => {
   res.render("portal/new-ticket", {
     message: null,
@@ -305,7 +316,6 @@ router.get("/portal/tickets/new", clientPortalMiddlewares, (req, res) => {
     user: req.user,
   });
 });
-
 router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
   try {
     const ticket = await Ticket.findOne({
@@ -321,11 +331,9 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
       ],
       order: [[Comment, "createdAt", "ASC"]],
     });
-
     if (!ticket) {
       return res.status(404).render("errors/404", { context: "portal" });
     }
-
     for (const comment of ticket.comments) {
       if (comment.filename && comment.type.startsWith("image/")) {
         const command = new GetObjectCommand({
@@ -337,7 +345,6 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
         });
       }
     }
-
     res.render("portal/ticket-detail", {
       user: req.user,
       ticket,
@@ -349,7 +356,6 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
     res.status(500).render("errors/500");
   }
 });
-
 router.post(
   "/portal/tickets/:id/comments",
   clientPortalMiddlewares,
@@ -389,12 +395,14 @@ router.post(
         order: [[Comment, "createdAt", "ASC"]],
       });
       if (error instanceof yup.ValidationError) {
-        return res.status(400).render(`portal/ticket-detail`, {
-          user: req.user,
-          ticket,
-          error: error.message,
-          statusTranslations,
-        });
+        return res
+          .status(400)
+          .render(`portal/ticket-detail`, {
+            user: req.user,
+            ticket,
+            error: error.message,
+            statusTranslations,
+          });
       }
       console.error("Erro ao adicionar comentário:", error);
       res.status(500).render("errors/500");
@@ -446,9 +454,10 @@ router.post(
         });
       }
       const newTicket = await Ticket.create(ticketData);
+
       try {
         const projectName = project ? project.name : "Não especificado";
-        const emailHtml = await ejs.renderFile(
+        const emailHtmlAdmin = await ejs.renderFile(
           path.join(__dirname, "../views/emails/newTicketNotification.ejs"),
           {
             clientName: client.name,
@@ -461,11 +470,39 @@ router.post(
         await MailService.sendMail(
           process.env.ADMIN_EMAIL,
           `Novo Chamado: ${newTicket.title} [Projeto: ${projectName}]`,
-          emailHtml
+          emailHtmlAdmin
         );
       } catch (mailError) {
-        console.error("Falha ao enviar email de notificação:", mailError);
+        console.error(
+          "Falha ao enviar email de notificação para o Admin:",
+          mailError
+        );
       }
+
+      try {
+        const emailHtmlClient = await ejs.renderFile(
+          path.join(__dirname, "../views/emails/ticketReceived.ejs"),
+          {
+            clientName: client.name,
+            ticketId: newTicket.id,
+            ticketTitle: newTicket.title,
+            ticketUrl: `${req.protocol}://${req.get("host")}/portal/tickets/${
+              newTicket.id
+            }`,
+          }
+        );
+        await MailService.sendMail(
+          client.email,
+          `Seu Chamado #${newTicket.id} Foi Recebido`,
+          emailHtmlClient
+        );
+      } catch (mailError) {
+        console.error(
+          "Falha ao enviar email de confirmação para o cliente:",
+          mailError
+        );
+      }
+
       res.redirect("/portal/tickets");
     } catch (error) {
       if (error instanceof yup.ValidationError) {

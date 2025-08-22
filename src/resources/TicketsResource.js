@@ -5,6 +5,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "../config/credentials.js";
 import { hasManagerPermission } from "../services/auth";
 import uploadFeature from "@adminjs/upload";
+import Client from "../models/client.js";
+import MailService from "../services/mail.js";
+import ejs from "ejs";
+import path from "path";
 
 const s3 = new S3Client({
   region: credentials.region,
@@ -13,6 +17,13 @@ const s3 = new S3Client({
     secretAccessKey: credentials.secretAccessKey,
   },
 });
+
+const statusTranslations = {
+  open: "Aberto",
+  pending: "Pendente",
+  in_progress: "Em Andamento",
+  closed: "Fechado",
+};
 
 export default {
   resource: Ticket,
@@ -23,9 +34,7 @@ export default {
     actions: {
       show: {
         component: AdminJS.bundle("../components/TicketShow.jsx"),
-        // === INÍCIO DA CORREÇÃO ===
         after: async (response) => {
-          // Vamos modificar diretamente o 'record' da resposta
           const record = response.record;
           if (record && record.params.path) {
             const command = new GetObjectCommand({
@@ -35,15 +44,62 @@ export default {
             const signedUrl = await getSignedUrl(s3, command, {
               expiresIn: 3600,
             });
-            // Adicionamos a nova propriedade diretamente aos params da resposta
             response.record.params.signedUrl = signedUrl;
           }
           return response;
         },
-        // === FIM DA CORREÇÃO ===
       },
       edit: {
         isAccessible: ({ currentAdmin }) => hasManagerPermission(currentAdmin),
+        before: async (request, context) => {
+          const { record } = context;
+          if (record && record.isValid()) {
+            context.originalStatus = record.get("status");
+          }
+          return request;
+        },
+        after: async (response, request, context) => {
+          const { record, originalStatus } = context;
+          const newStatus = record.get("status");
+
+          if (originalStatus && newStatus !== originalStatus) {
+            try {
+              const ticket = await Ticket.findByPk(record.id(), {
+                include: Client,
+              });
+              if (ticket && ticket.Client) {
+                const emailHtml = await ejs.renderFile(
+                  path.join(
+                    __dirname,
+                    "../views/emails/ticketStatusChanged.ejs"
+                  ),
+                  {
+                    clientName: ticket.Client.name,
+                    ticketId: ticket.id,
+                    ticketTitle: ticket.title,
+                    oldStatus:
+                      statusTranslations[originalStatus] || originalStatus,
+                    newStatus: statusTranslations[newStatus] || newStatus,
+                    ticketUrl: `${
+                      process.env.BASE_URL || "http://localhost:5000"
+                    }/portal/tickets/${ticket.id}`,
+                  }
+                );
+                await MailService.sendMail(
+                  ticket.Client.email,
+                  `O seu Chamado #${ticket.id} foi atualizado`,
+                  emailHtml
+                );
+              }
+            } catch (mailError) {
+              console.error(
+                "Falha ao enviar email de mudança de status:",
+                mailError
+              );
+            }
+          }
+          return response;
+        },
       },
     },
     properties: {
