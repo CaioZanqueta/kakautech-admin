@@ -1,12 +1,17 @@
-import * as path from "path";
-
 import AdminJS from "adminjs";
-
 import uploadFeature from "@adminjs/upload";
-
 import Task from "../models/task";
-
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "../config/credentials";
+
+const s3 = new S3Client({
+  region: credentials.region,
+  credentials: {
+    accessKeyId: credentials.accessKeyId,
+    secretAccessKey: credentials.secretAccessKey,
+  },
+});
 
 export default {
   resource: Task,
@@ -14,14 +19,27 @@ export default {
     parent: {
       icon: "Task",
     },
+    actions: {
+      show: {
+        after: async (response) => {
+          const record = response.record;
+          if (record && record.params.path) {
+            const command = new GetObjectCommand({
+              Bucket: record.params.folder,
+              Key: record.params.path,
+            });
+            const signedUrl = await getSignedUrl(s3, command, {
+              expiresIn: 3600,
+            });
+            response.record.params.signedUrl = signedUrl;
+          }
+          return response;
+        },
+      },
+    },
     properties: {
-      id: {
-        position: 1,
-      },
-      title: {
-        position: 2,
-        isRequired: true,
-      },
+      id: { position: 1 },
+      title: { position: 2, isRequired: true },
       description: {
         position: 3,
         isVisible: { list: false, filter: false, show: true, edit: true },
@@ -37,9 +55,7 @@ export default {
           },
         },
       },
-      due_date: {
-        position: 4,
-      },
+      due_date: { position: 4 },
       order: {
         position: 5,
         isRequired: true,
@@ -65,10 +81,7 @@ export default {
         isRequired: true,
         isVisible: { list: false, filter: true, show: true, edit: true },
       },
-      userId: {
-        position: 8,
-        isRequired: true,
-      },
+      userId: { position: 8, isRequired: true },
       createdAt: {
         position: 9,
         isVisible: { list: true, filter: true, show: true, edit: false },
@@ -77,15 +90,21 @@ export default {
         position: 10,
         isVisible: { list: false, filter: true, show: true, edit: false },
       },
+
+      // === INÍCIO DA CORREÇÃO ===
       attachment: {
         position: 11,
+        // 1. Esconde o anexo da vista de lista
+        isVisible: { list: false, show: true, edit: true },
+        // 2. Garante que o nosso componente customizado é usado na vista de detalhes
+        components: {
+          show: AdminJS.bundle("../components/AttachmentComponent.jsx"),
+        },
       },
-      user_id: {
-        isVisible: false,
-      },
-      project_id: {
-        isVisible: false,
-      },
+      // === FIM DA CORREÇÃO ===
+
+      user_id: { isVisible: false },
+      project_id: { isVisible: false },
       path: {
         isVisible: false,
       },
@@ -105,12 +124,7 @@ export default {
   },
   features: [
     uploadFeature({
-      provider: {
-        aws: credentials,
-        // local: {
-        //   bucket: path.join(__dirname, "../../uploads"),
-        // },
-      },
+      provider: { aws: credentials },
       properties: {
         key: "path",
         bucket: "folder",
@@ -124,7 +138,6 @@ export default {
           "image/png",
           "image/gif",
           "image/jpeg",
-          "image/vnd.adobe.photoshop",
           "application/pdf",
           "application/zip",
           "text/plain",
