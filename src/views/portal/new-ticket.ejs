@@ -59,6 +59,8 @@
         padding: 16px;
         display: flex;
         flex-direction: column;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1001;
       }
       .sidebar-header {
         padding: 16px 8px;
@@ -121,7 +123,21 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 32px;
+        padding: 0 24px;
+      }
+      .topbar-left-controls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .hamburger-menu {
+        display: none;
+        cursor: pointer;
+      }
+      .hamburger-menu svg {
+        width: 24px;
+        height: 24px;
+        color: var(--text-primary);
       }
       .topbar-right-controls {
         display: flex;
@@ -318,11 +334,71 @@
         color: #721c24;
         border: 1px solid #f5c6cb;
       }
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+
+      /* === INÍCIO: ESTILOS RESPONSIVOS === */
+      @media (max-width: 992px) {
+        .app-layout {
+          grid-template-columns: 1fr;
+          grid-template-areas: "topbar" "content";
+        }
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100%;
+          transform: translateX(-100%);
+        }
+        .sidebar.is-mobile-open {
+          transform: translateX(0);
+        }
+        .hamburger-menu {
+          display: block;
+        }
+        .mobile-overlay.is-visible {
+          display: block;
+        }
+        .breadcrumbs {
+          display: none;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .content {
+          padding: 16px;
+        }
+        .card {
+          padding: 16px;
+        }
+        .topbar {
+          padding: 0 16px;
+        }
+        .topbar-right-controls {
+          gap: 16px;
+        }
+        .dropdown-toggle span {
+          display: none;
+        }
+        .support-hours-badge {
+          font-size: 10px;
+          padding: 4px 8px;
+        }
+      }
+      /* === FIM: ESTILOS RESPONSIVOS === */
     </style>
   </head>
   <body>
     <div class="app-layout">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <img
             src="/public/kakau.webp"
@@ -356,19 +432,32 @@
         </nav>
       </aside>
       <header class="topbar">
-        <div class="breadcrumbs">Portal / Chamados / Criar novo</div>
+        <div class="topbar-left-controls">
+          <div class="hamburger-menu" id="hamburger-menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="breadcrumbs">Portal / Chamados / Criar novo</div>
+        </div>
         <div class="topbar-right-controls">
           <% if (supportHoursLimit) { %>
-            <div class="support-hours-badge">
-              Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
-            </div>
+          <div class="support-hours-badge">
+            Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit
+            %>h
+          </div>
           <% } %>
           <div class="theme-switch" id="theme-switcher" title="Alterar tema">
             <div class="theme-switch-toggle"></div>
           </div>
           <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-              <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
+              <span
+                ><% if (typeof user !== 'undefined' && user) { %><%= user.email
+                %><% } %></span
+              >
             </div>
             <div class="dropdown-content" id="user-menu-content">
               <a href="/portal/logout">Sair</a>
@@ -380,9 +469,9 @@
         <div class="card">
           <div class="card-header"><h1>Abrir Novo Chamado</h1></div>
           <% if (typeof message !== 'undefined' && message) { %>
-            <div class="feedback-message success-message"><%= message %></div>
+          <div class="feedback-message success-message"><%= message %></div>
           <% } %> <% if (typeof error !== 'undefined' && error) { %>
-            <div class="feedback-message error-message"><%= error %></div>
+          <div class="feedback-message error-message"><%= error %></div>
           <% } %>
           <form
             action="/portal/tickets"
@@ -390,12 +479,17 @@
             enctype="multipart/form-data"
           >
             <div class="form-group">
-              <label for="title">* Título</label>
-              <input type="text" id="title" name="title" required />
+              <label for="title">* Título</label
+              ><input type="text" id="title" name="title" required />
             </div>
             <div class="form-group">
-              <label for="description">* Descrição</label>
-              <textarea id="description" name="description" rows="5" required></textarea>
+              <label for="description">* Descrição</label
+              ><textarea
+                id="description"
+                name="description"
+                rows="5"
+                required
+              ></textarea>
             </div>
             <div class="form-group">
               <label for="attachment">Anexo</label>
@@ -412,13 +506,15 @@
           </form>
         </div>
       </main>
+      <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
     <script>
       const fileInput = document.getElementById("attachment");
       const fileNameDisplay = document.getElementById("file-name");
       fileInput.addEventListener("change", function () {
         if (this.files.length > 0) {
-          fileNameDisplay.textContent = "Arquivo selecionado: " + this.files[0].name;
+          fileNameDisplay.textContent =
+            "Arquivo selecionado: " + this.files[0].name;
         } else {
           fileNameDisplay.textContent = "";
         }
@@ -459,6 +555,19 @@
       themeSwitcher.addEventListener("click", toggleTheme);
       const savedTheme = localStorage.getItem("theme") || "light";
       applyTheme(savedTheme);
+
+      // --- NOVO: LÓGICA DO MENU RESPONSIVO ---
+      const hamburger = document.getElementById("hamburger-menu");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("mobile-overlay");
+      const toggleMenu = () => {
+        sidebar.classList.toggle("is-mobile-open");
+        overlay.classList.toggle("is-visible");
+      };
+      if (hamburger && sidebar && overlay) {
+        hamburger.addEventListener("click", toggleMenu);
+        overlay.addEventListener("click", toggleMenu);
+      }
     </script>
   </body>
 </html>

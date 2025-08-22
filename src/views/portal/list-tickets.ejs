@@ -59,6 +59,8 @@
         padding: 16px;
         display: flex;
         flex-direction: column;
+        transition: transform 0.3s ease-in-out;
+        z-index: 1001;
       }
       .sidebar-header {
         padding: 16px 8px;
@@ -121,7 +123,21 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 32px;
+        padding: 0 24px;
+      }
+      .topbar-left-controls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .hamburger-menu {
+        display: none;
+        cursor: pointer;
+      }
+      .hamburger-menu svg {
+        width: 24px;
+        height: 24px;
+        color: var(--text-primary);
       }
       .topbar-right-controls {
         display: flex;
@@ -215,13 +231,14 @@
       .card {
         background-color: var(--bg-card);
         border-radius: 1px;
-        padding: 32px;
+        padding: 24px;
         border: 1px solid var(--border-color);
       }
       .card-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
         margin-bottom: 24px;
       }
       .card-header h1 {
@@ -274,24 +291,146 @@
         font-weight: bold;
         text-transform: capitalize;
       }
-      .status-open { background-color: #cfe2ff; color: #084298; }
-      .status-pending { background-color: #fff3cd; color: #664d03; }
-      .status-in_progress { background-color: #ffc107; color: #333; }
-      .status-closed { background-color: #d1e7dd; color: #0f5132; }
-      body.dark-mode .status-open { background-color: #03285a; color: #a6cfff; }
-      body.dark-mode .status-pending { background-color: #533f03; color: #ffda6a; }
-      body.dark-mode .status-in_progress { background-color: #ffc107; color: #111; }
-      body.dark-mode .status-closed { background-color: #0b5345; color: #a3e4d7; }
+      .status-open {
+        background-color: #cfe2ff;
+        color: #084298;
+      }
+      .status-pending {
+        background-color: #fff3cd;
+        color: #664d03;
+      }
+      .status-in_progress {
+        background-color: #ffc107;
+        color: #333;
+      }
+      .status-closed {
+        background-color: #d1e7dd;
+        color: #0f5132;
+      }
+      body.dark-mode .status-open {
+        background-color: #03285a;
+        color: #a6cfff;
+      }
+      body.dark-mode .status-pending {
+        background-color: #533f03;
+        color: #ffda6a;
+      }
+      body.dark-mode .status-in_progress {
+        background-color: #ffc107;
+        color: #111;
+      }
+      body.dark-mode .status-closed {
+        background-color: #0b5345;
+        color: #a3e4d7;
+      }
       .no-tickets {
         text-align: center;
         padding: 40px;
         color: var(--grey-60);
       }
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+      }
+
+      /* === INÍCIO: ESTILOS RESPONSIVOS === */
+      @media (max-width: 992px) {
+        .app-layout {
+          grid-template-columns: 1fr;
+          grid-template-areas: "topbar" "content";
+        }
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100%;
+          transform: translateX(-100%);
+        }
+        .sidebar.is-mobile-open {
+          transform: translateX(0);
+        }
+        .hamburger-menu {
+          display: block;
+        }
+        .mobile-overlay.is-visible {
+          display: block;
+        }
+        .breadcrumbs {
+          display: none;
+        }
+        .card-header {
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .content {
+          padding: 16px;
+        }
+        .topbar {
+          padding: 0 16px;
+        }
+        .topbar-right-controls {
+          gap: 16px;
+        }
+        .dropdown-toggle span {
+          display: none;
+        }
+        .support-hours-badge {
+          font-size: 10px;
+          padding: 4px 8px;
+        }
+
+        /* Tabela Responsiva */
+        table {
+          border: 0;
+        }
+        table thead {
+          border: none;
+          clip: rect(0 0 0 0);
+          height: 1px;
+          margin: -1px;
+          overflow: hidden;
+          padding: 0;
+          position: absolute;
+          width: 1px;
+        }
+        table tr {
+          border-bottom: 2px solid var(--border-color);
+          display: block;
+          margin-bottom: 1em;
+        }
+        table td {
+          border-bottom: 1px solid var(--bg-hover);
+          display: block;
+          text-align: right;
+        }
+        table td::before {
+          content: attr(data-label);
+          float: left;
+          font-weight: bold;
+          text-transform: uppercase;
+          font-size: 12px;
+          color: var(--grey-60);
+        }
+        table td:last-child {
+          border-bottom: 0;
+        }
+      }
+      /* === FIM: ESTILOS RESPONSIVOS === */
     </style>
   </head>
   <body>
     <div class="app-layout">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <img
             src="/public/kakau.webp"
@@ -325,19 +464,32 @@
         </nav>
       </aside>
       <header class="topbar">
-        <div class="breadcrumbs">Portal / Meus Chamados</div>
+        <div class="topbar-left-controls">
+          <div class="hamburger-menu" id="hamburger-menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </div>
+          <div class="breadcrumbs">Portal / Meus Chamados</div>
+        </div>
         <div class="topbar-right-controls">
           <% if (supportHoursLimit) { %>
-            <div class="support-hours-badge">
-              Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
-            </div>
+          <div class="support-hours-badge">
+            Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit
+            %>h
+          </div>
           <% } %>
           <div class="theme-switch" id="theme-switcher" title="Alterar tema">
             <div class="theme-switch-toggle"></div>
           </div>
           <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-              <% if (typeof user !== 'undefined' && user) { %><span><%= user.email %></span><% } %>
+              <span
+                ><% if (typeof user !== 'undefined' && user) { %><%= user.email
+                %><% } %></span
+              >
             </div>
             <div class="dropdown-content" id="user-menu-content">
               <a href="/portal/logout">Sair</a>
@@ -349,40 +501,50 @@
         <div class="card">
           <div class="card-header">
             <h1>Meus Chamados</h1>
-            <a href="/portal/tickets/new" class="btn-primary">Abrir Novo Chamado</a>
+            <a href="/portal/tickets/new" class="btn-primary"
+              >Abrir Novo Chamado</a
+            >
           </div>
           <% if (tickets.length === 0) { %>
-            <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
+          <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
           <% } else { %>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Título</th>
-                  <th>Status</th>
-                  <th>Última Atualização</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% tickets.forEach(ticket => { %>
-                  <tr>
-                    <td>#<%= ticket.id %></td>
-                    <td><a href="/portal/tickets/<%= ticket.id %>"><%= ticket.title %></a></td>
-                    <td>
-                      <span class="status status-<%= ticket.status %>">
-                        <%= statusTranslations[ticket.status] || ticket.status %>
-                      </span>
-                    </td>
-                    <td><%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Status</th>
+                <th>Última Atualização</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% tickets.forEach(ticket => { %>
+              <tr>
+                <td data-label="ID">#<%= ticket.id %></td>
+                <td data-label="Título">
+                  <a href="/portal/tickets/<%= ticket.id %>"
+                    ><%= ticket.title %></a
+                  >
+                </td>
+                <td data-label="Status">
+                  <span class="status status-<%= ticket.status %>">
+                    <%= statusTranslations[ticket.status] || ticket.status %>
+                  </span>
+                </td>
+                <td data-label="Última Atualização">
+                  <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
           <% } %>
         </div>
       </main>
+      <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
     <script>
+      // Lógica do menu, tema, etc. (sem alterações)
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.getElementById("user-menu-toggle");
         const menuContent = document.getElementById("user-menu-content");
@@ -419,6 +581,21 @@
       themeSwitcher.addEventListener("click", toggleTheme);
       const savedTheme = localStorage.getItem("theme") || "light";
       applyTheme(savedTheme);
+
+      // --- NOVO: LÓGICA DO MENU RESPONSIVO ---
+      const hamburger = document.getElementById("hamburger-menu");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("mobile-overlay");
+
+      const toggleMenu = () => {
+        sidebar.classList.toggle("is-mobile-open");
+        overlay.classList.toggle("is-visible");
+      };
+
+      if (hamburger && sidebar && overlay) {
+        hamburger.addEventListener("click", toggleMenu);
+        overlay.addEventListener("click", toggleMenu);
+      }
     </script>
   </body>
 </html>

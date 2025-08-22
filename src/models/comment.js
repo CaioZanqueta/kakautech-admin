@@ -8,6 +8,12 @@ class Comment extends Model {
         ticket_id: Sequelize.INTEGER,
         user_id: Sequelize.INTEGER,
         client_id: Sequelize.INTEGER,
+        // Campos de anexo adicionados
+        path: Sequelize.STRING,
+        folder: Sequelize.STRING,
+        type: Sequelize.STRING,
+        filename: Sequelize.STRING,
+        size: Sequelize.INTEGER,
       },
       {
         sequelize,
