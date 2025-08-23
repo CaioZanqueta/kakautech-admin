@@ -356,6 +356,7 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
     res.status(500).render("errors/500");
   }
 });
+
 router.post(
   "/portal/tickets/:id/comments",
   clientPortalMiddlewares,
@@ -365,12 +366,16 @@ router.post(
     try {
       const { content } = req.body;
       await commentSchema.validate({ content });
+
       const ticket = await Ticket.findOne({
         where: { id: ticketId, clientId: req.user.id },
+        include: User, // Incluímos o User (responsável)
       });
+
       if (!ticket) {
         return res.status(404).render("errors/404", { context: "portal" });
       }
+
       const commentData = {
         content,
         ticket_id: ticketId,
@@ -386,7 +391,43 @@ router.post(
           size: size,
         });
       }
-      await Comment.create(commentData);
+
+      const newComment = await Comment.create(commentData);
+
+      // --- INÍCIO: LÓGICA DE NOTIFICAÇÃO PARA O ADMIN ---
+      try {
+        const client = req.user;
+        const recipients = new Set([process.env.ADMIN_EMAIL]);
+        if (ticket.User && ticket.User.email) {
+          recipients.add(ticket.User.email);
+        }
+
+        const emailHtml = await ejs.renderFile(
+          path.join(__dirname, "../views/emails/newCommentByClient.ejs"),
+          {
+            clientName: client.name,
+            ticketId: ticket.id,
+            ticketTitle: ticket.title,
+            commentContent: newComment.content,
+            adminTicketUrl: `${req.protocol}://${req.get(
+              "host"
+            )}/admin/resources/tickets/records/${ticket.id}/show`,
+          }
+        );
+
+        await MailService.sendMail(
+          Array.from(recipients), // Envia para a lista de destinatários únicos
+          `Nova Resposta do ${client.name} no Chamado ${ticket.title}`,
+          emailHtml
+        );
+      } catch (mailError) {
+        console.error(
+          "Falha ao enviar email de notificação de comentário do cliente:",
+          mailError
+        );
+      }
+      // --- FIM: LÓGICA DE NOTIFICAÇÃO ---
+
       res.redirect(`/portal/tickets/${ticketId}`);
     } catch (error) {
       const ticket = await Ticket.findOne({
@@ -493,7 +534,7 @@ router.post(
         );
         await MailService.sendMail(
           client.email,
-          `Seu Chamado #${newTicket.id} Foi Recebido`,
+          `Seu Chamado ${newTicket.title} Foi Recebido`,
           emailHtmlClient
         );
       } catch (mailError) {

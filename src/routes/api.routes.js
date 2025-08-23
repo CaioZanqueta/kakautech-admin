@@ -38,26 +38,29 @@ router.post(
       });
 
       try {
-        const ticket = await Ticket.findByPk(ticketId, { include: Client });
-        if (ticket && ticket.Client) {
-          const emailHtml = await ejs.renderFile(
-            path.join(__dirname, "../views/emails/newCommentByAdmin.ejs"),
-            {
-              clientName: ticket.Client.name,
-              ticketId: ticket.id,
-              ticketTitle: ticket.title,
-              adminName: adminUser.name,
-              commentContent: newComment.content,
-              ticketUrl: `${
-                process.env.BASE_URL || "http://localhost:5000"
-              }/portal/tickets/${ticket.id}`,
-            }
-          );
-          await MailService.sendMail(
-            ticket.Client.email,
-            `Nova Resposta no seu Chamado #${ticket.id}`,
-            emailHtml
-          );
+        const ticket = await Ticket.findByPk(ticketId);
+        if (ticket && ticket.clientId) {
+          const client = await Client.findByPk(ticket.clientId);
+          if (client) {
+            const emailHtml = await ejs.renderFile(
+              path.join(__dirname, "../views/emails/newCommentByAdmin.ejs"),
+              {
+                clientName: client.name,
+                ticketId: ticket.id,
+                ticketTitle: ticket.title,
+                adminName: adminUser.name,
+                commentContent: newComment.content,
+                ticketUrl: `${
+                  process.env.BASE_URL || "http://localhost:5000"
+                }/portal/tickets/${ticket.id}`,
+              }
+            );
+            await MailService.sendMail(
+              client.email,
+              `Nova Resposta no seu Chamado ${ticket.title}`,
+              emailHtml
+            );
+          }
         }
       } catch (mailError) {
         console.error(
@@ -82,12 +85,47 @@ router.post(
   async (req, res) => {
     try {
       const { ticketId } = req.params;
-      const adminUserId = req.user.id;
+      const adminUser = req.user;
       const ticket = await Ticket.findByPk(ticketId);
+
       if (!ticket) {
         return res.status(404).json({ message: "Chamado não encontrado." });
       }
-      await ticket.update({ userId: adminUserId, status: "pending" });
+
+      await ticket.update({ userId: adminUser.id, status: "pending" });
+
+      // --- INÍCIO DA NOVA LÓGICA DE EMAIL ---
+      try {
+        if (ticket.clientId) {
+          const client = await Client.findByPk(ticket.clientId);
+          if (client) {
+            const emailHtml = await ejs.renderFile(
+              path.join(__dirname, "../views/emails/ticketAssigned.ejs"),
+              {
+                clientName: client.name,
+                ticketId: ticket.id,
+                ticketTitle: ticket.title,
+                adminName: adminUser.name,
+                ticketUrl: `${
+                  process.env.BASE_URL || "http://localhost:5000"
+                }/portal/tickets/${ticket.id}`,
+              }
+            );
+            await MailService.sendMail(
+              client.email,
+              `Seu Chamado ${ticket.title} foi atribuído`,
+              emailHtml
+            );
+          }
+        }
+      } catch (mailError) {
+        console.error(
+          "Falha ao enviar email de atribuição de chamado:",
+          mailError
+        );
+      }
+      // --- FIM DA NOVA LÓGICA DE EMAIL ---
+
       return res
         .status(200)
         .json({ message: "Chamado atribuído com sucesso." });

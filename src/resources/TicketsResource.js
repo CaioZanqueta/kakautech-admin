@@ -54,40 +54,45 @@ export default {
         before: async (request, context) => {
           const { record } = context;
           if (record && record.isValid()) {
-            context.originalStatus = record.get("status");
+            context.originalTicket = await Ticket.findByPk(record.id());
           }
           return request;
         },
         after: async (response, request, context) => {
-          const { record, originalStatus } = context;
+          const { record, originalTicket } = context;
           const newStatus = record.get("status");
 
-          if (originalStatus && newStatus !== originalStatus) {
+          if (originalTicket && newStatus !== originalTicket.status) {
+            // Se a mudança for de 'open' para 'pending', não fazemos nada aqui,
+            // pois o botão "Atribuir a Mim" já trata disso.
+            if (originalTicket.status === "open" && newStatus === "pending") {
+              return response;
+            }
+
             try {
-              const ticket = await Ticket.findByPk(record.id(), {
-                include: Client,
-              });
-              if (ticket && ticket.Client) {
+              const client = await Client.findByPk(originalTicket.clientId);
+              if (client) {
                 const emailHtml = await ejs.renderFile(
                   path.join(
                     __dirname,
                     "../views/emails/ticketStatusChanged.ejs"
                   ),
                   {
-                    clientName: ticket.Client.name,
-                    ticketId: ticket.id,
-                    ticketTitle: ticket.title,
+                    clientName: client.name,
+                    ticketId: record.id(),
+                    ticketTitle: record.get("title"),
                     oldStatus:
-                      statusTranslations[originalStatus] || originalStatus,
+                      statusTranslations[originalTicket.status] ||
+                      originalTicket.status,
                     newStatus: statusTranslations[newStatus] || newStatus,
                     ticketUrl: `${
                       process.env.BASE_URL || "http://localhost:5000"
-                    }/portal/tickets/${ticket.id}`,
+                    }/portal/tickets/${record.id()}`,
                   }
                 );
                 await MailService.sendMail(
-                  ticket.Client.email,
-                  `O seu Chamado #${ticket.id} foi atualizado`,
+                  client.email,
+                  `O seu Chamado ${record.get("title")} foi atualizado`,
                   emailHtml
                 );
               }
