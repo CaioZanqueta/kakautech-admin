@@ -3943,6 +3943,11 @@ express-formidable@^1.2.0:
   dependencies:
     formidable "^1.0.17"
 
+express-rate-limit@7.3.1:
+  version "7.3.1"
+  resolved "https://registry.yarnpkg.com/express-rate-limit/-/express-rate-limit-7.3.1.tgz#c0887ba746cdd358d17b8ab63d6eba1bae0f670b"
+  integrity sha512-BbaryvkY4wEgDqLgD18/NSy2lDO2jTuT9Y8c1Mpx0X63Yz0sYd5zN6KPe7UvpuSVvV33T6RaE1o1IVZQjHMYgw==
+
 express-session@^1.18.1:
   version "1.18.2"
   resolved "https://registry.yarnpkg.com/express-session/-/express-session-1.18.2.tgz#34db6252611b57055e877036eea09b4453dec5d8"
