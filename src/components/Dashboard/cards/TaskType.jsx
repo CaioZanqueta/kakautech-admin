@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
-
 import { ApiClient, useTranslation } from "adminjs";
 import { Text, H5 } from "@adminjs/design-system";
 import { Chart } from "react-google-charts";
-
 import _ from "lodash";
-
 import { Card } from "../styles";
 
 const api = new ApiClient();
@@ -24,22 +21,28 @@ const makeChartData = (records) => {
   const values = _.groupBy(records, (record) => record.params.status);
   const data = _.map(status, (value, key) => [value, values[key]?.length || 0]);
 
-  return [["Tipo de tarefa", "Quantidade"], ...data];
+  const filteredData = data.filter(item => item[1] > 0);
+
+  return [["Tipo de tarefa", "Quantidade"], ...filteredData];
 };
 
 const TaskType = () => {
   const { translateMessage } = useTranslation();
-
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEmpty, setIsEmpty] = useState(true);
 
   useEffect(() => {
     (async () => {
+      // ===== INÍCIO DA CORREÇÃO =====
       const response = await api.resourceAction({
         resourceId: "tasks",
         actionName: "list",
+        params: {
+          perPage: 1000, // Busca até 1000 tarefas
+        },
       });
+      // ===== FIM DA CORREÇÃO =====
 
       setChartData(makeChartData(response.data.records));
       setIsEmpty(response.data.records.length == 0);

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Portal do Cliente</title>
+    <link rel="icon" type="image/webp" href="/public/favicon.webp" />
+    <link rel="stylesheet" href="/public/portal.css" />
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <%- include('../partials/portal-sidebar', { active: 'dashboard' }) %>
+        
+        <header class="topbar">
+            <div class="topbar-left-controls">
+                <div class="hamburger-menu" id="hamburger-menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </div>
+                <div class="breadcrumbs">Portal / Dashboard</div>
+            </div>
+            <div class="topbar-right-controls">
+                <% if (supportHoursLimit) { %>
+                    <div class="support-hours-badge">Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit %>h</div>
+                <% } %>
+                <div class="theme-switch" id="theme-switcher" title="Alterar tema"><div class="theme-switch-toggle"></div></div>
+                <div class="dropdown">
+                    <div class="dropdown-toggle" id="user-menu-toggle">
+                        <span><% if (typeof user !== 'undefined' && user) { %><%= user.email %><% } %></span>
+                    </div>
+                    <div class="dropdown-content" id="user-menu-content">
+                        <a href="/portal/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="card" style="background-color: transparent; border: none; padding: 0;">
+                <div style="margin-bottom: 24px;">
+                    <h1>Bem-vindo(a), <%= user.name.split(' ')[0] %>!</h1>
+                    <p style="color: var(--text-secondary); margin-top: 4px;">Aqui está um resumo do seu projeto.</p>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <p class="label">Chamados Ativos</p>
+                        <p class="value"><%= stats.openTickets %></p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="label">Chamados Concluídos</p>
+                        <p class="value"><%= stats.closedTickets %></p>
+                    </div>
+                    <% if (supportHoursLimit && supportHoursLimit > 0) { %>
+                        <div class="dashboard-card" id="chart-card">
+                            <div id="hours-chart" style="width: 100%; height: 250px;"></div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </main>
+        <div class="mobile-overlay" id="mobile-overlay"></div>
+    </div>
+    
+    <script>
+      // Lógica do Gráfico
+      const supportHoursLimit = parseFloat("<%= supportHoursLimit || 0 %>");
+      if (supportHoursLimit > 0) {
+        google.charts.load("current", { packages: ["corechart"] });
+        google.charts.setOnLoadCallback(drawChart);
+      }
+
+      function drawChart() {
+        const usedHours = parseFloat("<%= usedSupportHours || 0 %>");
+        const remainingHours =
+          supportHoursLimit > usedHours ? supportHoursLimit - usedHours : 0;
+        const isDarkMode = document.body.classList.contains("dark-mode");
+
+        const data = google.visualization.arrayToDataTable([
+          ["Horas", "Quantidade"],
+          ["Utilizadas", usedHours],
+          ["Restantes", remainingHours],
+        ]);
+
+        const options = {
+          title: "Consumo de Horas de Suporte",
+          pieHole: 0.5,
+          colors: ["#1187bd", "#e0e0e0"],
+          legend: "none",
+          backgroundColor: "transparent",
+          chartArea: { width: "90%", height: "80%" },
+          titleTextStyle: {
+            color: isDarkMode ? "#e9ecef" : "#495057",
+            fontSize: 16,
+          },
+          pieSliceTextStyle: {
+            color: "#ffffff",
+            fontSize: 14,
+            fontWeight: "bold",
+          },
+          tooltip: { textStyle: { color: "#0c0d0f" } },
+        };
+
+        if (isDarkMode) {
+          options.colors = ["#1187bd", "#343a40"];
+        }
+
+        const chart = new google.visualization.PieChart(
+          document.getElementById("hours-chart")
+        );
+        chart.draw(data, options);
+      }
+
+      // Lógica Padrão do Portal (Menu, Tema, etc.)
+      document.addEventListener("DOMContentLoaded", () => {
+        const menuToggle = document.getElementById("user-menu-toggle");
+        const menuContent = document.getElementById("user-menu-content");
+        if (menuToggle && menuContent) {
+          menuToggle.addEventListener("click", (event) => {
+            event.stopPropagation();
+            menuContent.classList.toggle("is-open");
+          });
+          window.addEventListener("click", () => {
+            if (menuContent.classList.contains("is-open")) {
+              menuContent.classList.remove("is-open");
+            }
+          });
+        }
+      });
+
+      const themeSwitcher = document.getElementById("theme-switcher");
+      const body = document.body;
+      const logo = document.getElementById("sidebar-logo");
+
+      const applyTheme = (theme) => {
+        if (theme === "dark") {
+          body.classList.add("dark-mode");
+          if (logo) logo.src = "/public/kakauWhite.webp";
+        } else {
+          body.classList.remove("dark-mode");
+          if (logo) logo.src = "/public/kakau.webp";
+        }
+        // Redesenha o gráfico ao mudar o tema
+        if (supportHoursLimit > 0) {
+          drawChart();
+        }
+      };
+
+      const toggleTheme = () => {
+        const currentTheme = localStorage.getItem("theme") || "light";
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        localStorage.setItem("theme", newTheme);
+        applyTheme(newTheme);
+      };
+
+      themeSwitcher.addEventListener("click", toggleTheme);
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
+
+      const hamburger = document.getElementById("hamburger-menu");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("mobile-overlay");
+
+      const toggleMenu = () => {
+        sidebar.classList.toggle("is-mobile-open");
+        overlay.classList.toggle("is-visible");
+      };
+
+      if (hamburger && sidebar && overlay) {
+        hamburger.addEventListener("click", toggleMenu);
+        overlay.addEventListener("click", toggleMenu);
+      }
+    </script>
+</body>
+</html>

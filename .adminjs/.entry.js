@@ -15,5 +15,7 @@ import Component7 from '../node_modules/@adminjs/upload/src/features/upload-file
 AdminJS.UserComponents.Component7 = Component7
 import Component8 from '../node_modules/@adminjs/upload/src/features/upload-file/components/show'
 AdminJS.UserComponents.Component8 = Component8
-import Component9 from '../src/components/Dashboard/index'
+import Component9 from '../src/components/CustomRichTextEdit'
 AdminJS.UserComponents.Component9 = Component9
+import Component10 from '../src/components/Dashboard/index'
+AdminJS.UserComponents.Component10 = Component10

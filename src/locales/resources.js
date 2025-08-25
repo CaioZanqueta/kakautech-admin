@@ -64,6 +64,7 @@ export default {
       projectId: "Projeto",
       userId: "Responsável",
       attachment: "Anexo",
+      priority: "Prioridade",
       ...commonProps,
     },
   },

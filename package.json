@@ -30,7 +30,7 @@
     "passport-microsoft": "^2.1.0",
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",
-    "react": "^19.1.0",
+    "react": "^18.2.0",
     "react-google-charts": "^3.0.15",
     "sequelize": "^6.12.5",
     "tslib": "^2.3.1",

@@ -124,6 +124,14 @@ export default {
       clientId: { position: 5, label: "Cliente" },
       projectId: { position: 6, label: "Projeto" },
       userId: { position: 7, label: "Responsável" },
+      priority: {
+        position: 8,
+        availableValues: [
+          { value: "low", label: "Baixo" },
+          { value: "medium", label: "Médio" },
+          { value: "high", label: "Alto" },
+        ],
+      },
       attachment: { isVisible: false },
       time_spent_seconds: { isVisible: false },
       in_progress_started_at: { isVisible: false },

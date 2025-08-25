@@ -5,464 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meus Chamados - Portal do Cliente</title>
     <link rel="icon" type="image/webp" href="/public/favicon.webp" />
-    <style>
-      :root {
-        --primary-100: #1187bd;
-        --primary-hover: #0e6a94;
-        --focus-ring: rgba(17, 135, 189, 0.25);
-        --white: #ffffff;
-        --grey-60: #6c757d;
-        --bg-body: #fafafa;
-        --bg-sidebar: #ffffff;
-        --bg-topbar: #ffffff;
-        --bg-card: #ffffff;
-        --bg-input: #ffffff;
-        --bg-hover: #e9ecef;
-        --text-primary: #0c0d0f;
-        --text-secondary: #495057;
-        --border-color: #dee2e6;
-      }
-      body.dark-mode {
-        --bg-body: #121212;
-        --bg-sidebar: #1e1e1e;
-        --bg-topbar: #1e1e1e;
-        --bg-card: #1e1e1e;
-        --bg-input: #2f2f2f;
-        --bg-hover: #343a40;
-        --text-primary: #e9ecef;
-        --text-secondary: #adb5bd;
-        --border-color: #343a40;
-      }
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-        background-color: var(--bg-body);
-        color: var(--text-primary);
-        transition: background-color 0.2s ease, color 0.2s ease;
-      }
-      .app-layout {
-        display: grid;
-        grid-template-columns: 240px 1fr;
-        grid-template-rows: 64px 1fr;
-        grid-template-areas: "sidebar topbar" "sidebar content";
-        height: 100vh;
-      }
-      .sidebar {
-        grid-area: sidebar;
-        background-color: var(--bg-sidebar);
-        border-right: 1px solid var(--border-color);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        transition: transform 0.3s ease-in-out;
-        z-index: 1001;
-      }
-      .sidebar-header {
-        padding: 16px 8px;
-        margin-bottom: 16px;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: center;
-      }
-      .sidebar-header .logo {
-        height: 28px;
-        width: auto;
-      }
-      .sidebar-nav-title {
-        font-size: 11px;
-        font-weight: bold;
-        text-transform: uppercase;
-        padding: 0 8px;
-        margin: 16px 0 8px 0;
-        color: var(--grey-60);
-      }
-      .sidebar-nav a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: var(--text-secondary);
-        text-decoration: none;
-        padding: 10px 12px;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 4px;
-        transition: background-color 0.2s ease, color 0.2s ease;
-      }
-      .sidebar-nav a svg {
-        width: 16px;
-        height: 16px;
-        stroke-width: 2px;
-        color: var(--grey-60);
-        transition: color 0.2s ease;
-      }
-      .sidebar-nav a:hover {
-        background-color: var(--bg-hover);
-        color: var(--text-primary);
-      }
-      .sidebar-nav a:hover svg {
-        color: var(--text-primary);
-      }
-      .sidebar-nav a.active {
-        background-color: transparent;
-        color: var(--primary-100);
-        font-weight: bold;
-      }
-      .sidebar-nav a.active svg {
-        color: var(--primary-100);
-      }
-      .topbar {
-        grid-area: topbar;
-        background-color: var(--bg-topbar);
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 24px;
-      }
-      .topbar-left-controls {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-      .hamburger-menu {
-        display: none;
-        cursor: pointer;
-      }
-      .hamburger-menu svg {
-        width: 24px;
-        height: 24px;
-        color: var(--text-primary);
-      }
-      .topbar-right-controls {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-      }
-      .support-hours-badge {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 4px 10px;
-        border-radius: 16px;
-        background-color: var(--bg-hover);
-        color: var(--text-secondary);
-      }
-      .breadcrumbs {
-        font-size: 14px;
-        color: var(--grey-60);
-      }
-      .dropdown {
-        position: relative;
-        display: inline-block;
-      }
-      .dropdown-toggle {
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-primary);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .dropdown-toggle::after {
-        content: "⋮";
-        font-size: 20px;
-        font-weight: bold;
-        line-height: 1;
-      }
-      .dropdown-content {
-        display: none;
-        position: absolute;
-        right: 0;
-        top: 100%;
-        background-color: var(--bg-card);
-        min-width: 160px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.1);
-        z-index: 1;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 8px 0;
-        margin-top: 8px;
-      }
-      .dropdown-content.is-open {
-        display: block;
-      }
-      .dropdown-content a {
-        color: var(--text-primary);
-        padding: 12px 16px;
-        text-decoration: none;
-        display: block;
-        font-size: 14px;
-      }
-      .dropdown-content a:hover {
-        background-color: var(--bg-hover);
-      }
-      .theme-switch {
-        cursor: pointer;
-        width: 40px;
-        height: 20px;
-        background-color: var(--grey-60);
-        border-radius: 10px;
-        position: relative;
-      }
-      .theme-switch-toggle {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 16px;
-        height: 16px;
-        background-color: white;
-        border-radius: 50%;
-        transition: transform 0.2s ease;
-      }
-      body.dark-mode .theme-switch-toggle {
-        transform: translateX(20px);
-      }
-      .content {
-        grid-area: content;
-        overflow-y: auto;
-        padding: 32px;
-      }
-      .card {
-        background-color: var(--bg-card);
-        border-radius: 1px;
-        padding: 24px;
-        border: 1px solid var(--border-color);
-      }
-      .card-header {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        align-items: flex-start;
-        margin-bottom: 24px;
-      }
-      .card-header h1 {
-        font-size: 24px;
-        font-weight: 300;
-        color: var(--text-primary);
-      }
-      .btn-primary {
-        background-color: var(--primary-100);
-        color: var(--white);
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background-color 0.2s ease;
-      }
-      .btn-primary:hover {
-        background-color: var(--primary-hover);
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      th,
-      td {
-        padding: 12px 16px;
-        text-align: left;
-        border-bottom: 1px solid var(--border-color);
-      }
-      th {
-        font-size: 12px;
-        color: var(--grey-60);
-        text-transform: uppercase;
-      }
-      td a {
-        color: var(--primary-100);
-        text-decoration: none;
-        font-weight: 500;
-      }
-      td a:hover {
-        text-decoration: underline;
-      }
-      .status {
-        padding: 4px 12px;
-        border-radius: 16px;
-        font-size: 12px;
-        font-weight: bold;
-        text-transform: capitalize;
-      }
-      .status-open {
-        background-color: #cfe2ff;
-        color: #084298;
-      }
-      .status-pending {
-        background-color: #fff3cd;
-        color: #664d03;
-      }
-      .status-in_progress {
-        background-color: #ffc107;
-        color: #333;
-      }
-      .status-closed {
-        background-color: #d1e7dd;
-        color: #0f5132;
-      }
-      body.dark-mode .status-open {
-        background-color: #03285a;
-        color: #a6cfff;
-      }
-      body.dark-mode .status-pending {
-        background-color: #533f03;
-        color: #ffda6a;
-      }
-      body.dark-mode .status-in_progress {
-        background-color: #ffc107;
-        color: #111;
-      }
-      body.dark-mode .status-closed {
-        background-color: #0b5345;
-        color: #a3e4d7;
-      }
-      .no-tickets {
-        text-align: center;
-        padding: 40px;
-        color: var(--grey-60);
-      }
-      .mobile-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-      }
-
-      /* === INÍCIO: ESTILOS RESPONSIVOS === */
-      @media (max-width: 992px) {
-        .app-layout {
-          grid-template-columns: 1fr;
-          grid-template-areas: "topbar" "content";
-        }
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          height: 100%;
-          transform: translateX(-100%);
-        }
-        .sidebar.is-mobile-open {
-          transform: translateX(0);
-        }
-        .hamburger-menu {
-          display: block;
-        }
-        .mobile-overlay.is-visible {
-          display: block;
-        }
-        .breadcrumbs {
-          display: none;
-        }
-        .card-header {
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: center;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .content {
-          padding: 16px;
-        }
-        .topbar {
-          padding: 0 16px;
-        }
-        .topbar-right-controls {
-          gap: 16px;
-        }
-        .dropdown-toggle span {
-          display: none;
-        }
-        .support-hours-badge {
-          font-size: 10px;
-          padding: 4px 8px;
-        }
-
-        /* Tabela Responsiva */
-        table {
-          border: 0;
-        }
-        table thead {
-          border: none;
-          clip: rect(0 0 0 0);
-          height: 1px;
-          margin: -1px;
-          overflow: hidden;
-          padding: 0;
-          position: absolute;
-          width: 1px;
-        }
-        table tr {
-          border-bottom: 2px solid var(--border-color);
-          display: block;
-          margin-bottom: 1em;
-        }
-        table td {
-          border-bottom: 1px solid var(--bg-hover);
-          display: block;
-          text-align: right;
-        }
-        table td::before {
-          content: attr(data-label);
-          float: left;
-          font-weight: bold;
-          text-transform: uppercase;
-          font-size: 12px;
-          color: var(--grey-60);
-        }
-        table td:last-child {
-          border-bottom: 0;
-        }
-      }
-      /* === FIM: ESTILOS RESPONSIVOS === */
-    </style>
+    <link rel="stylesheet" href="/public/portal.css" />
   </head>
   <body>
     <div class="app-layout">
-      <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-          <img
-            src="/public/kakau.webp"
-            alt="Logo Kakau Tech"
-            class="logo"
-            id="sidebar-logo"
-          />
-        </div>
-        <nav class="sidebar-nav">
-          <h3 class="sidebar-nav-title">Navegação</h3>
-          <a href="/portal/tickets" class="active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-              ></path>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            </svg>
-            Meus Chamados
-          </a>
-          <a href="/portal/tickets/new">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-              ></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="12" y1="18" x2="12" y2="12"></line>
-              <line x1="9" y1="15" x2="15" y2="15"></line>
-            </svg>
-            Novo Chamado
-          </a>
-        </nav>
-      </aside>
+      <%- include('../partials/portal-sidebar', { active: 'tickets' }) %>
+
       <header class="topbar">
         <div class="topbar-left-controls">
           <div class="hamburger-menu" id="hamburger-menu">
@@ -497,54 +45,133 @@
           </div>
         </div>
       </header>
+
       <main class="content">
         <div class="card">
-          <div class="card-header">
-            <h1>Meus Chamados</h1>
-            <a href="/portal/tickets/new" class="btn-primary"
-              >Abrir Novo Chamado</a
-            >
+          <div class="card-header-container">
+            <div class="main-header">
+              <h1>Meus Chamados</h1>
+              <a href="/portal/tickets/new" class="btn-primary"
+                >Abrir Novo Chamado</a
+              >
+            </div>
+
+            <div class="filters-and-search">
+              <div class="filter-buttons">
+                <a
+                  href="/portal/tickets?search=<%= currentSearch %>"
+                  class="btn-filter <%= currentStatus === '' ? 'active' : '' %>"
+                  >Todos</a
+                >
+                <a
+                  href="/portal/tickets?status=open&search=<%= currentSearch %>"
+                  class="btn-filter <%= currentStatus === 'open' ? 'active' : '' %>"
+                  >Abertos</a
+                >
+                <a
+                  href="/portal/tickets?status=in_progress&search=<%= currentSearch %>"
+                  class="btn-filter <%= currentStatus === 'in_progress' ? 'active' : '' %>"
+                  >Em Andamento</a
+                >
+                <a
+                  href="/portal/tickets?status=closed&search=<%= currentSearch %>"
+                  class="btn-filter <%= currentStatus === 'closed' ? 'active' : '' %>"
+                  >Fechados</a
+                >
+              </div>
+              <form action="/portal/tickets" method="GET" class="search-form">
+                <input
+                  type="hidden"
+                  name="status"
+                  value="<%= currentStatus %>"
+                />
+                <input
+                  type="search"
+                  name="search"
+                  placeholder="Pesquisar por título..."
+                  value="<%= currentSearch %>"
+                  class="search-input"
+                />
+                <button type="submit" class="btn-search" title="Pesquisar">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                </button>
+              </form>
+            </div>
           </div>
           <% if (tickets.length === 0) { %>
-          <p class="no-tickets">Você ainda não abriu nenhum chamado.</p>
+          <p class="no-tickets">
+            Nenhum chamado encontrado com os filtros atuais.
+          </p>
           <% } else { %>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Status</th>
-                <th>Última Atualização</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% tickets.forEach(ticket => { %>
-              <tr>
-                <td data-label="ID">#<%= ticket.id %></td>
-                <td data-label="Título">
-                  <a href="/portal/tickets/<%= ticket.id %>"
-                    ><%= ticket.title %></a
-                  >
-                </td>
-                <td data-label="Status">
-                  <span class="status status-<%= ticket.status %>">
-                    <%= statusTranslations[ticket.status] || ticket.status %>
-                  </span>
-                </td>
-                <td data-label="Última Atualização">
-                  <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR') %>
-                </td>
-              </tr>
-              <% }) %>
-            </tbody>
-          </table>
+          <div style="overflow-x: auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Título</th>
+                  <th>Prioridade</th>
+                  <th>Status</th>
+                  <th>Última Atualização</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% tickets.forEach(ticket => { %>
+                <tr>
+                  <td data-label="ID">#<%= ticket.id %></td>
+                  <td data-label="Título">
+                    <a href="/portal/tickets/<%= ticket.id %>"
+                      ><%= ticket.title %></a
+                    >
+                  </td>
+                  <td data-label="Prioridade">
+                    <%= {low: 'Baixa', medium: 'Média', high:
+                    'Alta'}[ticket.priority] || 'Média' %>
+                  </td>
+                  <td data-label="Status">
+                    <span class="badge status-<%= ticket.status %>">
+                      <%= statusTranslations[ticket.status] || ticket.status %>
+                    </span>
+                  </td>
+                  <td data-label="Última Atualização">
+                    <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric'}) %>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% } %> <% if (totalPages > 1) { %>
+          <div class="pagination">
+            <a
+              href="?page=<%= currentPage - 1 %>&status=<%= currentStatus %>&search=<%= currentSearch %>"
+              class="<%= currentPage <= 1 ? 'disabled' : '' %>"
+              >Anterior</a
+            >
+            <span>Página <%= currentPage %> de <%= totalPages %></span>
+            <a
+              href="?page=<%= currentPage + 1 %>&status=<%= currentStatus %>&search=<%= currentSearch %>"
+              class="<%= currentPage >= totalPages ? 'disabled' : '' %>"
+              >Próximo</a
+            >
+          </div>
           <% } %>
         </div>
       </main>
       <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
     <script>
-      // Lógica do menu, tema, etc. (sem alterações)
+      // Lógica do menu, tema, etc.
       document.addEventListener("DOMContentLoaded", () => {
         const menuToggle = document.getElementById("user-menu-toggle");
         const menuContent = document.getElementById("user-menu-content");
@@ -582,7 +209,6 @@
       const savedTheme = localStorage.getItem("theme") || "light";
       applyTheme(savedTheme);
 
-      // --- NOVO: LÓGICA DO MENU RESPONSIVO ---
       const hamburger = document.getElementById("hamburger-menu");
       const sidebar = document.getElementById("sidebar");
       const overlay = document.getElementById("mobile-overlay");

@@ -6,6 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as yup from "yup";
 import ejs from "ejs";
 import path from "path";
+import { Op } from "sequelize"; // Adicionada para a pesquisa
 
 import Project from "../models/project";
 import Client from "../models/client";
@@ -85,17 +86,43 @@ const loadProjectData = async (req, res, next) => {
 };
 const clientPortalMiddlewares = [requireClientAuth, loadProjectData];
 
+// MODIFICAÇÃO: Redireciona para o novo dashboard
 router.get("/portal", (req, res) => {
   if (
     req.isAuthenticated() &&
     req.user instanceof Client &&
     req.user.status === "active"
   ) {
-    res.redirect("/portal/tickets");
+    res.redirect("/portal/dashboard");
   } else {
     res.redirect("/portal/login");
   }
 });
+
+// NOVA ROTA: Lógica do Dashboard do Cliente
+router.get("/portal/dashboard", clientPortalMiddlewares, async (req, res) => {
+  try {
+    const clientId = req.user.id;
+    const openTickets = await Ticket.count({
+      where: { clientId, status: ["open", "pending", "in_progress"] },
+    });
+    const closedTickets = await Ticket.count({
+      where: { clientId, status: "closed" },
+    });
+
+    res.render("portal/dashboard", {
+      user: req.user,
+      stats: {
+        openTickets,
+        closedTickets,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao carregar o dashboard do cliente:", error);
+    res.status(500).render("errors/500");
+  }
+});
+
 router.get("/portal/login", (req, res) => {
   const messages = req.session.messages || [];
   req.session.messages = [];
@@ -105,7 +132,7 @@ router.get("/portal/login", (req, res) => {
 router.post(
   "/portal/login",
   passport.authenticate("local-client", {
-    successRedirect: "/portal/tickets",
+    successRedirect: "/portal/dashboard", // MODIFICAÇÃO: Redireciona para o dashboard após login
     failureRedirect: "/portal/login",
     failureMessage: true,
   })
@@ -129,13 +156,11 @@ router.post("/portal/register", async (req, res) => {
     );
     const existingClient = await Client.findOne({ where: { email } });
     if (existingClient) {
-      return res
-        .status(400)
-        .render("client/client-register", {
-          error: "Este e-mail já está cadastrado...",
-          projects,
-          message: null,
-        });
+      return res.status(400).render("client/client-register", {
+        error: "Este e-mail já está cadastrado...",
+        projects,
+        message: null,
+      });
     }
 
     const newClient = await Client.create({
@@ -174,22 +199,18 @@ router.post("/portal/register", async (req, res) => {
     return res.render("portal/pending-approval");
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      return res
-        .status(400)
-        .render("client/client-register", {
-          error: error.errors.join(". "),
-          projects,
-          message: null,
-        });
-    }
-    console.error("Erro no cadastro do cliente:", error);
-    return res
-      .status(500)
-      .render("client/client-register", {
-        error: "Ocorreu um erro inesperado.",
+      return res.status(400).render("client/client-register", {
+        error: error.errors.join(". "),
         projects,
         message: null,
       });
+    }
+    console.error("Erro no cadastro do cliente:", error);
+    return res.status(500).render("client/client-register", {
+      error: "Ocorreu um erro inesperado.",
+      projects,
+      message: null,
+    });
   }
 });
 
@@ -205,7 +226,7 @@ const socialAuthCallback = (req, res, next) => {
     if (err) {
       return next(err);
     }
-    return res.redirect("/portal/tickets");
+    return res.redirect("/portal/dashboard"); // MODIFICAÇÃO: Redireciona para o dashboard
   });
 };
 router.get(
@@ -293,22 +314,47 @@ router.get(
     }
   }
 );
+
+// MODIFICAÇÃO: Lógica de filtros, pesquisa e paginação
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {
-    const tickets = await Ticket.findAll({
-      where: { clientId: req.user.id },
+    const { status, search } = req.query;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    const where = { clientId: req.user.id };
+    if (status) {
+      where.status = status;
+    }
+    if (search) {
+      where.title = { [Op.iLike]: `%${search}%` };
+    }
+
+    const { count, rows: tickets } = await Ticket.findAndCountAll({
+      where,
+      limit,
+      offset,
       order: [["updatedAt", "DESC"]],
     });
+
+    const totalPages = Math.ceil(count / limit);
+
     res.render("portal/list-tickets", {
       user: req.user,
       tickets,
       statusTranslations,
+      totalPages,
+      currentPage: page,
+      currentStatus: status || "",
+      currentSearch: search || "",
     });
   } catch (error) {
     console.error("Erro ao buscar chamados:", error);
     res.status(500).render("errors/500");
   }
 });
+
 router.get("/portal/tickets/new", clientPortalMiddlewares, (req, res) => {
   res.render("portal/new-ticket", {
     message: null,
@@ -369,7 +415,7 @@ router.post(
 
       const ticket = await Ticket.findOne({
         where: { id: ticketId, clientId: req.user.id },
-        include: User, // Incluímos o User (responsável)
+        include: User,
       });
 
       if (!ticket) {
@@ -394,7 +440,6 @@ router.post(
 
       const newComment = await Comment.create(commentData);
 
-      // --- INÍCIO: LÓGICA DE NOTIFICAÇÃO PARA O ADMIN ---
       try {
         const client = req.user;
         const recipients = new Set([process.env.ADMIN_EMAIL]);
@@ -416,7 +461,7 @@ router.post(
         );
 
         await MailService.sendMail(
-          Array.from(recipients), // Envia para a lista de destinatários únicos
+          Array.from(recipients),
           `Nova Resposta do ${client.name} no Chamado ${ticket.title}`,
           emailHtml
         );
@@ -426,7 +471,6 @@ router.post(
           mailError
         );
       }
-      // --- FIM: LÓGICA DE NOTIFICAÇÃO ---
 
       res.redirect(`/portal/tickets/${ticketId}`);
     } catch (error) {
@@ -436,14 +480,12 @@ router.post(
         order: [[Comment, "createdAt", "ASC"]],
       });
       if (error instanceof yup.ValidationError) {
-        return res
-          .status(400)
-          .render(`portal/ticket-detail`, {
-            user: req.user,
-            ticket,
-            error: error.message,
-            statusTranslations,
-          });
+        return res.status(400).render(`portal/ticket-detail`, {
+          user: req.user,
+          ticket,
+          error: error.message,
+          statusTranslations,
+        });
       }
       console.error("Erro ao adicionar comentário:", error);
       res.status(500).render("errors/500");
@@ -451,13 +493,14 @@ router.post(
   }
 );
 
+// MODIFICAÇÃO: Salva a prioridade ao criar o chamado
 router.post(
   "/portal/tickets",
   clientPortalMiddlewares,
   multer(multerConfig).single("attachment"),
   async (req, res) => {
     try {
-      const { title, description } = req.body;
+      const { title, description, priority } = req.body; // Captura a prioridade
       const client = req.user;
       const project = await Project.findByPk(client.projectId);
       if (project && project.support_hours_limit !== null) {
@@ -467,19 +510,18 @@ router.post(
           })) || 0;
         const limitInSeconds = project.support_hours_limit * 3600;
         if (totalSpentSeconds >= limitInSeconds) {
-          return res
-            .status(403)
-            .render("portal/new-ticket", {
-              message: null,
-              error: `O limite de horas de suporte para este projeto foi atingido. Por favor, entre em contato com a Kakau Tech.`,
-              user: client,
-            });
+          return res.status(403).render("portal/new-ticket", {
+            message: null,
+            error: `O limite de horas de suporte para este projeto foi atingido. Por favor, entre em contato com a Kakau Tech.`,
+            user: client,
+          });
         }
       }
       await ticketSchema.validate({ title, description });
       const ticketData = {
         title,
         description,
+        priority, // Adiciona a prioridade aos dados
         clientId: client.id,
         projectId: client.projectId,
         status: "open",
@@ -547,22 +589,18 @@ router.post(
       res.redirect("/portal/tickets");
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        return res
-          .status(400)
-          .render("portal/new-ticket", {
-            message: null,
-            error: error.message,
-            user: req.user,
-          });
-      }
-      console.error("Erro ao criar chamado:", error);
-      res
-        .status(500)
-        .render("portal/new-ticket", {
+        return res.status(400).render("portal/new-ticket", {
           message: null,
-          error: `Erro: ${error.message}`,
+          error: error.message,
           user: req.user,
         });
+      }
+      console.error("Erro ao criar chamado:", error);
+      res.status(500).render("portal/new-ticket", {
+        message: null,
+        error: `Erro: ${error.message}`,
+        user: req.user,
+      });
     }
   }
 );

@@ -1,5 +1,3 @@
-// src/components/Dashboard/cards/TicketType.jsx
-
 import React, { useState, useEffect } from "react";
 import { ApiClient } from "adminjs";
 import { Text, H5 } from "@adminjs/design-system";
@@ -9,11 +7,9 @@ import { Card } from "../styles";
 
 const api = new ApiClient();
 
-// Função para preparar os dados para o gráfico de chamados
 const makeChartData = (records) => {
   if (!records || records.length === 0) return [];
 
-  // Estes são os status dos seus chamados (tickets)
   const status = {
     open: "Aberto",
     pending: "Pendente",
@@ -24,7 +20,10 @@ const makeChartData = (records) => {
   const values = _.groupBy(records, (record) => record.params.status);
   const data = _.map(status, (value, key) => [value, values[key]?.length || 0]);
 
-  return [["Status do Chamado", "Quantidade"], ...data];
+  // Filtra os status que não têm nenhum chamado para não poluir o gráfico
+  const filteredData = data.filter(item => item[1] > 0);
+
+  return [["Status do Chamado", "Quantidade"], ...filteredData];
 };
 
 const TicketType = () => {
@@ -34,11 +33,15 @@ const TicketType = () => {
 
   useEffect(() => {
     (async () => {
-      // Buscamos os dados do recurso 'tickets'
+      // ===== INÍCIO DA CORREÇÃO =====
       const response = await api.resourceAction({
         resourceId: "tickets",
         actionName: "list",
+        params: {
+          perPage: 1000, // Busca até 1000 chamados para garantir que todos são contados
+        },
       });
+      // ===== FIM DA CORREÇÃO =====
 
       setChartData(makeChartData(response.data.records));
       setIsEmpty(response.data.records.length === 0);
@@ -51,7 +54,6 @@ const TicketType = () => {
   }
 
   return (
-    // O card agora aponta para a página de listagem de chamados
     <Card as="a" href="/admin/resources/tickets">
       <Text textAlign="center">
         <H5 mt="lg">Chamados de Clientes</H5>
