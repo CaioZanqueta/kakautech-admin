@@ -86,6 +86,8 @@ export default {
       project_id: {
         isVisible: false,
       },
+      // Adicionado para garantir que não apareça na UI
+      shortName: { isVisible: false },
     },
   },
 };

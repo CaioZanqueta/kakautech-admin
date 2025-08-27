@@ -13,6 +13,17 @@ const s3 = new S3Client({
   },
 });
 
+// ===== FUNÇÃO AUXILIAR PARA ABREVIAR NOMES =====
+const getShortName = (fullName) => {
+  if (!fullName) return '';
+  const names = fullName.split(' ').filter(Boolean);
+  if (names.length > 1) {
+    return `${names[0]} ${names[names.length - 1]}`;
+  }
+  return fullName;
+};
+// ===============================================
+
 export default {
   resource: Task,
   options: {
@@ -20,6 +31,19 @@ export default {
       icon: "Task",
     },
     actions: {
+      // ===== MODIFICAÇÃO: Hook para abreviar nomes na listagem =====
+      list: {
+        after: async (response) => {
+          response.records.forEach((record) => {
+            if (record.populated.userId) {
+              const fullName = record.populated.userId.title;
+              record.populated.userId.title = getShortName(fullName);
+            }
+          });
+          return response;
+        },
+      },
+      // =============================================================
       show: {
         after: async (response) => {
           const record = response.record;
@@ -90,19 +114,13 @@ export default {
         position: 10,
         isVisible: { list: false, filter: true, show: true, edit: false },
       },
-
-      // === INÍCIO DA CORREÇÃO ===
       attachment: {
         position: 11,
-        // 1. Esconde o anexo da vista de lista
         isVisible: { list: false, show: true, edit: true },
-        // 2. Garante que o nosso componente customizado é usado na vista de detalhes
         components: {
           show: AdminJS.bundle("../components/AttachmentComponent.jsx"),
         },
       },
-      // === FIM DA CORREÇÃO ===
-
       user_id: { isVisible: false },
       project_id: { isVisible: false },
       path: {

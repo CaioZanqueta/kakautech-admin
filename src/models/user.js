@@ -11,11 +11,25 @@ class User extends Model {
             const match = this.name.split(" ");
             if (match.length > 1) {
               return `${match[0][0]}${match[match.length - 1][0]}`;
-            } else {
+            } else if (match.length === 1 && match[0] !== '') {
               return match[0][0];
             }
+            return '';
           },
         },
+        // ===== CAMPO VIRTUAL ADICIONADO =====
+        shortName: {
+          type: Sequelize.VIRTUAL,
+          get() {
+            const fullName = this.name || '';
+            const names = fullName.split(' ').filter(Boolean); // filter(Boolean) remove espaços extra
+            if (names.length > 1) {
+              return `${names[0]} ${names[names.length - 1]}`;
+            }
+            return fullName;
+          },
+        },
+        // ===================================
         name: Sequelize.STRING,
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,

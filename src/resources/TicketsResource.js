@@ -25,18 +25,45 @@ const statusTranslations = {
   closed: "Fechado",
 };
 
+// ===== FUNÇÃO AUXILIAR PARA ABREVIAR NOMES =====
+const getShortName = (fullName) => {
+  if (!fullName) return '';
+  const names = fullName.split(' ').filter(Boolean);
+  if (names.length > 1) {
+    return `${names[0]} ${names[names.length - 1]}`;
+  }
+  return fullName;
+};
+// ===============================================
+
 export default {
   resource: Ticket,
   options: {
     parent: {
       icon: "Ticket",
     },
-    // ===== MODIFICAÇÃO 1: ORDENAR PELOS MAIS RECENTES =====
     sort: {
       direction: "desc",
       sortBy: "createdAt",
     },
     actions: {
+      // ===== MODIFICAÇÃO: Hook para abreviar nomes na listagem =====
+      list: {
+        after: async (response) => {
+          response.records.forEach((record) => {
+            if (record.populated.clientId) {
+              const fullName = record.populated.clientId.title;
+              record.populated.clientId.title = getShortName(fullName);
+            }
+            if (record.populated.userId) {
+              const fullName = record.populated.userId.title;
+              record.populated.userId.title = getShortName(fullName);
+            }
+          });
+          return response;
+        },
+      },
+      // =============================================================
       show: {
         component: AdminJS.bundle("../components/TicketShow.jsx"),
         after: async (response) => {
@@ -111,12 +138,10 @@ export default {
       },
     },
     properties: {
-      // ===== MODIFICAÇÃO 2: ESCONDER O ID DA LISTA =====
       id: {
         isVisible: { list: false, filter: true, show: true, edit: false },
       },
       title: { position: 2, isRequired: true, isTitle: true },
-      // ===== MODIFICAÇÃO 3: ESCONDER DESCRIÇÃO DA LISTA (EVITA QUEBRA DE TEXTO) =====
       description: {
         position: 3,
         type: "textarea",
@@ -144,8 +169,6 @@ export default {
       clientId: { position: 6, label: "Cliente" },
       projectId: { position: 7, label: "Projeto" },
       userId: { position: 8, label: "Responsável" },
-
-      // Campos que não precisam de ser visíveis
       attachment: { isVisible: false },
       time_spent_seconds: { isVisible: false },
       in_progress_started_at: { isVisible: false },

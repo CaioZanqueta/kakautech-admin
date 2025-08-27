@@ -27,17 +27,3 @@ li:has(a[href="/admin/resources/comments"]) {
 .adminjs_Table td {
   white-space: nowrap;
 }
-
-/* ======================================================= */
-/* ===  AJUSTE: Diminuir a Largura do Menu Lateral do AdminJS === */
-/* ======================================================= */
-
-/* AJUSTE: Diminuir a Largura do Menu Lateral do AdminJS */
-.adminjs_Sidebar {
-    width: 220px !important;
-}
-
-.adminjs_Main {
-    width: calc(100% - 220px) !important;
-    margin-left: 220px !important;
-}

@@ -70,6 +70,8 @@ export default {
       password_hash: {
         isVisible: false,
       },
+      // Adicionado para garantir que não apareça na UI
+      shortName: { isVisible: false },
     },
   },
 };

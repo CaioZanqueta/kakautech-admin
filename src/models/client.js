@@ -5,6 +5,19 @@ class Client extends Model {
   static init(sequelize) {
     super.init(
       {
+        // ===== CAMPO VIRTUAL ADICIONADO =====
+        shortName: {
+          type: Sequelize.VIRTUAL,
+          get() {
+            const fullName = this.name || '';
+            const names = fullName.split(' ').filter(Boolean);
+            if (names.length > 1) {
+              return `${names[0]} ${names[names.length - 1]}`;
+            }
+            return fullName;
+          },
+        },
+        // ===================================
         name: Sequelize.STRING,
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
@@ -42,7 +55,7 @@ class Client extends Model {
   }
 
   static associate(models) {
-    this.hasMany(models.Ticket, { foreignKey: "clientId" });
+    this.hasMany(models.Ticket, { foreignKey: "clientId", as: 'Tickets' });
     this.belongsTo(models.Project, { foreignKey: "projectId" });
     this.hasMany(models.Comment, { foreignKey: "client_id" });
   }

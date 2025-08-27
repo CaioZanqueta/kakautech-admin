@@ -51,6 +51,7 @@ const adminJS = new AdminJS({
   },
   assets: {
     styles: ['/public/custom.css'],
+    // scripts: ['/public/custom.js'],
   },
   ...locale,
 });
