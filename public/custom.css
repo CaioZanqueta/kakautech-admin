@@ -13,3 +13,31 @@
 li:has(a[href="/admin/resources/comments"]) {
   display: none !important;
 }
+
+/* ===================================================== */
+/* === REGRAS PARA TABELA COMPACTA E SEM QUEBRA DE LINHA === */
+/* ===================================================== */
+
+/* Deixa a tabela mais compacta */
+.adminjs_Table td, .adminjs_Table th {
+  padding: 12px 10px;
+}
+
+/* Impede a quebra de texto nas células da tabela */
+.adminjs_Table td {
+  white-space: nowrap;
+}
+
+/* ======================================================= */
+/* ===  AJUSTE: Diminuir a Largura do Menu Lateral do AdminJS === */
+/* ======================================================= */
+
+/* AJUSTE: Diminuir a Largura do Menu Lateral do AdminJS */
+.adminjs_Sidebar {
+    width: 220px !important;
+}
+
+.adminjs_Main {
+    width: calc(100% - 220px) !important;
+    margin-left: 220px !important;
+}

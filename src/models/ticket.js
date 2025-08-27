@@ -64,7 +64,7 @@ class Ticket extends Model {
   }
 
   static associate(models) {
-    this.belongsTo(models.Client, { foreignKey: "clientId" });
+    this.belongsTo(models.Client, { foreignKey: "clientId", as: 'Client' });
     this.belongsTo(models.User, { foreignKey: "userId" });
     this.belongsTo(models.Project, { foreignKey: "projectId" });
     this.hasMany(models.Comment, { foreignKey: "ticket_id" });

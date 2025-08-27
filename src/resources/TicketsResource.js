@@ -31,6 +31,11 @@ export default {
     parent: {
       icon: "Ticket",
     },
+    // ===== MODIFICAÇÃO 1: ORDENAR PELOS MAIS RECENTES =====
+    sort: {
+      direction: "desc",
+      sortBy: "createdAt",
+    },
     actions: {
       show: {
         component: AdminJS.bundle("../components/TicketShow.jsx"),
@@ -63,8 +68,6 @@ export default {
           const newStatus = record.get("status");
 
           if (originalTicket && newStatus !== originalTicket.status) {
-            // Se a mudança for de 'open' para 'pending', não fazemos nada aqui,
-            // pois o botão "Atribuir a Mim" já trata disso.
             if (originalTicket.status === "open" && newStatus === "pending") {
               return response;
             }
@@ -108,9 +111,17 @@ export default {
       },
     },
     properties: {
-      id: { position: 1 },
+      // ===== MODIFICAÇÃO 2: ESCONDER O ID DA LISTA =====
+      id: {
+        isVisible: { list: false, filter: true, show: true, edit: false },
+      },
       title: { position: 2, isRequired: true, isTitle: true },
-      description: { position: 3, type: "textarea" },
+      // ===== MODIFICAÇÃO 3: ESCONDER DESCRIÇÃO DA LISTA (EVITA QUEBRA DE TEXTO) =====
+      description: {
+        position: 3,
+        type: "textarea",
+        isVisible: { list: false, filter: false, show: true, edit: true },
+      },
       status: {
         position: 4,
         isRequired: true,
@@ -121,40 +132,33 @@ export default {
           { value: "closed", label: "Fechado" },
         ],
       },
-      clientId: { position: 5, label: "Cliente" },
-      projectId: { position: 6, label: "Projeto" },
-      userId: { position: 7, label: "Responsável" },
       priority: {
-        position: 8,
+        position: 5,
+        isRequired: true,
         availableValues: [
-          { value: "low", label: "Baixo" },
-          { value: "medium", label: "Médio" },
-          { value: "high", label: "Alto" },
+          { value: "low", label: "Baixa" },
+          { value: "medium", label: "Média" },
+          { value: "high", label: "Alta" },
         ],
       },
+      clientId: { position: 6, label: "Cliente" },
+      projectId: { position: 7, label: "Projeto" },
+      userId: { position: 8, label: "Responsável" },
+
+      // Campos que não precisam de ser visíveis
       attachment: { isVisible: false },
       time_spent_seconds: { isVisible: false },
       in_progress_started_at: { isVisible: false },
-      createdAt: { isVisible: { list: true, show: false, edit: false } },
+      createdAt: { isVisible: { list: true, show: true, edit: false } },
       updatedAt: { isVisible: { list: false, show: false, edit: false } },
       client_id: { isVisible: false },
       user_id: { isVisible: false },
       project_id: { isVisible: false },
-      path: {
-        isVisible: { list: false, edit: false, filter: false, show: true },
-      },
-      folder: {
-        isVisible: { list: false, edit: false, filter: false, show: true },
-      },
-      type: {
-        isVisible: { list: false, edit: false, filter: false, show: true },
-      },
-      filename: {
-        isVisible: { list: false, edit: false, filter: false, show: true },
-      },
-      size: {
-        isVisible: { list: false, edit: false, filter: false, show: true },
-      },
+      path: { isVisible: false },
+      folder: { isVisible: false },
+      type: { isVisible: false },
+      filename: { isVisible: false },
+      size: { isVisible: false },
     },
   },
   features: [

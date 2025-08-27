@@ -117,8 +117,8 @@
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Título</th>
+                  <th>Criado Por</th>
                   <th>Prioridade</th>
                   <th>Status</th>
                   <th>Última Atualização</th>
@@ -127,11 +127,13 @@
               <tbody>
                 <% tickets.forEach(ticket => { %>
                 <tr>
-                  <td data-label="ID">#<%= ticket.id %></td>
                   <td data-label="Título">
                     <a href="/portal/tickets/<%= ticket.id %>"
                       ><%= ticket.title %></a
                     >
+                  </td>
+                  <td data-label="Criado Por">
+                    <%= ticket.Client ? ticket.Client.name : 'N/D' %>
                   </td>
                   <td data-label="Prioridade">
                     <%= {low: 'Baixa', medium: 'Média', high:

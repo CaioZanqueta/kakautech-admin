@@ -61,6 +61,14 @@
               <h1><%= ticket.title %></h1>
               <div class="subtitle">
                 <span>Chamado #<%= ticket.id %></span>
+
+                <% if (ticket.Client) { %>
+                <span style="margin: 0 8px">•</span>
+                <span
+                  >Criado por: <strong><%= ticket.Client.name %></strong></span
+                >
+                <% } %>
+
                 <span style="margin: 0 8px">•</span>
                 <span>
                   Prioridade:

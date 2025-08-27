@@ -6,7 +6,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as yup from "yup";
 import ejs from "ejs";
 import path from "path";
-import { Op } from "sequelize"; // Adicionada para a pesquisa
+import { Op } from "sequelize";
 
 import Project from "../models/project";
 import Client from "../models/client";
@@ -86,7 +86,6 @@ const loadProjectData = async (req, res, next) => {
 };
 const clientPortalMiddlewares = [requireClientAuth, loadProjectData];
 
-// MODIFICAÇÃO: Redireciona para o novo dashboard
 router.get("/portal", (req, res) => {
   if (
     req.isAuthenticated() &&
@@ -99,15 +98,14 @@ router.get("/portal", (req, res) => {
   }
 });
 
-// NOVA ROTA: Lógica do Dashboard do Cliente
 router.get("/portal/dashboard", clientPortalMiddlewares, async (req, res) => {
   try {
-    const clientId = req.user.id;
+    const projectId = req.user.projectId;
     const openTickets = await Ticket.count({
-      where: { clientId, status: ["open", "pending", "in_progress"] },
+      where: { projectId, status: ["open", "pending", "in_progress"] },
     });
     const closedTickets = await Ticket.count({
-      where: { clientId, status: "closed" },
+      where: { projectId, status: "closed" },
     });
 
     res.render("portal/dashboard", {
@@ -132,7 +130,7 @@ router.get("/portal/login", (req, res) => {
 router.post(
   "/portal/login",
   passport.authenticate("local-client", {
-    successRedirect: "/portal/dashboard", // MODIFICAÇÃO: Redireciona para o dashboard após login
+    successRedirect: "/portal/dashboard",
     failureRedirect: "/portal/login",
     failureMessage: true,
   })
@@ -226,7 +224,7 @@ const socialAuthCallback = (req, res, next) => {
     if (err) {
       return next(err);
     }
-    return res.redirect("/portal/dashboard"); // MODIFICAÇÃO: Redireciona para o dashboard
+    return res.redirect("/portal/dashboard");
   });
 };
 router.get(
@@ -263,6 +261,7 @@ router.get("/portal/logout", (req, res, next) => {
     });
   });
 });
+
 router.get(
   "/portal/download/ticket/:recordId",
   clientPortalMiddlewares,
@@ -273,7 +272,7 @@ router.get(
       if (!ticket || !ticket.path) {
         return res.status(404).send("Anexo não encontrado.");
       }
-      if (ticket.clientId !== req.user.id) {
+      if (ticket.projectId !== req.user.projectId) {
         return res.status(403).send("Acesso negado.");
       }
       const command = new GetObjectCommand({
@@ -288,6 +287,7 @@ router.get(
     }
   }
 );
+
 router.get(
   "/portal/download/comment/:commentId",
   requireClientAuth,
@@ -299,7 +299,7 @@ router.get(
         return res.status(404).send("Anexo não encontrado.");
       }
       const ticket = await Ticket.findByPk(comment.ticket_id);
-      if (!ticket || ticket.clientId !== req.user.id) {
+      if (!ticket || ticket.projectId !== req.user.projectId) {
         return res.status(403).send("Acesso negado.");
       }
       const command = new GetObjectCommand({
@@ -315,7 +315,6 @@ router.get(
   }
 );
 
-// MODIFICAÇÃO: Lógica de filtros, pesquisa e paginação
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {
     const { status, search } = req.query;
@@ -323,7 +322,7 @@ router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
     const limit = 10;
     const offset = (page - 1) * limit;
 
-    const where = { clientId: req.user.id };
+    const where = { projectId: req.user.projectId };
     if (status) {
       where.status = status;
     }
@@ -336,6 +335,13 @@ router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
       limit,
       offset,
       order: [["updatedAt", "DESC"]],
+      include: [
+        {
+          model: Client,
+          as: 'Client', // MODIFICAÇÃO: Usa o alias
+          attributes: ['name'],
+        },
+      ],
     });
 
     const totalPages = Math.ceil(count / limit);
@@ -362,11 +368,17 @@ router.get("/portal/tickets/new", clientPortalMiddlewares, (req, res) => {
     user: req.user,
   });
 });
+
 router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
   try {
     const ticket = await Ticket.findOne({
-      where: { id: req.params.id, clientId: req.user.id },
+      where: { id: req.params.id, projectId: req.user.projectId },
       include: [
+        {
+          model: Client,
+          as: 'Client', // MODIFICAÇÃO: Usa o alias
+          attributes: ['name'],
+        },
         {
           model: Comment,
           include: [
@@ -414,7 +426,7 @@ router.post(
       await commentSchema.validate({ content });
 
       const ticket = await Ticket.findOne({
-        where: { id: ticketId, clientId: req.user.id },
+        where: { id: ticketId, projectId: req.user.projectId },
         include: User,
       });
 
@@ -475,7 +487,7 @@ router.post(
       res.redirect(`/portal/tickets/${ticketId}`);
     } catch (error) {
       const ticket = await Ticket.findOne({
-        where: { id: ticketId, clientId: req.user.id },
+        where: { id: ticketId, projectId: req.user.projectId },
         include: [{ model: Comment, include: [User, Client] }],
         order: [[Comment, "createdAt", "ASC"]],
       });
@@ -493,14 +505,13 @@ router.post(
   }
 );
 
-// MODIFICAÇÃO: Salva a prioridade ao criar o chamado
 router.post(
   "/portal/tickets",
   clientPortalMiddlewares,
   multer(multerConfig).single("attachment"),
   async (req, res) => {
     try {
-      const { title, description, priority } = req.body; // Captura a prioridade
+      const { title, description, priority } = req.body;
       const client = req.user;
       const project = await Project.findByPk(client.projectId);
       if (project && project.support_hours_limit !== null) {
@@ -521,7 +532,7 @@ router.post(
       const ticketData = {
         title,
         description,
-        priority, // Adiciona a prioridade aos dados
+        priority,
         clientId: client.id,
         projectId: client.projectId,
         status: "open",
