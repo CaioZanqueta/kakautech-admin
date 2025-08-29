@@ -13,6 +13,7 @@ import Client from "../models/client";
 import Ticket from "../models/ticket";
 import Comment from "../models/comment";
 import User from "../models/user";
+import TimeLog from "../models/timelog"; // Importa o novo modelo
 import multerConfig from "../config/multer";
 import credentials from "../config/credentials";
 import MailService from "../services/mail";
@@ -66,15 +67,39 @@ const requireClientAuth = (req, res, next) => {
   }
   return res.redirect("/portal/login");
 };
+
 const loadProjectData = async (req, res, next) => {
   if (req.user && req.user.projectId) {
     const project = await Project.findByPk(req.user.projectId);
     if (project && project.support_hours_limit !== null) {
       res.locals.supportHoursLimit = project.support_hours_limit;
+
+      // ===== MODIFICAÇÃO PARA CÁLCULO MENSAL PRECISO =====
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Nova consulta: Soma os 'seconds_spent' da tabela 'time_logs'
+      // para os registos criados neste mês e que pertencem a chamados deste projeto.
       const totalSpentSeconds =
-        (await Ticket.sum("time_spent_seconds", {
-          where: { projectId: project.id },
+        (await TimeLog.sum("seconds_spent", {
+          where: {
+            createdAt: {
+              [Op.gte]: startOfMonth,
+            },
+          },
+          include: [
+            {
+              model: Ticket,
+              attributes: [], // Não precisamos de dados do Ticket, apenas da ligação
+              where: {
+                projectId: project.id,
+              },
+              required: true, // Garante que a junção (INNER JOIN) seja feita
+            },
+          ],
         })) || 0;
+      // ===== FIM DA MODIFICAÇÃO =====
+
       const usedHours = (totalSpentSeconds / 3600).toFixed(2);
       res.locals.usedSupportHours = usedHours;
     } else {
@@ -338,8 +363,8 @@ router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
       include: [
         {
           model: Client,
-          as: 'Client', // MODIFICAÇÃO: Usa o alias
-          attributes: ['name'],
+          as: "Client",
+          attributes: ["name"],
         },
       ],
     });
@@ -376,8 +401,8 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
       include: [
         {
           model: Client,
-          as: 'Client', // MODIFICAÇÃO: Usa o alias
-          attributes: ['name'],
+          as: "Client",
+          attributes: ["name"],
         },
         {
           model: Comment,

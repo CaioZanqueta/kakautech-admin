@@ -1,5 +1,4 @@
-// src/resources/ProjectsResource.js
-
+import AdminJS from "adminjs"; // 1. IMPORTAMOS O ADMINJS
 import Project from "../models/project";
 import { hasManagerPermission } from "../services/auth";
 
@@ -19,6 +18,21 @@ export default {
       delete: {
         isAccessible: ({ currentAdmin }) => hasManagerPermission(currentAdmin),
       },
+      // ===== 2. ADICIONAMOS A NOVA AÇÃO DE RELATÓRIOS =====
+      reports: {
+        actionType: "record", // É uma ação para um registo específico (um projeto)
+        icon: "ReportAnalytics",
+        label: "Relatórios",
+        handler: async (request, response, context) => {
+          // A lógica para buscar os dados virá aqui no futuro
+          return {
+            record: context.record.toJSON(context.currentAdmin),
+          };
+        },
+        // Usamos o nosso novo componente React para renderizar a página
+        component: AdminJS.bundle("../components/ProjectReports.jsx"),
+      },
+      // =======================================================
     },
     properties: {
       id: {
@@ -32,9 +46,9 @@ export default {
         position: 3,
         type: "textarea",
       },
-      support_hours_limit: { // ADICIONADO AQUI
+      support_hours_limit: {
         position: 4,
-        label: 'Limite de Horas de Suporte',
+        label: "Limite de Horas de Suporte",
       },
       userId: {
         position: 5,

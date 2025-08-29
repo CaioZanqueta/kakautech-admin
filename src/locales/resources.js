@@ -23,6 +23,9 @@ export default {
     },
   },
   projects: {
+    actions: {
+      reports: 'Relatórios',
+    },
     properties: {
       id: "ID",
       name: "Nome",
