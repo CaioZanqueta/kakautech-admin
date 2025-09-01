@@ -1,328 +1,187 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Relatórios - <%= project.name %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      :root {
-        --primary-100: #1187bd;
-        --grey-100: #0c0d0f;
-        --grey-80: #1d1e21;
-        --grey-60: #64666b;
-        --grey-20: #e9ecef;
-        --white: #fff;
-        --bg-color: #f8f9fa;
-        --border-color: #dee2e6;
-      }
-      body {
-        background-color: var(--bg-color);
-        font-family: "Roboto", sans-serif;
-        margin: 0;
-        color: var(--grey-80);
-      }
-      .container {
-        padding: 24px 40px;
-        max-width: 1200px;
-        margin: auto;
-      }
-      .card {
-        background-color: var(--white);
-        padding: 24px;
-        border-radius: 4px;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
-          0 1px 2px -1px rgba(0, 0, 0, 0.1);
-        border: 1px solid var(--border-color);
-      }
-      .header h2 {
-        font-size: 24px;
-        font-weight: 300;
-        margin: 0;
-      }
-      .header p {
-        margin-top: 8px;
-        color: var(--grey-60);
-      }
-      hr {
-        margin: 24px 0;
-        border: 0;
-        border-top: 1px solid var(--border-color);
-      }
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 24px;
-        align-items: flex-end;
-      }
-      .form-group {
-        display: flex;
-        flex-direction: column;
-      }
-      .form-group label {
-        font-size: 12px;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: var(--grey-60);
-      }
-      select,
-      button {
-        height: 36px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        padding: 0 12px;
-        font-size: 14px;
-        background-color: var(--white);
-        min-width: 200px;
-      }
-      button {
-        font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.2s ease, border-color 0.2s ease;
-      }
-      button.primary {
-        background-color: var(--primary-100);
-        border-color: var(--primary-100);
-        color: var(--white);
-      }
-      button.primary:hover {
-        opacity: 0.9;
-      }
-      button.secondary {
-        background-color: var(--white);
-        color: var(--grey-80);
-        border-color: #ccc;
-      }
-      button.secondary:hover {
-        border-color: var(--grey-80);
-      }
-      #results table {
-        width: 100%;
-        margin-top: 24px;
-        border-collapse: collapse;
-        border: 1px solid var(--border-color);
-      }
-      #results th,
-      #results td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid var(--border-color);
-      }
-      #results th {
-        background-color: #f8f9fa;
-        font-size: 12px;
-        text-transform: uppercase;
-      }
-      @media (max-width: 768px) {
-        .container {
-          padding: 16px;
-        }
-        .filters {
-          flex-direction: column;
-          align-items: stretch;
-        }
-        .form-group select,
-        .form-group button {
-          width: 100%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="card">
-        <div class="header">
-          <h2>Relatórios do Projeto: <%= project.name %></h2>
-          <p>Selecione os filtros abaixo para gerar o seu relatório.</p>
+<head>
+  <title>Relatórios - <%= project.name %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-100: #1187BD; --grey-100: #0C0D0F; --grey-80: #1D1E21;
+      --grey-60: #64666B; --grey-20: #E9ECEF; --white: #fff;
+      --bg-color: #f8f9fa; --border-color: #dee2e6;
+    }
+    body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; margin: 0; color: var(--grey-80); }
+    .container { padding: 24px 40px; max-width: 1200px; margin: auto; }
+    .card { background-color: var(--white); padding: 24px; border-radius: 4px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--border-color); }
+    .header h2 { font-size: 24px; font-weight: 300; margin: 0; }
+    .header p { margin-top: 8px; color: var(--grey-60); }
+    hr { margin: 24px 0; border: 0; border-top: 1px solid var(--border-color); }
+    .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 12px; margin-bottom: 8px; font-weight: 500; color: var(--grey-60); }
+    select, button {
+      height: 38px; border: 1px solid #ccc; border-radius: 4px; padding: 0 12px;
+      font-size: 14px; background-color: var(--white); min-width: 180px;
+    }
+    button { font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+    button.primary { background-color: var(--primary-100); border-color: var(--primary-100); color: var(--white); }
+    button.primary:hover { opacity: 0.9; }
+    button.secondary { background-color: var(--white); color: var(--grey-80); border-color: #ccc; }
+    button.secondary:hover { border-color: var(--grey-80); }
+    #results table { width: 100%; margin-top: 24px; border-collapse: collapse; border: 1px solid var(--border-color); }
+    #results th, #results td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+    #results th { background-color: #f8f9fa; font-size: 12px; text-transform: uppercase; }
+    @media (max-width: 768px) {
+      .container { padding: 16px; }
+      .filters { flex-direction: column; align-items: stretch; }
+      .form-group select, .form-group button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <h2>Relatórios do Projeto: <%= project.name %></h2>
+        <p>Selecione os filtros abaixo para gerar o seu relatório.</p>
+      </div>
+      <hr />
+      <div class="filters">
+        <div class="form-group">
+          <label for="reportType">Tipo de Relatório</label>
+          <select id="reportType"><option value="hours">Horas Gastas</option><option value="tickets">Chamados</option></select>
         </div>
-
-        <hr />
-
-        <div class="filters">
-          <div class="form-group">
-            <label for="reportType">Tipo de Relatório</label>
-            <select id="reportType">
-              <option value="hours">Horas Gastas</option>
-              <option value="tickets">Chamados</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="period">Período</label>
-            <select id="period">
-              <option value="current_month">Este Mês</option>
-              <option value="last_month">Mês Passado</option>
-              <option value="current_quarter">Este Trimestre</option>
-              <option value="current_year">Este Ano</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <button id="generateReport" class="primary">Visualizar</button>
-          </div>
-          <div class="form-group">
-            <button id="exportCsv" class="secondary">Exportar CSV</button>
-          </div>
+        <div class="form-group">
+          <label for="period">Período</label>
+          <select id="period">
+            <option value="current_month">Este Mês</option><option value="last_month">Mês Passado</option>
+            <option value="current_quarter">Este Trimestre</option><option value="current_year">Este Ano</option>
+          </select>
         </div>
-
-        <div id="results" style="margin-top: 24px"></div>
+        <div class="form-group">
+          <button id="generateReport" class="primary">Visualizar</button>
+        </div>
+        <div class="form-group">
+          <button id="exportExcel" class="secondary">Exportar Excel</button>
+        </div>
+        <div class="form-group">
+          <button id="exportCsv" class="secondary">Exportar CSV</button>
+        </div>
+      </div>
+      <div id="results" style="margin-top: 24px;">
+        <p style="color: #64666B;">Selecione os filtros e clique em "Visualizar" para gerar um relatório.</p>
       </div>
     </div>
+  </div>
 
-    <script>
-      const projectId = "<%= project.id %>";
+  <script>
+    const projectId = "<%= project.id %>";
+    const projectName = "<%= project.name.toLowerCase().replace(/\\s+/g, '_') %>";
+    const reportTypeEl = document.getElementById('reportType');
+    const periodEl = document.getElementById('period');
+    const generateBtn = document.getElementById('generateReport');
+    const exportCsvBtn = document.getElementById('exportCsv');
+    const exportExcelBtn = document.getElementById('exportExcel');
+    const resultsDiv = document.getElementById('results');
 
-      const reportTypeEl = document.getElementById("reportType");
-
-      const periodEl = document.getElementById("period");
-
-      const generateBtn = document.getElementById("generateReport");
-
-      const exportBtn = document.getElementById("exportCsv");
-
-      const resultsDiv = document.getElementById("results");
-
-      async function fetchData(format = "json") {
-        const payload = {
-          data: {
-            reportType: reportTypeEl.value,
-
-            period: periodEl.value,
-
-            format: format,
-          },
-        };
-
-        const response = await fetch(`/api/projects/${projectId}/reports`, {
-          method: "POST",
-
-          headers: { "Content-Type": "application/json" },
-
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-
-          throw new Error(errorData.message || "Falha ao buscar dados.");
+    async function fetchData(format = 'json') {
+      const payload = {
+        data: {
+          reportType: reportTypeEl.value,
+          period: periodEl.value,
+          format: format,
         }
-
-        if (format === "csv") {
-          const blob = await response.blob();
-
-          const url = window.URL.createObjectURL(blob);
-
-          const a = document.createElement("a");
-
-          a.style.display = "none";
-
-          a.href = url;
-
-          a.download = `relatorio_${payload.data.reportType}_${projectId}.csv`;
-
-          document.body.appendChild(a);
-
-          a.click();
-
-          window.URL.revokeObjectURL(url);
-        } else {
-          return response.json();
-        }
+      };
+      
+      const response = await fetch(`/api/projects/${projectId}/reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Falha ao buscar dados.');
       }
+      
+      if (format === 'csv' || format === 'xlsx') {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `relatorio_${payload.data.reportType}_${projectName}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        return response.json();
+      }
+    }
 
-      generateBtn.addEventListener("click", async () => {
-        resultsDiv.innerHTML = '<p class="adminjs_Text">A gerar...</p>';
+    generateBtn.addEventListener('click', async () => {
+      resultsDiv.innerHTML = '<p>A gerar...</p>';
+      try {
+        const data = await fetchData('json');
+        renderResults(data);
+      } catch (error) {
+        resultsDiv.innerHTML = `<p style="color: red;"><b>Erro:</b> ${error.message}</p>`;
+      }
+    });
 
-        try {
-          const data = await fetchData("json");
+    exportCsvBtn.addEventListener('click', () => {
+        resultsDiv.innerHTML = '<p>A exportar CSV...</p>';
+        fetchData('csv')
+            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação CSV concluída!</p>'; })
+            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+    });
 
-          renderResults(data);
-        } catch (error) {
-          resultsDiv.innerHTML = `<p style="color: red;"><b>Erro:</b> ${error.message}</p>`;
-        }
-      });
+    exportExcelBtn.addEventListener('click', () => {
+        resultsDiv.innerHTML = '<p>A exportar Excel...</p>';
+        fetchData('xlsx')
+            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação Excel concluída!</p>'; })
+            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+    });
 
-      exportBtn.addEventListener("click", () => {
-        fetchData("csv").catch((error) => {
-          resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`;
-        });
-      });
-
-      function renderResults(data) {
-        let html = `
-
-        <h3 class="adminjs_H3">Resultado do Relatório</h3>
-
-        <p class="adminjs_Text">Período de ${data.period.start} a ${data.period.end}</p>
-
+    function renderResults(data) {
+      let html = `
+        <h3>Resultado do Relatório</h3>
+        <p style="color: #64666B;">Período de ${data.period.start} a ${data.period.end}</p>
       `;
 
-        if (data.type === "hours") {
-          html += `
-
-          <table class="adminjs_Table">
-
-            <thead class="adminjs_TableHead">
-
-              <tr class="adminjs_TableRow"><th class="adminjs_TableCell">Métrica</th><th class="adminjs_TableCell">Valor</th></tr>
-
-            </thead>
-
-            <tbody class="adminjs_TableBody">
-
-              <tr class="adminjs_TableRow"><td class="adminjs_TableCell">Total de Horas Gastas</td><td class="adminjs_TableCell">${data.totalHours}h</td></tr>
-
-            </tbody>
-
+      if (data.type === 'hours') {
+        html += `
+          <table>
+            <thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
+            <tbody><tr><td>Total de Horas Gastas</td><td>${data.totalHours}h</td></tr></tbody>
           </table>`;
-        }
-
-        if (data.type === "tickets") {
-          html += `
-
-          <table class="adminjs_Table">
-
-            <thead class="adminjs_TableHead">
-
-              <tr class="adminjs_TableRow">
-
-                <th class="adminjs_TableCell">Título</th><th class="adminjs_TableCell">Criado Por</th><th class="adminjs_TableCell">Status</th>
-
-              </tr>
-
-            </thead>
-
-            <tbody class="adminjs_TableBody">
-
-              ${data.tickets
-                .map(
-                  (t) => `
-
-                <tr class="adminjs_TableRow">
-
-                  <td class="adminjs_TableCell">${t.title}</td>
-
-                  <td class="adminjs_TableCell">${t.Client?.name || "N/D"}</td>
-
-                  <td class="adminjs_TableCell">${t.status}</td>
-
-                </tr>
-
-              `
-                )
-                .join("")}
-
-            </tbody>
-
-          </table>
-
-        `;
-        }
-
-        resultsDiv.innerHTML = html;
       }
-    </script>
-  </body>
+
+      if (data.type === 'tickets' && data.tickets.length > 0) {
+        html += `
+          <table>
+            <thead><tr><th>Título</th><th>Criado Por</th><th>Status</th><th>Prioridade</th><th>Data</th></tr></thead>
+            <tbody>
+              ${data.tickets.map(t => `
+                <tr>
+                  <td>${t.title}</td>
+                  <td>${t.Client?.name || 'N/D'}</td>
+                  <td>${t.status}</td>
+                  <td>${t.priority}</td>
+                  <td>${new Date(t.createdAt).toLocaleDateString('pt-BR')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } else if (data.type === 'tickets') {
+        html += '<p style="margin-top: 16px;">Nenhum chamado encontrado para o período selecionado.</p>'
+      }
+      resultsDiv.innerHTML = html;
+    }
+  </script>
+</body>
 </html>

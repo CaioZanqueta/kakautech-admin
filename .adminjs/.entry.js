@@ -1,5 +1,5 @@
 AdminJS.UserComponents = {}
-import Component1 from '../src/components/GoToReportsButton'
+import Component1 from '../src/components/ReportPageWrapper'
 AdminJS.UserComponents.Component1 = Component1
 import Component2 from '../src/components/AttachmentComponent'
 AdminJS.UserComponents.Component2 = Component2

@@ -1,6 +1,7 @@
 import express from "express";
 import { Op } from 'sequelize';
 import { Parser } from 'json2csv';
+import ExcelJS from 'exceljs';
 import path from "path";
 import ejs from "ejs";
 
@@ -142,7 +143,6 @@ router.post(
 router.post('/projects/:projectId/reports', isAuthenticatedAdmin, async (req, res) => {
   try {
     const { projectId } = req.params;
-    // MODIFICAÇÃO: Apanha o 'format' do body também
     const { reportType, period, startDate, endDate, format } = req.body.data;
 
     const project = await Project.findByPk(projectId);
@@ -150,10 +150,9 @@ router.post('/projects/:projectId/reports', isAuthenticatedAdmin, async (req, re
       return res.status(404).json({ message: 'Projeto não encontrado.' });
     }
 
-    // Lógica para calcular o intervalo de datas
     let start, end = new Date();
     const now = new Date();
-    end.setHours(23, 59, 59, 999); // Garante que o fim do dia é incluído
+    end.setHours(23, 59, 59, 999);
     
     switch (period) {
         case 'last_month':
@@ -177,7 +176,7 @@ router.post('/projects/:projectId/reports', isAuthenticatedAdmin, async (req, re
             start = new Date(now.getFullYear(), now.getMonth(), 1);
             break;
     }
-    start.setHours(0, 0, 0, 0); // Garante que o início do dia é incluído
+    start.setHours(0, 0, 0, 0);
 
     let reportResult;
     
@@ -205,39 +204,62 @@ router.post('/projects/:projectId/reports', isAuthenticatedAdmin, async (req, re
         type: reportType,
     };
 
-    // Lógica para exportação em CSV
     if (format === 'csv') {
         let csv;
         const json2csvParser = new Parser();
-
         if (reportType === 'hours') {
             const csvData = [{
-                "Projeto": responsePayload.project,
-                "Período de Início": responsePayload.period.start,
-                "Período de Fim": responsePayload.period.end,
-                "Total de Horas Gastas": responsePayload.totalHours,
+                "Projeto": responsePayload.project, "Período de Início": responsePayload.period.start,
+                "Período de Fim": responsePayload.period.end, "Total de Horas Gastas": responsePayload.totalHours,
             }];
             csv = json2csvParser.parse(csvData);
         }
-
         if (reportType === 'tickets') {
-            if (!responsePayload.tickets || responsePayload.tickets.length === 0) {
-                return res.status(200).send('Nenhum chamado encontrado para o período selecionado.');
-            }
-            const csvData = responsePayload.tickets.map(t => ({
-                "ID do Chamado": t.id,
-                "Título": t.title,
-                "Criado Por": t.Client?.name || 'N/D',
-                "Status": t.status,
-                "Prioridade": t.priority,
-                "Data de Criação": new Date(t.createdAt).toLocaleDateString('pt-BR'),
+            const csvData = (responsePayload.tickets || []).map(t => ({
+                "ID do Chamado": t.id, "Título": t.title, "Criado Por": t.Client?.name || 'N/D',
+                "Status": t.status, "Prioridade": t.priority, "Data de Criação": new Date(t.createdAt).toLocaleDateString('pt-BR'),
             }));
             csv = json2csvParser.parse(csvData);
         }
-
         res.header('Content-Type', 'text/csv');
         res.attachment(`relatorio_${project.name.toLowerCase().replace(/\s+/g, '_')}.csv`);
         return res.send(csv);
+    }
+
+    if (format === 'xlsx') {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Relatório');
+      const fileName = `relatorio_${project.name.toLowerCase().replace(/\s+/g, '_')}.xlsx`;
+
+      if (reportType === 'hours') {
+        worksheet.columns = [
+          { header: 'Projeto', key: 'projeto', width: 30 }, { header: 'Período de Início', key: 'inicio', width: 20 },
+          { header: 'Período de Fim', key: 'fim', width: 20 }, { header: 'Total de Horas Gastas', key: 'horas', width: 25 },
+        ];
+        worksheet.addRow({
+          projeto: responsePayload.project, inicio: responsePayload.period.start,
+          fim: responsePayload.period.end, horas: parseFloat(responsePayload.totalHours),
+        });
+      }
+
+      if (reportType === 'tickets') {
+        worksheet.columns = [
+          { header: 'ID do Chamado', key: 'id', width: 15 }, { header: 'Título', key: 'titulo', width: 40 },
+          { header: 'Criado Por', key: 'criadoPor', width: 25 }, { header: 'Status', key: 'status', width: 15 },
+          { header: 'Prioridade', key: 'prioridade', width: 15 }, { header: 'Data de Criação', key: 'criadoEm', width: 20 },
+        ];
+        (responsePayload.tickets || []).forEach(t => {
+          worksheet.addRow({
+            id: t.id, titulo: t.title, criadoPor: t.Client?.name || 'N/D',
+            status: t.status, prioridade: t.priority, criadoEm: new Date(t.createdAt).toLocaleDateString('pt-BR'),
+          });
+        });
+      }
+      
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+      await workbook.xlsx.write(res);
+      return res.end();
     }
     
     return res.json(responsePayload);

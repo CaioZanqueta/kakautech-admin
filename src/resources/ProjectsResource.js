@@ -18,6 +18,21 @@ export default {
       delete: {
         isAccessible: ({ currentAdmin }) => hasManagerPermission(currentAdmin),
       },
+      // ===== INÍCIO DA MODIFICAÇÃO =====
+      reports: {
+        actionType: 'record',
+        icon: 'ReportAnalytics',
+        label: 'Relatórios',
+        // O handler agora apenas fornece os dados para o componente
+        handler: async (request, response, context) => {
+          return {
+            record: context.record.toJSON(context.currentAdmin),
+          };
+        },
+        // Apontamos para o nosso novo componente invólucro
+        component: AdminJS.bundle('../components/ReportPageWrapper.jsx'),
+      },
+      // ===================================
     },
     properties: {
       id: {
@@ -57,17 +72,6 @@ export default {
         position: 8,
         isVisible: { list: true, filter: true, show: true, edit: false },
       },
-      // ===== CAMPO VIRTUAL PARA MOSTRAR O BOTÃO DE RELATÓRIOS =====
-      relatorios: {
-        // Este campo "falso" só existe para mostrar o nosso botão
-        components: {
-          // Renderiza o nosso componente na página de "show" (detalhes)
-          show: AdminJS.bundle('../components/GoToReportsButton.jsx'),
-        },
-        // Removemos o rótulo para que só o botão apareça
-        label: ' ',
-      },
-      // ================================================================
     },
   },
 };
