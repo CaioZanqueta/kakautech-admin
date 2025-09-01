@@ -64,6 +64,9 @@
           <button id="generateReport" class="primary">Visualizar</button>
         </div>
         <div class="form-group">
+          <button id="exportPdf" class="secondary">Exportar PDF</button>
+        </div>
+        <div class="form-group">
           <button id="exportExcel" class="secondary">Exportar Excel</button>
         </div>
         <div class="form-group">
@@ -84,6 +87,7 @@
     const generateBtn = document.getElementById('generateReport');
     const exportCsvBtn = document.getElementById('exportCsv');
     const exportExcelBtn = document.getElementById('exportExcel');
+    const exportPdfBtn = document.getElementById('exportPdf');
     const resultsDiv = document.getElementById('results');
 
     async function fetchData(format = 'json') {
@@ -106,13 +110,14 @@
         throw new Error(errorData.message || 'Falha ao buscar dados.');
       }
       
-      if (format === 'csv' || format === 'xlsx') {
+      const extension = format === 'xlsx' ? 'xlsx' : format;
+      if (['csv', 'xlsx', 'pdf'].includes(format)) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `relatorio_${payload.data.reportType}_${projectName}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+        a.download = `relatorio_${payload.data.reportType}_${projectName}.${extension}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -146,6 +151,13 @@
             .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
     });
 
+    exportPdfBtn.addEventListener('click', () => {
+        resultsDiv.innerHTML = '<p>A gerar PDF (isto pode demorar alguns segundos)...</p>';
+        fetchData('pdf')
+            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação PDF concluída!</p>'; })
+            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+    });
+
     function renderResults(data) {
       let html = `
         <h3>Resultado do Relatório</h3>
@@ -160,7 +172,7 @@
           </table>`;
       }
 
-      if (data.type === 'tickets' && data.tickets.length > 0) {
+      if (data.type === 'tickets' && data.tickets && data.tickets.length > 0) {
         html += `
           <table>
             <thead><tr><th>Título</th><th>Criado Por</th><th>Status</th><th>Prioridade</th><th>Data</th></tr></thead>
