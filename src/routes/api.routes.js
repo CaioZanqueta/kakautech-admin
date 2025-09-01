@@ -1,10 +1,15 @@
 import express from "express";
+import { Op } from 'sequelize';
+import { Parser } from 'json2csv';
+import path from "path";
+import ejs from "ejs";
+
 import Comment from "../models/comment.js";
 import Ticket from "../models/ticket.js";
 import Client from "../models/client.js";
 import User from "../models/user.js";
-import ejs from "ejs";
-import path from "path";
+import Project from '../models/project.js';
+import TimeLog from '../models/timelog.js';
 import MailService from "../services/mail.js";
 
 const router = express.Router();
@@ -94,7 +99,6 @@ router.post(
 
       await ticket.update({ userId: adminUser.id, status: "pending" });
 
-      // --- INÍCIO DA NOVA LÓGICA DE EMAIL ---
       try {
         if (ticket.clientId) {
           const client = await Client.findByPk(ticket.clientId);
@@ -124,8 +128,7 @@ router.post(
           mailError
         );
       }
-      // --- FIM DA NOVA LÓGICA DE EMAIL ---
-
+      
       return res
         .status(200)
         .json({ message: "Chamado atribuído com sucesso." });
@@ -135,5 +138,114 @@ router.post(
     }
   }
 );
+
+router.post('/projects/:projectId/reports', isAuthenticatedAdmin, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    // MODIFICAÇÃO: Apanha o 'format' do body também
+    const { reportType, period, startDate, endDate, format } = req.body.data;
+
+    const project = await Project.findByPk(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Projeto não encontrado.' });
+    }
+
+    // Lógica para calcular o intervalo de datas
+    let start, end = new Date();
+    const now = new Date();
+    end.setHours(23, 59, 59, 999); // Garante que o fim do dia é incluído
+    
+    switch (period) {
+        case 'last_month':
+            start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            end = new Date(now.getFullYear(), now.getMonth(), 0);
+            end.setHours(23, 59, 59, 999);
+            break;
+        case 'current_quarter':
+            const quarter = Math.floor(now.getMonth() / 3);
+            start = new Date(now.getFullYear(), quarter * 3, 1);
+            break;
+        case 'current_year':
+            start = new Date(now.getFullYear(), 0, 1);
+            break;
+        case 'custom':
+            start = new Date(startDate);
+            end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            break;
+        default: // 'current_month'
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+    }
+    start.setHours(0, 0, 0, 0); // Garante que o início do dia é incluído
+
+    let reportResult;
+    
+    if (reportType === 'hours') {
+        const totalSeconds = await TimeLog.sum('seconds_spent', {
+            where: { createdAt: { [Op.between]: [start, end] } },
+            include: [{ model: Ticket, attributes: [], where: { projectId }, required: true }],
+        });
+        reportResult = { totalHours: ((totalSeconds || 0) / 3600).toFixed(2) };
+    }
+
+    if (reportType === 'tickets') {
+        const tickets = await Ticket.findAll({
+            where: { projectId, createdAt: { [Op.between]: [start, end] } },
+            include: [{ model: Client, as: 'Client', attributes: ['name'] }],
+            order: [['createdAt', 'DESC']]
+        });
+        reportResult = { tickets: tickets.map(t => t.toJSON()) };
+    }
+
+    const responsePayload = {
+        ...reportResult,
+        project: project.name,
+        period: { start: start.toLocaleDateString('pt-BR'), end: end.toLocaleDateString('pt-BR') },
+        type: reportType,
+    };
+
+    // Lógica para exportação em CSV
+    if (format === 'csv') {
+        let csv;
+        const json2csvParser = new Parser();
+
+        if (reportType === 'hours') {
+            const csvData = [{
+                "Projeto": responsePayload.project,
+                "Período de Início": responsePayload.period.start,
+                "Período de Fim": responsePayload.period.end,
+                "Total de Horas Gastas": responsePayload.totalHours,
+            }];
+            csv = json2csvParser.parse(csvData);
+        }
+
+        if (reportType === 'tickets') {
+            if (!responsePayload.tickets || responsePayload.tickets.length === 0) {
+                return res.status(200).send('Nenhum chamado encontrado para o período selecionado.');
+            }
+            const csvData = responsePayload.tickets.map(t => ({
+                "ID do Chamado": t.id,
+                "Título": t.title,
+                "Criado Por": t.Client?.name || 'N/D',
+                "Status": t.status,
+                "Prioridade": t.priority,
+                "Data de Criação": new Date(t.createdAt).toLocaleDateString('pt-BR'),
+            }));
+            csv = json2csvParser.parse(csvData);
+        }
+
+        res.header('Content-Type', 'text/csv');
+        res.attachment(`relatorio_${project.name.toLowerCase().replace(/\s+/g, '_')}.csv`);
+        return res.send(csv);
+    }
+    
+    return res.json(responsePayload);
+
+  } catch (error) {
+    console.error('ERRO AO GERAR RELATÓRIO PELA API:', error);
+    return res.status(500).json({ message: 'Ocorreu um erro interno ao gerar o relatório.' });
+  }
+});
 
 export default router;

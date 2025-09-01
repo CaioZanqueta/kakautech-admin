@@ -51,7 +51,6 @@ const adminJS = new AdminJS({
   },
   assets: {
     styles: ['/public/custom.css'],
-    // scripts: ['/public/custom.js'],
   },
   ...locale,
 });
@@ -72,7 +71,11 @@ app.use(passport.session());
 
 app.use('/api', apiRoutes);
 
-const adminRouter = AdminJSExpress.buildRouter(adminJS);
+const adminRouter = AdminJSExpress.buildRouter(adminJS, null, null, {
+  custom: {
+      postReport: '/api/projects/:projectId/reports'
+  }
+});
 
 app.get("/admin/login", (req, res) => {
   const messages = req.session.messages || [];
@@ -112,6 +115,26 @@ app.post("/admin/login", async (req, res, next) => {
     next(error);
   }
 });
+
+// ===== INÍCIO DA MODIFICAÇÃO =====
+// Adicionamos a rota da nossa nova página de relatórios em EJS
+app.get('/admin/projects/:projectId/reports', async (req, res) => {
+    // Protege a rota para garantir que apenas administradores logados a possam aceder
+    const isAuthenticated = req.session.adminUser || req.isAuthenticated();
+    if (!isAuthenticated) {
+      return res.redirect('/admin/login');
+    }
+    
+    const { projectId } = req.params;
+    // Buscamos o nome do projeto para exibir na página
+    const project = await ProjectsResource.resource.findByPk(projectId);
+    
+    res.render('admin/project-reports', { 
+        project: project.toJSON(),
+        adminUser: req.session.adminUser || req.user,
+    });
+});
+// ===================================
 
 const checkAdminAuth = (req, res, next) => {
   if (req.session.adminUser) {

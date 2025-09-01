@@ -1,4 +1,4 @@
-import AdminJS from "adminjs"; // 1. IMPORTAMOS O ADMINJS
+import AdminJS from "adminjs";
 import Project from "../models/project";
 import { hasManagerPermission } from "../services/auth";
 
@@ -18,21 +18,6 @@ export default {
       delete: {
         isAccessible: ({ currentAdmin }) => hasManagerPermission(currentAdmin),
       },
-      // ===== 2. ADICIONAMOS A NOVA AÇÃO DE RELATÓRIOS =====
-      reports: {
-        actionType: "record", // É uma ação para um registo específico (um projeto)
-        icon: "ReportAnalytics",
-        label: "Relatórios",
-        handler: async (request, response, context) => {
-          // A lógica para buscar os dados virá aqui no futuro
-          return {
-            record: context.record.toJSON(context.currentAdmin),
-          };
-        },
-        // Usamos o nosso novo componente React para renderizar a página
-        component: AdminJS.bundle("../components/ProjectReports.jsx"),
-      },
-      // =======================================================
     },
     properties: {
       id: {
@@ -72,6 +57,17 @@ export default {
         position: 8,
         isVisible: { list: true, filter: true, show: true, edit: false },
       },
+      // ===== CAMPO VIRTUAL PARA MOSTRAR O BOTÃO DE RELATÓRIOS =====
+      relatorios: {
+        // Este campo "falso" só existe para mostrar o nosso botão
+        components: {
+          // Renderiza o nosso componente na página de "show" (detalhes)
+          show: AdminJS.bundle('../components/GoToReportsButton.jsx'),
+        },
+        // Removemos o rótulo para que só o botão apareça
+        label: ' ',
+      },
+      // ================================================================
     },
   },
 };
