@@ -22,6 +22,7 @@ import CommentsResource from "./resources/CommentsResource";
 import ActivityLogsResource from "./resources/ActivityLogsResource";
 import locale from "./locales";
 import theme from "./theme";
+import { loginLimiter, apiLimiter } from './config/limiters';
 
 AdminJS.registerAdapter(AdminJSSequelize);
 
@@ -71,7 +72,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/api', apiRoutes);
+app.use('/api', apiLimiter, apiRoutes);
 
 const adminRouter = AdminJSExpress.buildRouter(adminJS, null, null, {
   custom: {
@@ -86,7 +87,7 @@ app.get("/admin/login", (req, res) => {
   res.render("admin/admin-login", { error });
 });
 
-app.post("/admin/login", async (req, res, next) => {
+app.post("/admin/login", loginLimiter, async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const adminUser = await User.findOne({ where: { email } });

@@ -17,6 +17,7 @@ import TimeLog from "../models/timelog"; // Importa o novo modelo
 import multerConfig from "../config/multer";
 import credentials from "../config/credentials";
 import MailService from "../services/mail";
+import { loginLimiter } from '../config/limiters';
 
 const router = express.Router();
 
@@ -154,6 +155,7 @@ router.get("/portal/login", (req, res) => {
 });
 router.post(
   "/portal/login",
+  loginLimiter,
   passport.authenticate("local-client", {
     successRedirect: "/portal/dashboard",
     failureRedirect: "/portal/login",
@@ -169,7 +171,7 @@ router.get("/portal/register", async (req, res) => {
   });
 });
 
-router.post("/portal/register", async (req, res) => {
+router.post("/portal/register", loginLimiter, async (req, res) => {
   const { name, email, password, projectId } = req.body;
   const projects = await Project.findAll({ where: { status: "active" } });
   try {
