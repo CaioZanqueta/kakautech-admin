@@ -94,6 +94,7 @@ class Ticket extends Model {
     this.belongsTo(models.Project, { foreignKey: "projectId" });
     this.hasMany(models.Comment, { foreignKey: "ticket_id" });
     this.hasMany(models.TimeLog, { foreignKey: "ticketId" });
+    this.hasMany(models.ActivityLog, { foreignKey: "ticketId" });
   }
 }
 

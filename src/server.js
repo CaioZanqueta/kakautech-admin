@@ -19,6 +19,7 @@ import User from "./models/user";
 import ClientsResource from "./resources/ClientsResource";
 import TicketsResource from "./resources/TicketsResource";
 import CommentsResource from "./resources/CommentsResource";
+import ActivityLogsResource from "./resources/ActivityLogsResource";
 import locale from "./locales";
 import theme from "./theme";
 
@@ -41,6 +42,7 @@ const adminJS = new AdminJS({
     ClientsResource,
     TicketsResource,
     CommentsResource,
+    ActivityLogsResource,
   ],
   branding: {
     companyName: "Kakau Tech",

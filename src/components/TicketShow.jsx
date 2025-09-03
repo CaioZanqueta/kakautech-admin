@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-// A importação do 'useRecord' foi removida pois não será mais usada
-import { useNotice, useCurrentAdmin } from "adminjs";
+import React, { useState, useEffect } from "react";
+import { useNotice, useCurrentAdmin, ApiClient } from "adminjs";
 import {
   Box,
   H2,
+  H4,
   Label,
   Text,
   Badge,
@@ -20,12 +20,14 @@ const statusTranslations = {
   in_progress: "Em Andamento",
   closed: "Fechado",
 };
+
 const statusVariants = {
   open: "info",
   pending: "primary",
   in_progress: "warning",
   closed: "success",
 };
+
 const PropertyInView = ({ label, children }) => (
   <Box display="flex" alignItems="center" mb="lg">
     <Text width="140px" flexShrink={0} variant="sm" color="grey60">
@@ -34,6 +36,7 @@ const PropertyInView = ({ label, children }) => (
     <Box>{children}</Box>
   </Box>
 );
+
 const AssignToMeButton = ({ record }) => {
   const [loading, setLoading] = useState(false);
   const addNotice = useNotice();
@@ -60,20 +63,70 @@ const AssignToMeButton = ({ record }) => {
   );
 };
 
+const ActivityLogTimeline = ({ ticketId }) => {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const api = new ApiClient();
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .resourceAction({
+        resourceId: "activity_logs",
+        actionName: "list",
+        params: {
+          "filters.ticketId": ticketId,
+          sortBy: "createdAt",
+          direction: "desc",
+        },
+      })
+      .then((response) => {
+        setLogs(response.data.records);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Erro ao buscar logs de atividade:", error);
+        setLoading(false);
+      });
+  }, [ticketId]);
+
+  if (loading) return <Text>A carregar histórico...</Text>;
+  if (!logs.length) return <Text>Nenhuma atividade registada.</Text>;
+
+  return (
+    <Box>
+      <H4>Histórico de Atividades</H4>
+      {logs.map((log) => (
+        <Box key={log.id} display="flex" my="lg">
+          <Box flexShrink={0} mr="lg">
+            <Icon icon="History" color="grey60" />
+          </Box>
+          <Box>
+            <Text fontWeight="bold">{log.params.description}</Text>
+            <Text variant="sm" color="grey60">
+              Por {log.populated.userId?.title || "Sistema"} em{" "}
+              {new Date(log.params.createdAt).toLocaleString("pt-BR")}
+            </Text>
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
 const TicketShow = (props) => {
-  // === A CORREÇÃO ESTÁ AQUI ===
-  // Em vez de usar o 'useRecord', pegamos o 'record' diretamente das props.
   const { record } = props;
   const [currentAdmin] = useCurrentAdmin();
 
-  // A verificação de 'loading' foi removida pois já não é necessária
   if (!record) {
     return <Box>Carregando...</Box>;
   }
 
   const status = record.params.status;
   const showAssignButton =
-    currentAdmin && record.params.userId !== currentAdmin.id;
+    currentAdmin &&
+    record.params.userId !== currentAdmin.id &&
+    status === "open";
 
   return (
     <Box>
@@ -136,6 +189,10 @@ const TicketShow = (props) => {
 
         <Box variant="white" boxShadow="card" p="lg" mt="lg">
           <TicketComments {...props} record={record} />
+        </Box>
+
+        <Box variant="white" boxShadow="card" p="lg" mt="lg">
+          <ActivityLogTimeline ticketId={record.id} />
         </Box>
       </Box>
     </Box>

@@ -1,0 +1,27 @@
+<header class="topbar">
+    <div class="topbar-left-controls">
+        <div class="hamburger-menu" id="hamburger-menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </div>
+        <div class="breadcrumbs">
+            </div>
+    </div>
+    <div class="topbar-right-controls">
+        <% if (locals.supportHoursLimit) { %>
+        <div class="support-hours-badge">
+            Horas de Suporte: <%= locals.usedSupportHours || '0.00' %>h / <%= locals.supportHoursLimit %>h
+        </div>
+        <% } %>
+        <div class="theme-switch" id="theme-switcher" title="Alterar tema">
+            <div class="theme-switch-toggle"></div>
+        </div>
+        <div class="dropdown">
+            <div class="dropdown-toggle" id="user-menu-toggle">
+                <span><% if (typeof user !== 'undefined' && user) { %><%= user.email %><% } %></span>
+            </div>
+            <div class="dropdown-content" id="user-menu-content">
+                <a href="/portal/logout">Sair</a>
+            </div>
+        </div>
+    </div>
+</header>

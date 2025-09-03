@@ -8,8 +8,9 @@ import Client from "../models/client";
 import Ticket from "../models/ticket";
 import Comment from "../models/comment";
 import TimeLog from "../models/timelog";
+import ActivityLog from "../models/activitylog";
 
-const models = [User, Project, Task, Client, Ticket, Comment, TimeLog];
+const models = [User, Project, Task, Client, Ticket, Comment, TimeLog, ActivityLog];
 
 class Database {
   constructor() {

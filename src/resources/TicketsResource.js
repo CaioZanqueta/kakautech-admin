@@ -1,5 +1,6 @@
 import AdminJS from "adminjs";
 import Ticket from "../models/ticket";
+import User from "../models/user";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "../config/credentials.js";
@@ -25,7 +26,6 @@ const statusTranslations = {
   closed: "Fechado",
 };
 
-// ===== FUNÇÃO AUXILIAR PARA ABREVIAR NOMES =====
 const getShortName = (fullName) => {
   if (!fullName) return '';
   const names = fullName.split(' ').filter(Boolean);
@@ -34,7 +34,6 @@ const getShortName = (fullName) => {
   }
   return fullName;
 };
-// ===============================================
 
 export default {
   resource: Ticket,
@@ -47,7 +46,6 @@ export default {
       sortBy: "createdAt",
     },
     actions: {
-      // ===== MODIFICAÇÃO: Hook para abreviar nomes na listagem =====
       list: {
         after: async (response) => {
           response.records.forEach((record) => {
@@ -63,7 +61,6 @@ export default {
           return response;
         },
       },
-      // =============================================================
       show: {
         component: AdminJS.bundle("../components/TicketShow.jsx"),
         after: async (response) => {
@@ -91,14 +88,47 @@ export default {
           return request;
         },
         after: async (response, request, context) => {
-          const { record, originalTicket } = context;
-          const newStatus = record.get("status");
+          const { record, originalTicket, currentAdmin } = context;
+          // ===== MODIFICAÇÃO: Forma mais segura de aceder ao modelo =====
+          const ActivityLog = Ticket.sequelize.models.ActivityLog;
+          // =============================================================
 
-          if (originalTicket && newStatus !== originalTicket.status) {
-            if (originalTicket.status === "open" && newStatus === "pending") {
-              return response;
+          // LÓGICA DE LOG DE ATIVIDADE
+          if (originalTicket && ActivityLog) {
+            const newStatus = record.get('status');
+            const oldStatus = originalTicket.status;
+
+            if (newStatus !== oldStatus) {
+              await ActivityLog.create({
+                description: `Status alterado de "${statusTranslations[oldStatus] || oldStatus}" para "${statusTranslations[newStatus] || newStatus}"`,
+                ticketId: record.id(),
+                userId: currentAdmin.id,
+              });
             }
 
+            const newUserId = record.get('userId');
+            const oldUserId = originalTicket.userId;
+
+            if (newUserId != oldUserId) {
+              const oldUser = oldUserId ? await User.findByPk(oldUserId) : null;
+              const newUser = newUserId ? await User.findByPk(newUserId) : null;
+              const oldUserName = oldUser ? oldUser.name : 'Ninguém';
+              const newUserName = newUser ? newUser.name : 'Ninguém';
+
+              await ActivityLog.create({
+                description: `Responsável alterado de "${oldUserName}" para "${newUserName}"`,
+                ticketId: record.id(),
+                userId: currentAdmin.id,
+              });
+            }
+          }
+
+          // LÓGICA DE NOTIFICAÇÃO POR EMAIL
+          const newStatusEmail = record.get("status");
+          if (originalTicket && newStatusEmail !== originalTicket.status) {
+            if (originalTicket.status === "open" && newStatusEmail === "pending") {
+              return response;
+            }
             try {
               const client = await Client.findByPk(originalTicket.clientId);
               if (client) {
@@ -114,7 +144,7 @@ export default {
                     oldStatus:
                       statusTranslations[originalTicket.status] ||
                       originalTicket.status,
-                    newStatus: statusTranslations[newStatus] || newStatus,
+                    newStatus: statusTranslations[newStatusEmail] || newStatusEmail,
                     ticketUrl: `${
                       process.env.BASE_URL || "http://localhost:5000"
                     }/portal/tickets/${record.id()}`,

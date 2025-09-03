@@ -1,0 +1,53 @@
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const menuToggle = document.getElementById("user-menu-toggle");
+    const menuContent = document.getElementById("user-menu-content");
+    if (menuToggle && menuContent) {
+      menuToggle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        menuContent.classList.toggle("is-open");
+      });
+      window.addEventListener("click", () => {
+        if (menuContent.classList.contains("is-open")) {
+          menuContent.classList.remove("is-open");
+        }
+      });
+    }
+  });
+  const themeSwitcher = document.getElementById("theme-switcher");
+  const body = document.body;
+  const logo = document.getElementById("sidebar-logo");
+  const applyTheme = (theme) => {
+    if (theme === "dark") {
+      body.classList.add("dark-mode");
+      if (logo) logo.src = "/public/kakauWhite.webp";
+    } else {
+      body.classList.remove("dark-mode");
+      if (logo) logo.src = "/public/kakau.webp";
+    }
+    // Para o gráfico do dashboard
+    if (typeof drawChart === 'function') {
+        drawChart();
+    }
+  };
+  const toggleTheme = () => {
+    const currentTheme = localStorage.getItem("theme") || "light";
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    localStorage.setItem("theme", newTheme);
+    applyTheme(newTheme);
+  };
+  themeSwitcher.addEventListener("click", toggleTheme);
+  const savedTheme = localStorage.getItem("theme") || "light";
+  applyTheme(savedTheme);
+  const hamburger = document.getElementById("hamburger-menu");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("mobile-overlay");
+  const toggleMenu = () => {
+    sidebar.classList.toggle("is-mobile-open");
+    overlay.classList.toggle("is-visible");
+  };
+  if (hamburger && sidebar && overlay) {
+    hamburger.addEventListener("click", toggleMenu);
+    overlay.addEventListener("click", toggleMenu);
+  }
+</script>

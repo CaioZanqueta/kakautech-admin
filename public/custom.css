@@ -14,6 +14,10 @@ li:has(a[href="/admin/resources/comments"]) {
   display: none !important;
 }
 
+li:has(a[href="/admin/resources/activity_logs"]) {
+  display: none !important;
+}
+
 /* ===================================================== */
 /* === REGRAS PARA TABELA COMPACTA E SEM QUEBRA DE LINHA === */
 /* ===================================================== */

@@ -62,6 +62,7 @@ class User extends Model {
     this.hasMany(models.Ticket, { foreignKey: "userId" });
     this.hasMany(models.Comment, { foreignKey: "user_id" });
     this.hasMany(models.TimeLog, { foreignKey: "userId" });
+    this.hasMany(models.ActivityLog, { foreignKey: "userId" });
   }
 
   checkPassword(password) {

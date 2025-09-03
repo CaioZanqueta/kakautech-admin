@@ -340,6 +340,14 @@ router.get(
   }
 );
 
+router.get("/portal/profile", clientPortalMiddlewares, (req, res) => {
+  res.render("portal/profile", {
+    user: req.user,
+    error: null,
+    success: null,
+  });
+});
+
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {
     const { status, search } = req.query;

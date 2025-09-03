@@ -93,33 +93,62 @@ router.post(
     try {
       const { ticketId } = req.params;
       const adminUser = req.user;
-      const ticket = await Ticket.findByPk(ticketId);
 
-      if (!ticket) {
+      const originalTicket = await Ticket.findByPk(ticketId);
+
+      if (!originalTicket) {
         return res.status(404).json({ message: "Chamado não encontrado." });
       }
 
-      await ticket.update({ userId: adminUser.id, status: "pending" });
+      const oldStatus = originalTicket.status;
+      const oldUser = await User.findByPk(originalTicket.userId);
+      const oldUserName = oldUser ? oldUser.name : "Ninguém";
+
+      await originalTicket.update({ userId: adminUser.id, status: "pending" });
+
+      const ActivityLog = Ticket.sequelize.models.ActivityLog;
+      const newStatus = "pending";
+
+      const statusTranslations = {
+        open: "Aberto",
+        pending: "Pendente",
+        in_progress: "Em Andamento",
+        closed: "Fechado",
+      };
+
+      await ActivityLog.create({
+        description: `Status alterado de "${
+          statusTranslations[oldStatus] || oldStatus
+        }" para "${statusTranslations[newStatus] || newStatus}"`,
+        ticketId: originalTicket.id,
+        userId: adminUser.id,
+      });
+
+      await ActivityLog.create({
+        description: `Responsável alterado de "${oldUserName}" para "${adminUser.name}"`,
+        ticketId: originalTicket.id,
+        userId: adminUser.id,
+      });
 
       try {
-        if (ticket.clientId) {
-          const client = await Client.findByPk(ticket.clientId);
+        if (originalTicket.clientId) {
+          const client = await Client.findByPk(originalTicket.clientId);
           if (client) {
             const emailHtml = await ejs.renderFile(
               path.join(__dirname, "../views/emails/ticketAssigned.ejs"),
               {
                 clientName: client.name,
-                ticketId: ticket.id,
-                ticketTitle: ticket.title,
+                ticketId: originalTicket.id,
+                ticketTitle: originalTicket.title,
                 adminName: adminUser.name,
                 ticketUrl: `${
                   process.env.BASE_URL || "http://localhost:5000"
-                }/portal/tickets/${ticket.id}`,
+                }/portal/tickets/${originalTicket.id}`,
               }
             );
             await MailService.sendMail(
               client.email,
-              `Seu Chamado ${ticket.title} foi atribuído`,
+              `Seu Chamado ${originalTicket.title} foi atribuído`,
               emailHtml
             );
           }
@@ -308,31 +337,43 @@ router.post(
         return res.end();
       }
 
-      if (format === 'pdf') {
-      const html = await ejs.renderFile(
-        path.join(__dirname, '../views/reports/pdf-template.ejs'),
-        responsePayload
-      );
-      
-      const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-      const page = await browser.newPage();
-      
-      await page.goto(`data:text/html;charset=UTF-8,${encodeURIComponent(html)}`, {
-        waitUntil: 'networkidle0'
-      });
+      if (format === "pdf") {
+        const html = await ejs.renderFile(
+          path.join(__dirname, "../views/reports/pdf-template.ejs"),
+          responsePayload
+        );
 
-      const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-      
-      await browser.close();
-      
-      const fileName = `relatorio_${project.name.toLowerCase().replace(/\s+/g, '_')}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-      
-      // ===== MODIFICAÇÃO FINAL: Usamos res.end() para enviar o buffer =====
-      return res.end(pdfBuffer);
-      // ====================================================================
-    }
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
+        const page = await browser.newPage();
+
+        await page.goto(
+          `data:text/html;charset=UTF-8,${encodeURIComponent(html)}`,
+          {
+            waitUntil: "networkidle0",
+          }
+        );
+
+        const pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+        });
+
+        await browser.close();
+
+        const fileName = `relatorio_${project.name
+          .toLowerCase()
+          .replace(/\s+/g, "_")}.pdf`;
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename=${fileName}`
+        );
+
+        return res.end(pdfBuffer);
+      }
 
       return res.json(responsePayload);
     } catch (error) {

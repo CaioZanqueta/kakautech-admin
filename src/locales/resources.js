@@ -71,4 +71,13 @@ export default {
       ...commonProps,
     },
   },
+  activitylogs: {
+    properties: {
+      description: 'Descrição',
+      ticketId: 'ID do Chamado',
+      userId: 'Realizado Por',
+      createdAt: 'Data',
+      ...commonProps,
+    },
+  },
 };
