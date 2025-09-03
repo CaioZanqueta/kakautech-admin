@@ -1,7 +1,7 @@
 import express from "express";
 import passport from "passport";
 import multer from "multer";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as yup from "yup";
 import ejs from "ejs";
@@ -340,13 +340,121 @@ router.get(
   }
 );
 
-router.get("/portal/profile", clientPortalMiddlewares, (req, res) => {
+router.get("/portal/profile", clientPortalMiddlewares, async (req, res) => {
+  const clientWithProject = await Client.findByPk(req.user.id, {
+    include: Project,
+  });
+
+  // ===== INÍCIO DA MODIFICAÇÃO =====
+  // Gera um URL seguro para o avatar, se ele existir
+  let avatarUrl = null;
+  if (clientWithProject && clientWithProject.avatar_path) {
+      const command = new GetObjectCommand({
+          Bucket: process.env.AWS_BUCKET,
+          Key: clientWithProject.avatar_path,
+      });
+      // O URL será válido por 1 hora
+      avatarUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+  }
+  // ===================================
+
   res.render("portal/profile", {
-    user: req.user,
+    user: clientWithProject,
+    avatarUrl: avatarUrl, // Passa o URL para a página
     error: null,
     success: null,
   });
 });
+
+// ===== NOVA ROTA POST PARA ALTERAR A SENHA =====
+router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
+  const { current_password, new_password, confirm_password } = req.body;
+  const client = await Client.findByPk(req.user.id, { include: Project });
+
+  // 1. Verifica se a senha atual está correta
+  const isPasswordCorrect = await client.checkPassword(current_password);
+  if (!isPasswordCorrect) {
+    return res.render("portal/profile", {
+      user: client,
+      success: null,
+      error: "A senha atual está incorreta.",
+    });
+  }
+
+  // 2. Valida a nova senha
+  if (!new_password || new_password.length < 6) {
+    return res.render("portal/profile", {
+        user: client,
+        success: null,
+        error: "A nova senha deve ter no mínimo 6 caracteres.",
+    });
+  }
+
+  if (new_password !== confirm_password) {
+    return res.render("portal/profile", {
+      user: client,
+      success: null,
+      error: "A nova senha e a confirmação não coincidem.",
+    });
+  }
+
+  // 3. Salva a nova senha
+  try {
+    client.password = new_password;
+    await client.save();
+    
+    res.render("portal/profile", {
+      user: client,
+      error: null,
+      success: "Senha alterada com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao salvar nova senha:", error);
+    res.render("portal/profile", {
+        user: client,
+        success: null,
+        error: "Ocorreu um erro ao salvar a nova senha. Tente novamente.",
+    });
+  }
+});
+
+router.post(
+  "/portal/profile/avatar",
+  clientPortalMiddlewares,
+  multer(multerConfig).single("avatar"), // Usa o multer para processar um único ficheiro chamado 'avatar'
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        // Se nenhum ficheiro for enviado, redireciona de volta com um erro (podemos adicionar flash messages depois)
+        return res.redirect("/portal/profile");
+      }
+
+      const client = await Client.findByPk(req.user.id);
+      
+      // Se o cliente já tiver uma foto de perfil, apagamos a antiga do S3
+      if (client.avatar_path) {
+        const deleteParams = {
+          Bucket: process.env.AWS_BUCKET,
+          Key: client.avatar_path,
+        };
+        await s3.send(new DeleteObjectCommand(deleteParams));
+      }
+
+      // Atualiza o registo do cliente com o caminho do novo ficheiro no S3
+      client.avatar_path = req.file.key;
+      await client.save();
+
+      // Redireciona para a página de perfil (podemos adicionar uma mensagem de sucesso depois)
+      return res.redirect("/portal/profile");
+
+    } catch (error) {
+      console.error("Erro no upload do avatar:", error);
+      // Em caso de erro, redireciona de volta
+      return res.redirect("/portal/profile");
+    }
+  }
+);
+// ===============================================
 
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {

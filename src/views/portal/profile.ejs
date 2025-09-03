@@ -6,51 +6,78 @@
     <title>Meu Perfil - Portal do Cliente</title>
     <link rel="icon" type="image/webp" href="/public/favicon.webp" />
     <link rel="stylesheet" href="/public/portal.css" />
+    <style>
+      .profile-container { display: flex; flex-wrap: wrap; gap: 48px; }
+      .profile-picture-section { text-align: center; min-width: 200px; }
+      .avatar-preview { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--border-color); margin-bottom: 16px; }
+      .profile-info-section { flex: 1; }
+      .file-input-label { cursor: pointer; color: var(--primary-100); font-weight: 500; }
+      #avatar-upload-input { display: none; }
+    </style>
 </head>
 <body>
     <div class="app-layout">
         <%- include('../partials/portal-sidebar', { active: 'profile' }) %>
-        <%- include('../partials/portal-topbar') %>
+        <%- include('../partials/portal-topbar', { breadcrumb: 'Portal / Meu Perfil' }) %>
 
         <main class="content">
             <div class="card">
-                <div class="card-header">
-                    <h1>Meu Perfil</h1>
+                <div class="card-header"><h1>Meu Perfil</h1></div>
+                <% if (locals.success) { %><div class="feedback-message success-message"><%= success %></div><% } %>
+                <% if (locals.error) { %><div class="feedback-message error-message"><%= error %></div><% } %>
+
+                <div class="profile-container">
+                    <div class="profile-picture-section">
+                        <img src="<%= locals.avatarUrl || '/public/default-avatar.svg' %>" alt="Foto de Perfil" class="avatar-preview" id="avatar-preview-img">
+                        <form action="/portal/profile/avatar" method="POST" enctype="multipart/form-data" id="avatar-form">
+                            <label for="avatar-upload-input" class="file-input-label">Alterar Foto</label>
+                            <input type="file" name="avatar" id="avatar-upload-input" accept="image/png, image/jpeg, image/gif">
+                            <button type="submit" class="btn-submit" id="avatar-submit-btn" style="display: none; margin-top: 10px;">Salvar Foto</button>
+                        </form>
+                    </div>
+
+                    <div class="profile-info-section">
+                        <div class="ticket-content" style="border-top: none; padding-top: 0; margin-top: 0;">
+                            <h3>Informações da Conta</h3>
+                            <p><strong>Nome:</strong> <%= user.name %></p>
+                            <p><strong>Email:</strong> <%= user.email %></p>
+                            <% if (user.Project) { %><p><strong>Projeto:</strong> <%= user.Project.name %></p><% } %>
+                        </div>
+        
+                        <div class="new-comment-form">
+                            <h3>Alterar Senha</h3>
+                            <form action="/portal/profile" method="POST">
+                                <div class="form-group"><label for="current_password">Senha Atual</label><input type="password" id="current_password" name="current_password" required /></div>
+                                <div class="form-group"><label for="new_password">Nova Senha (mínimo 6 caracteres)</label><input type="password" id="new_password" name="new_password" required /></div>
+                                <div class="form-group"><label for="confirm_password">Confirmar Nova Senha</label><input type="password" id="confirm_password" name="confirm_password" required /></div>
+                                <div class="form-footer"><button type="submit" class="btn-submit">Salvar Alterações de Senha</button></div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                <% if (success) { %>
-                    <div class="feedback-message success-message"><%= success %></div>
-                <% } %>
-                <% if (error) { %>
-                    <div class="feedback-message error-message"><%= error %></div>
-                <% } %>
-
-                <h3 style="font-weight: 400; margin-top: 24px; margin-bottom: 16px;">Alterar Senha</h3>
-                
-                <form action="/portal/profile" method="POST">
-                    <div class="form-group">
-                        <label for="current_password">Senha Atual</label>
-                        <input type="password" id="current_password" name="current_password" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="new_password">Nova Senha</label>
-                        <input type="password" id="new_password" name="new_password" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm_password">Confirmar Nova Senha</label>
-                        <input type="password" id="confirm_password" name="confirm_password" required />
-                    </div>
-                    <div class="form-footer">
-                        <button type="submit" class="btn-submit">Salvar Alterações</button>
-                    </div>
-                </form>
             </div>
         </main>
         <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
     
+    <%- include('../partials/portal-scripts') %>
     <script>
-      
+        // Script para pré-visualização da imagem de perfil
+        const avatarInput = document.getElementById('avatar-upload-input');
+        const avatarPreview = document.getElementById('avatar-preview-img');
+        const avatarSubmitBtn = document.getElementById('avatar-submit-btn');
+
+        avatarInput.addEventListener('change', () => {
+            const file = avatarInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    avatarPreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+                avatarSubmitBtn.style.display = 'block'; // Mostra o botão para salvar
+            }
+        });
     </script>
 </body>
 </html>

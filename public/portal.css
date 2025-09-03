@@ -391,6 +391,7 @@ body.dark-mode .status-closed { background-color: #0b5345; color: #a3e4d7; }
 }
 
 .form-group input[type="text"],
+.form-group input[type="password"],
 .form-group textarea,
 .form-group select {
   width: 100%;
@@ -403,6 +404,7 @@ body.dark-mode .status-closed { background-color: #0b5345; color: #a3e4d7; }
 }
 
 .form-group input[type="text"]:focus,
+.form-group input[type="password"]:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;

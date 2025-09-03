@@ -35,6 +35,7 @@ class Client extends Model {
           type: Sequelize.ENUM("pending", "active", "inactive"),
           defaultValue: "pending",
         },
+        avatar_path: Sequelize.STRING,
       },
       {
         sequelize,

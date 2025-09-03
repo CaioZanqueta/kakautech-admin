@@ -10,131 +10,35 @@
   <body>
     <div class="app-layout">
       <%- include('../partials/portal-sidebar', { active: 'tickets' }) %>
-
-      <header class="topbar">
-        <div class="topbar-left-controls">
-          <div class="hamburger-menu" id="hamburger-menu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </div>
-          <div class="breadcrumbs">
-            Portal / Meus Chamados / Detalhes do Chamado
-          </div>
-        </div>
-        <div class="topbar-right-controls">
-          <% if (supportHoursLimit) { %>
-          <div class="support-hours-badge">
-            Horas: <%= usedSupportHours %>h / <%= supportHoursLimit %>h
-          </div>
-          <% } %>
-          <div class="theme-switch" id="theme-switcher" title="Alterar tema">
-            <div class="theme-switch-toggle"></div>
-          </div>
-          <div class="dropdown">
-            <div class="dropdown-toggle" id="user-menu-toggle">
-              <span
-                ><% if (typeof user !== 'undefined' && user) { %><%= user.email
-                %><% } %></span
-              >
-            </div>
-            <div class="dropdown-content" id="user-menu-content">
-              <a href="/portal/logout">Sair</a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <%- include('../partials/portal-topbar', { breadcrumb: 'Portal / Meus Chamados / Detalhes' }) %>
 
       <main class="content">
         <div class="card">
-          <div
-            class="card-header"
-            style="
-              margin-bottom: 0;
-              padding-bottom: 24px;
-              border-bottom: 1px solid var(--border-color);
-            "
-          >
+          <div class="card-header" style="margin-bottom: 0; padding-bottom: 24px; border-bottom: 1px solid var(--border-color);">
             <div>
               <h1><%= ticket.title %></h1>
               <div class="subtitle">
-                <span>Chamado #<%= ticket.id %></span>
-
                 <% if (ticket.Client) { %>
-                <span style="margin: 0 8px">•</span>
-                <span
-                  >Criado por: <strong><%= ticket.Client.name %></strong></span
-                >
+                  <span>Criado por: <strong><%= ticket.Client.name %></strong></span>
+                  <span style="margin: 0 8px;">•</span>
                 <% } %>
-
-                <span style="margin: 0 8px">•</span>
-                <span>
-                  Prioridade:
-                  <span class="badge priority-<%= ticket.priority %>">
-                    <%= {low: 'Baixa', medium: 'Média', high:
-                    'Alta'}[ticket.priority] || 'Média' %>
-                  </span>
-                </span>
-                <span style="margin: 0 8px">•</span>
-                <span>
-                  Status:
-                  <span class="badge status-<%= ticket.status %>">
-                    <%= statusTranslations[ticket.status] || ticket.status %>
-                  </span>
-                </span>
+                <span>Prioridade: <span class="badge priority-<%= ticket.priority %>"><%= {low: 'Baixa', medium: 'Média', high: 'Alta'}[ticket.priority] || 'Média' %></span></span>
+                <span style="margin: 0 8px;">•</span>
+                <span>Status: <span class="badge status-<%= ticket.status %>"><%= statusTranslations[ticket.status] || ticket.status %></span></span>
               </div>
             </div>
           </div>
 
-          <div
-            class="ticket-content"
-            style="border-top: none; padding-top: 24px"
-          >
+          <div class="ticket-content" style="border-top: none; padding-top: 24px;">
             <h3>Descrição</h3>
             <p><%= ticket.description %></p>
             <% if (ticket.filename) { %>
             <div style="margin-top: 24px">
-              <h4
-                style="
-                  font-size: 14px;
-                  font-weight: 500;
-                  margin-bottom: 8px;
-                  color: var(--text-secondary);
-                "
-              >
-                Anexo Principal:
-              </h4>
-              <a
-                href="/portal/download/ticket/<%= ticket.id %>"
-                class="attachment-chip"
-                target="_blank"
-              >
-                <span class="attachment-icon"
-                  ><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                    ></path></svg
-                ></span>
-                <span class="attachment-info">
-                  <%= ticket.filename %> <% if (ticket.size) { %><span
-                    class="filesize"
-                    >(<%= (ticket.size / 1024).toFixed(1) %> KB)</span
-                  ><% } %>
-                </span>
-                <span class="attachment-download-icon"
-                  ><svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    ></path></svg
-                ></span>
+              <h4 style="font-size: 14px; font-weight: 500; margin-bottom: 8px; color: var(--text-secondary);">Anexo Principal:</h4>
+              <a href="/portal/download/ticket/<%= ticket.id %>" class="attachment-chip" target="_blank">
+                <span class="attachment-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg></span>
+                <span class="attachment-info"><%= ticket.filename %> <% if (ticket.size) { %><span class="filesize">(<%= (ticket.size / 1024).toFixed(1) %> KB)</span><% } %></span>
+                <span class="attachment-download-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></span>
               </a>
             </div>
             <% } %>
@@ -142,75 +46,34 @@
 
           <div class="comments-section">
             <h3>Histórico de Comentários</h3>
-            <% if (ticket.comments && ticket.comments.length > 0) { %> <%
-            ticket.comments.forEach(comment => { %>
-            <div
-              class="comment <%= comment.client_id ? 'client-comment' : 'admin-comment' %>"
-            >
+            <% if (ticket.comments && ticket.comments.length > 0) { %>
+            <% ticket.comments.forEach(comment => { %>
+            <div class="comment <%= comment.client_id ? 'client-comment' : 'admin-comment' %>">
               <div class="comment-header">
                 <span class="comment-author">
-                  <% if (comment.client) { %> <%= comment.client.name %> (Você)
-                  <% } else if (comment.user) { %> <%= comment.user.name %>
-                  (Equipa) <% } else { %> Anônimo <% } %>
+                  <% if (comment.client) { %> <%= comment.client.name %> <%= comment.client_id === user.id ? '(Você)' : '' %>
+                  <% } else if (comment.user) { %> <%= comment.user.name %> (Equipa)
+                  <% } else { %> Anônimo <% } %>
                 </span>
-                <span class="comment-date"
-                  ><%= new Date(comment.createdAt).toLocaleString('pt-BR')
-                  %></span
-                >
+                <span class="comment-date"><%= new Date(comment.createdAt).toLocaleString('pt-BR') %></span>
               </div>
               <div class="comment-body">
                 <p><%= comment.content %></p>
-
-                <% if (comment.filename) { %> <% if (comment.previewUrl) { %>
-                <a
-                  href="<%= comment.previewUrl %>"
-                  class="preview-link"
-                  target="_blank"
-                >
-                  <img
-                    src="<%= comment.previewUrl %>"
-                    alt="Pré-visualização do anexo"
-                    class="comment-attachment-preview"
-                  />
-                </a>
+                <% if (comment.filename) { %>
+                <% if (comment.previewUrl) { %>
+                <a href="<%= comment.previewUrl %>" class="preview-link" target="_blank"><img src="<%= comment.previewUrl %>" alt="Pré-visualização do anexo" class="comment-attachment-preview" /></a>
                 <% } else { %>
-                <a
-                  href="/portal/download/comment/<%= comment.id %>"
-                  class="attachment-chip"
-                  target="_blank"
-                >
-                  <span class="attachment-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                      ></path>
-                    </svg>
-                  </span>
-                  <span class="attachment-info">
-                    <%= comment.filename %> <% if (comment.size) { %>
-                    <span class="filesize"
-                      >(<%= (comment.size / 1024 / 1024).toFixed(2) %> MB)</span
-                    >
-                    <% } %>
-                  </span>
-                  <span class="attachment-download-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      ></path>
-                    </svg>
-                  </span>
+                <a href="/portal/download/comment/<%= comment.id %>" class="attachment-chip" target="_blank">
+                  <span class="attachment-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg></span>
+                  <span class="attachment-info"><%= comment.filename %> <% if (comment.size) { %><span class="filesize">(<%= (comment.size / 1024 / 1024).toFixed(2) %> MB)</span><% } %></span>
+                  <span class="attachment-download-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></span>
                 </a>
-                <% } %> <% } %>
+                <% } %>
+                <% } %>
               </div>
             </div>
-            <% }) %> <% } else { %>
+            <% }) %>
+            <% } else { %>
             <p>Ainda não há comentários neste chamado.</p>
             <% } %>
           </div>
@@ -220,42 +83,15 @@
             <% if (typeof error !== 'undefined' && error) { %>
             <div class="error-message"><%= error %></div>
             <% } %>
-            <form
-              action="/portal/tickets/<%= ticket.id %>/comments"
-              method="POST"
-              enctype="multipart/form-data"
-            >
+            <form action="/portal/tickets/<%= ticket.id %>/comments" method="POST" enctype="multipart/form-data">
               <div class="comment-form-container">
-                <textarea
-                  name="content"
-                  required
-                  placeholder="Escreva a sua mensagem aqui..."
-                ></textarea>
+                <textarea name="content" required placeholder="Escreva a sua mensagem aqui..."></textarea>
                 <div class="form-actions">
                   <div>
-                    <label
-                      for="attachment"
-                      class="upload-trigger"
-                      title="Anexar ficheiro"
-                      ><svg
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                        ></path></svg
-                    ></label>
-                    <input type="file" id="attachment" name="attachment" /><span
-                      id="file-name-display"
-                    ></span>
+                    <label for="attachment" class="upload-trigger" title="Anexar ficheiro"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg></label>
+                    <input type="file" id="attachment" name="attachment" /><span id="file-name-display"></span>
                   </div>
-                  <button type="submit" class="btn-submit">
-                    Enviar Comentário
-                  </button>
+                  <button type="submit" class="btn-submit">Enviar Comentário</button>
                 </div>
               </div>
             </form>
@@ -268,99 +104,46 @@
       <span class="modal-close">&times;</span>
       <img class="modal-content" id="modal-image" />
     </div>
+    <%- include('../partials/portal-scripts') %>
     <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const menuToggle = document.getElementById("user-menu-toggle");
-        const menuContent = document.getElementById("user-menu-content");
-        if (menuToggle && menuContent) {
-          menuToggle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            menuContent.classList.toggle("is-open");
-          });
-          window.addEventListener("click", () => {
-            if (menuContent.classList.contains("is-open")) {
-              menuContent.classList.remove("is-open");
-            }
-          });
+        const fileInput = document.getElementById("attachment");
+        const fileNameDisplay = document.getElementById("file-name-display");
+        if(fileInput) {
+            fileInput.addEventListener("change", () => {
+                if (fileInput.files.length > 0) {
+                    const fileSize = fileInput.files[0].size;
+                    const sizeInKb = (fileSize / 1024).toFixed(1);
+                    const sizeInMb = (fileSize / 1024 / 1024).toFixed(2);
+                    const displaySize = sizeInMb >= 1 ? `${sizeInMb} MB` : `${sizeInKb} KB`;
+                    fileNameDisplay.textContent = `${fileInput.files[0].name} (${displaySize})`;
+                } else {
+                    fileNameDisplay.textContent = "";
+                }
+            });
         }
-      });
-      const themeSwitcher = document.getElementById("theme-switcher");
-      const body = document.body;
-      const logo = document.getElementById("sidebar-logo");
-      const applyTheme = (theme) => {
-        if (theme === "dark") {
-          body.classList.add("dark-mode");
-          if (logo) logo.src = "/public/kakauWhite.webp";
-        } else {
-          body.classList.remove("dark-mode");
-          if (logo) logo.src = "/public/kakau.webp";
-        }
-      };
-      const toggleTheme = () => {
-        const currentTheme = localStorage.getItem("theme") || "light";
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
-        localStorage.setItem("theme", newTheme);
-        applyTheme(newTheme);
-      };
-      themeSwitcher.addEventListener("click", toggleTheme);
-      const savedTheme = localStorage.getItem("theme") || "light";
-      applyTheme(savedTheme);
-      const fileInput = document.getElementById("attachment");
-      const fileNameDisplay = document.getElementById("file-name-display");
-      if (fileInput) {
-        fileInput.addEventListener("change", () => {
-          if (fileInput.files.length > 0) {
-            const fileSize = fileInput.files[0].size;
-            const sizeInKb = (fileSize / 1024).toFixed(1);
-            const sizeInMb = (fileSize / 1024 / 1024).toFixed(2);
-            const displaySize =
-              sizeInMb >= 1 ? `${sizeInMb} MB` : `${sizeInKb} KB`;
-            fileNameDisplay.textContent = `${fileInput.files[0].name} (${displaySize})`;
-          } else {
-            fileNameDisplay.textContent = "";
-          }
-        });
-      }
-      document.addEventListener("DOMContentLoaded", () => {
+        
         const modal = document.getElementById("image-modal");
         const modalImg = document.getElementById("modal-image");
         const closeBtn = document.querySelector(".modal-close");
-        document
-          .querySelectorAll(".comment-attachment-preview")
-          .forEach((img) => {
+        document.querySelectorAll(".comment-attachment-preview").forEach((img) => {
             img.onclick = function (e) {
-              e.preventDefault();
-              modal.style.display = "flex";
-              modalImg.src = this.src;
+                e.preventDefault();
+                modal.style.display = "flex";
+                modalImg.src = this.parentElement.href; 
             };
-          });
-        const closeModal = () => {
-          modal.style.display = "none";
-        };
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (modal)
-          modal.onclick = function (event) {
-            if (event.target === modal) {
-              closeModal();
-            }
-          };
-        window.addEventListener("keydown", (event) => {
-          if (event.key === "Escape" && modal.style.display !== "none") {
-            closeModal();
-          }
         });
-      });
-      const hamburger = document.getElementById("hamburger-menu");
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("mobile-overlay");
-      const toggleMenu = () => {
-        sidebar.classList.toggle("is-mobile-open");
-        overlay.classList.toggle("is-visible");
-      };
-      if (hamburger && sidebar && overlay) {
-        hamburger.addEventListener("click", toggleMenu);
-        overlay.addEventListener("click", toggleMenu);
-      }
+        const closeModal = () => { if(modal) modal.style.display = "none"; };
+        if (closeBtn) closeBtn.onclick = closeModal;
+        if (modal) modal.onclick = function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+        window.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && modal && modal.style.display !== "none") {
+                closeModal();
+            }
+        });
     </script>
   </body>
 </html>

@@ -10,41 +10,7 @@
   <body>
     <div class="app-layout">
       <%- include('../partials/portal-sidebar', { active: 'new-ticket' }) %>
-
-      <header class="topbar">
-        <div class="topbar-left-controls">
-          <div class="hamburger-menu" id="hamburger-menu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </div>
-          <div class="breadcrumbs">Portal / Chamados / Criar novo</div>
-        </div>
-        <div class="topbar-right-controls">
-          <% if (supportHoursLimit) { %>
-          <div class="support-hours-badge">
-            Horas de Suporte: <%= usedSupportHours %>h / <%= supportHoursLimit
-            %>h
-          </div>
-          <% } %>
-          <div class="theme-switch" id="theme-switcher" title="Alterar tema">
-            <div class="theme-switch-toggle"></div>
-          </div>
-          <div class="dropdown">
-            <div class="dropdown-toggle" id="user-menu-toggle">
-              <span
-                ><% if (typeof user !== 'undefined' && user) { %><%= user.email
-                %><% } %></span
-              >
-            </div>
-            <div class="dropdown-content" id="user-menu-content">
-              <a href="/portal/logout">Sair</a>
-            </div>
-          </div>
-        </div>
-      </header>
+      <%- include('../partials/portal-topbar', { breadcrumb: 'Portal / Novo Chamado' }) %>
 
       <main class="content">
         <div class="card">
@@ -54,16 +20,11 @@
           <% } %> <% if (typeof error !== 'undefined' && error) { %>
           <div class="feedback-message error-message"><%= error %></div>
           <% } %>
-          <form
-            action="/portal/tickets"
-            method="POST"
-            enctype="multipart/form-data"
-          >
+          <form action="/portal/tickets" method="POST" enctype="multipart/form-data">
             <div class="form-group">
               <label for="title">* Título</label>
               <input type="text" id="title" name="title" required />
             </div>
-
             <div class="form-group">
               <label for="priority">* Prioridade</label>
               <select id="priority" name="priority" required>
@@ -72,17 +33,10 @@
                 <option value="high">Alta</option>
               </select>
             </div>
-
             <div class="form-group">
               <label for="description">* Descrição</label>
-              <textarea
-                id="description"
-                name="description"
-                rows="5"
-                required
-              ></textarea>
+              <textarea id="description" name="description" rows="5" required></textarea>
             </div>
-
             <div class="form-group">
               <label for="attachment">Anexo</label>
               <label for="attachment" class="upload-zone">
@@ -100,65 +54,18 @@
       </main>
       <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
+    <%- include('../partials/portal-scripts') %>
     <script>
       const fileInput = document.getElementById("attachment");
       const fileNameDisplay = document.getElementById("file-name");
-      fileInput.addEventListener("change", function () {
-        if (this.files.length > 0) {
-          fileNameDisplay.textContent =
-            "Arquivo selecionado: " + this.files[0].name;
-        } else {
-          fileNameDisplay.textContent = "";
-        }
-      });
-      document.addEventListener("DOMContentLoaded", () => {
-        const menuToggle = document.getElementById("user-menu-toggle");
-        const menuContent = document.getElementById("user-menu-content");
-        if (menuToggle && menuContent) {
-          menuToggle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            menuContent.classList.toggle("is-open");
-          });
-          window.addEventListener("click", () => {
-            if (menuContent.classList.contains("is-open")) {
-              menuContent.classList.remove("is-open");
-            }
-          });
-        }
-      });
-      const themeSwitcher = document.getElementById("theme-switcher");
-      const body = document.body;
-      const logo = document.getElementById("sidebar-logo");
-      const applyTheme = (theme) => {
-        if (theme === "dark") {
-          body.classList.add("dark-mode");
-          if (logo) logo.src = "/public/kakauWhite.webp";
-        } else {
-          body.classList.remove("dark-mode");
-          if (logo) logo.src = "/public/kakau.webp";
-        }
-      };
-      const toggleTheme = () => {
-        const currentTheme = localStorage.getItem("theme") || "light";
-        const newTheme = currentTheme === "dark" ? "light" : "dark";
-        localStorage.setItem("theme", newTheme);
-        applyTheme(newTheme);
-      };
-      themeSwitcher.addEventListener("click", toggleTheme);
-      const savedTheme = localStorage.getItem("theme") || "light";
-      applyTheme(savedTheme);
-
-      // --- NOVO: LÓGICA DO MENU RESPONSIVO ---
-      const hamburger = document.getElementById("hamburger-menu");
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("mobile-overlay");
-      const toggleMenu = () => {
-        sidebar.classList.toggle("is-mobile-open");
-        overlay.classList.toggle("is-visible");
-      };
-      if (hamburger && sidebar && overlay) {
-        hamburger.addEventListener("click", toggleMenu);
-        overlay.addEventListener("click", toggleMenu);
+      if (fileInput) {
+        fileInput.addEventListener("change", function () {
+          if (this.files.length > 0) {
+            fileNameDisplay.textContent = "Arquivo selecionado: " + this.files[0].name;
+          } else {
+            fileNameDisplay.textContent = "";
+          }
+        });
       }
     </script>
   </body>
