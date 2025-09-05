@@ -58,7 +58,7 @@
     "db:migrate": "sequelize-cli db:migrate",
     "db:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
-    "build": "babel src -d dist --copy-files",
+    "build": "babel src --out-dir dist --copy-files --extensions \".js,.jsx\"",
     "start": "node dist/server.js"
   }
 }

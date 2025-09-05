@@ -4,6 +4,7 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm cache clean --force
 RUN npm install --legacy-peer-deps
 
 COPY . .
@@ -14,15 +15,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copia as dependências da imagem de build
 COPY --from=build /app/node_modules ./node_modules
-# Copia o código já transpilado da imagem de build
 COPY --from=build /app/dist ./dist
-# Copia as pastas public e views que são necessárias em produção
+
+# ===== LINHA DE GARANTIA ADICIONADA =====
+# Copia explicitamente a pasta de componentes para garantir que ela exista
+COPY --from=build /app/src/components ./src/components
+# =========================================
+
 COPY --from=build /app/public ./public
 COPY --from=build /app/src/views ./src/views
 
 EXPOSE 5000
 
-# Comando para iniciar a aplicação
 CMD ["node", "dist/server.js"]
