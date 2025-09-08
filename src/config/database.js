@@ -7,6 +7,12 @@ module.exports = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
   define: {
     timestamp: true,
     underscored: true,

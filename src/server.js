@@ -27,6 +27,7 @@ import { loginLimiter, apiLimiter } from './config/limiters';
 AdminJS.registerAdapter(AdminJSSequelize);
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use("/public", express.static("public"));
 app.set("view engine", "ejs");

@@ -62,7 +62,7 @@ export default {
         },
       },
       show: {
-        component: AdminJS.bundle("../components/TicketShow.jsx"),
+        component: AdminJS.bundle(path.join(__dirname, '../../src/components/TicketShow.jsx')),
         after: async (response) => {
           const record = response.record;
           if (record && record.params.path) {

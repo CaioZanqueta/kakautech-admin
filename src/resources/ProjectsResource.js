@@ -1,6 +1,7 @@
 import AdminJS from "adminjs";
 import Project from "../models/project";
 import { hasManagerPermission } from "../services/auth";
+import path from 'path';
 
 export default {
   resource: Project,
@@ -30,7 +31,7 @@ export default {
           };
         },
         // Apontamos para o nosso novo componente invólucro
-        component: AdminJS.bundle('../components/ReportPageWrapper.jsx'),
+        component: AdminJS.bundle(path.join(__dirname, '../../src/components/ReportPageWrapper.jsx')),
       },
       // ===================================
     },

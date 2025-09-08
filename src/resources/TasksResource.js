@@ -4,6 +4,7 @@ import Task from "../models/task";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import credentials from "../config/credentials";
+import path from 'path';
 
 const s3 = new S3Client({
   region: credentials.region,
@@ -118,7 +119,7 @@ export default {
         position: 11,
         isVisible: { list: false, show: true, edit: true },
         components: {
-          show: AdminJS.bundle("../components/AttachmentComponent.jsx"),
+          show: AdminJS.bundle(path.join(__dirname, '../../src/components/AttachmentComponent.jsx')),
         },
       },
       user_id: { isVisible: false },

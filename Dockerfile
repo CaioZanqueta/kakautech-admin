@@ -1,31 +1,26 @@
-# Estágio 1: Build - Instalar dependências e construir o projeto
-FROM node:18-alpine AS build
-
+# Estágio 1: Build
+FROM node:22-alpine AS build
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm cache clean --force
 RUN npm install --legacy-peer-deps
-
 COPY . .
 RUN npm run build
 
-# Estágio 2: Produção - Copiar apenas o necessário para a imagem final
-FROM node:18-alpine
-
+# Estágio 2: Produção
+FROM node:22-alpine
 WORKDIR /app
 
+# Copia node_modules e dist da build
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 
-# ===== LINHA DE GARANTIA ADICIONADA =====
-# Copia explicitamente a pasta de componentes para garantir que ela exista
+# ===== LINHA DE GARANTIA (CORRIGIDA) =====
+# Copia a pasta de componentes originais (necessária para AdminJS.bundle)
 COPY --from=build /app/src/components ./src/components
-# =========================================
 
+# Copia assets e views
 COPY --from=build /app/public ./public
 COPY --from=build /app/src/views ./src/views
 
 EXPOSE 5000
-
 CMD ["node", "dist/server.js"]
