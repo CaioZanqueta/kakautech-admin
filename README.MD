@@ -2,7 +2,7 @@
 
 ## 📝 Descrição
 
-Esta é uma aplicação completa para gestão de projetos e tarefas internas, combinada com um portal de suporte ao cliente. A plataforma permite que a equipa interna organize projetos e tarefas, enquanto os clientes podem abrir, acompanhar e interagir com chamados de suporte, tudo num único sistema integrado.
+Esta é uma aplicação completa para gestão de projetos e tarefas internas, combinada com um portal de suporte ao cliente. A plataforma permite que a equipe interna organize projetos e tarefas, enquanto os clientes podem abrir, acompanhar e interagir com chamados de suporte, tudo num único sistema integrado.
 
 ## ✨ Funcionalidades Principais
 
@@ -25,7 +25,7 @@ A plataforma está dividida em duas grandes áreas:
   - **Sistema de Chamados (Tickets):**
       - Abertura de novos chamados com título, descrição, prioridade e anexos.
       - Acompanhamento do status e do histórico de todos os chamados do seu projeto.
-      - Comunicação com a equipa através de um histórico de comentários.
+      - Comunicação com a equipe através de um histórico de comentários.
   - **Gestão de Perfil:** Página "Meu Perfil" onde o cliente pode ver os seus dados, alterar a sua senha e fazer o upload de uma foto de perfil.
   - **Controlo de Horas Mensal:** O sistema de horas de suporte contratadas reinicia automaticamente a cada mês, com base no tempo registado em cada sessão de trabalho.
 

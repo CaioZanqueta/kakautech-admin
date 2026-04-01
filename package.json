@@ -4,13 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@adminjs/express": "^4.0.1",
-    "@adminjs/sequelize": "^2.1.0",
-    "@adminjs/themes": "^1.0.1",
-    "@adminjs/upload": "^2.0.1",
     "@aws-sdk/client-s3": "^3.835.0",
     "@aws-sdk/s3-request-presigner": "^3.835.0",
-    "adminjs": "^5.5.0",
     "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
@@ -33,10 +28,7 @@
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",
     "puppeteer": "^24.18.0",
-    "react-datepicker": "^8.7.0",
-    "react-google-charts": "^3.0.15",
     "sequelize": "^6.12.5",
-    "styled-components": "^6.1.19",
     "tslib": "^2.3.1",
     "yup": "^1.6.1"
   },
@@ -45,7 +37,6 @@
     "@babel/core": "^7.28.0",
     "@babel/node": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
-    "@babel/preset-react": "^7.23.3",
     "@types/mocha": "^10.0.10",
     "nodemon": "^2.0.15",
     "prettier": "^2.5.1",
@@ -54,11 +45,12 @@
   },
   "scripts": {
     "dev": "nodemon ./src/server.js",
-    "format": "prettier --write \"src/**/*.{js,jsx,ejs}\"",
+    "format": "prettier --write \"src/**/*.{js,ejs}\"",
     "db:migrate": "sequelize-cli db:migrate",
     "db:undo": "sequelize-cli db:migrate:undo",
     "db:seed": "sequelize-cli db:seed:all",
-    "build": "babel src --out-dir dist --copy-files --extensions \".js,.jsx\"",
+    "build": "babel src --out-dir dist --copy-files --extensions \".js\"",
     "start": "node dist/server.js"
   }
 }
+

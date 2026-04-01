@@ -1,0 +1,112 @@
+<%
+  var pageTitle = 'Dashboard'
+  var activeMenu = 'dashboard'
+%>
+
+<div class="dashboard-header">
+  <h2>Bem-vindo(a), <%= typeof adminUser !== 'undefined' ? adminUser.name.split(' ')[0] : '' %> 👋</h2>
+  <p>Acompanhe seus projetos, tarefas e chamados em tempo real</p>
+</div>
+
+<div id="stats-container" class="stats-row">
+  <!-- preenchido via JS -->
+</div>
+
+<div class="cards-row">
+  <div class="card">
+    <h3>📋 Tarefas por Status</h3>
+    <div id="tasks-chart" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+      <p style="color: var(--gray-500);">Carregando...</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🎫 Chamados por Status</h3>
+    <div id="tickets-chart" style="min-height: 280px; display: flex; align-items: center; justify-content: center;">
+      <p style="color: var(--gray-500);">Carregando...</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+  google.charts.load('current', { packages: ['corechart'] });
+  google.charts.setOnLoadCallback(loadDashboard);
+
+  async function loadDashboard() {
+    try {
+      const resp = await fetch('/admin/api/dashboard');
+      const data = await resp.json();
+
+      // Stat cards
+      const statsHtml = [
+        { label: 'Total de Tarefas', value: data.tasks.total, cls: 'primary' },
+        { label: 'Total de Chamados', value: data.tickets.total, cls: 'primary' },
+        { label: 'Chamados em Aberto', value: (data.tickets.byStatus.open || 0) + (data.tickets.byStatus.pending || 0), cls: 'warning' },
+        { label: 'Concluídos', value: (data.tasks.byStatus.done || 0) + (data.tasks.byStatus.approved || 0), cls: 'success' },
+      ].map(function(s) {
+        return '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value ' + s.cls + '">' + s.value + '</div></div>';
+      }).join('');
+      document.getElementById('stats-container').innerHTML = statsHtml;
+
+      // Tasks PieChart
+      var taskLabels = { backlog: 'Backlog', doing: 'Em Execução', done: 'Pronto', approved: 'Aprovado', rejected: 'Rejeitado' };
+      var taskColors = ['#1187BD', '#f5a623', '#2bb673', '#6c63ff', '#e5534b'];
+      drawDonutChart('tasks-chart', data.tasks.byStatus, taskLabels, taskColors, 'Sem tarefas', '/admin/resources/tasks');
+
+      // Tickets PieChart
+      var ticketLabels = { open: 'Aberto', pending: 'Pendente', in_progress: 'Em Andamento', closed: 'Fechado' };
+      var ticketColors = ['#1187BD', '#f5a623', '#6c63ff', '#2bb673'];
+      drawDonutChart('tickets-chart', data.tickets.byStatus, ticketLabels, ticketColors, 'Sem chamados', '/admin/resources/tickets');
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      document.getElementById('tasks-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar</p>';
+      document.getElementById('tickets-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar</p>';
+    }
+  }
+
+  function drawDonutChart(containerId, byStatus, labels, colors, emptyText, linkUrl) {
+    var el = document.getElementById(containerId);
+    var entries = Object.entries(byStatus || {}).filter(function(e) { return e[1] > 0; });
+
+    if (entries.length === 0) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>' + emptyText + '</p></div>';
+      return;
+    }
+
+    var chartData = [['Status', 'Quantidade']];
+    entries.forEach(function(e) { chartData.push([labels[e[0]] || e[0], e[1]]); });
+
+    var textColor = window.getComputedStyle(document.body).getPropertyValue('--text-main').trim() || '#212529';
+    
+    var dataTable = google.visualization.arrayToDataTable(chartData);
+    var chart = new google.visualization.PieChart(el);
+    
+    var options = {
+      pieHole: 0.55,
+      pieSliceText: 'value',
+      legend: { position: 'bottom', textStyle: { fontSize: 12, color: textColor } },
+      chartArea: { width: '90%', height: '70%' },
+      colors: colors,
+      pieSliceBorderColor: 'transparent',
+      fontName: 'Inter',
+      tooltip: { textStyle: { fontSize: 13 } },
+      backgroundColor: 'transparent',
+    };
+
+    chart.draw(dataTable, options);
+
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function() { window.location.href = linkUrl; });
+
+    // Redesenhar ao redimensionar ou trocar tema alternativo
+    window.addEventListener('resize', function() { chart.draw(dataTable, options); });
+    
+    // Observer para mudanças de tema
+    const observer = new MutationObserver(function() {
+      const newColor = window.getComputedStyle(document.body).getPropertyValue('--text-main').trim();
+      options.legend.textStyle.color = newColor;
+      chart.draw(dataTable, options);
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+</script>

@@ -8,16 +8,16 @@ import ejs from "ejs";
 import path from "path";
 import { Op } from "sequelize";
 
-import Project from "../models/project";
-import Client from "../models/client";
-import Ticket from "../models/ticket";
-import Comment from "../models/comment";
-import User from "../models/user";
-import TimeLog from "../models/timelog"; // Importa o novo modelo
-import multerConfig from "../config/multer";
-import credentials from "../config/credentials";
-import MailService from "../services/mail";
-import { loginLimiter } from '../config/limiters';
+import Project from "../models/project.js";
+import Client from "../models/client.js";
+import Ticket from "../models/ticket.js";
+import Comment from "../models/comment.js";
+import User from "../models/user.js";
+import TimeLog from "../models/timelog.js";
+import multerConfig from "../config/multer.js";
+import credentials from "../config/credentials.js";
+import MailService from "../services/mail.js";
+import { loginLimiter } from '../config/limiters.js';
 
 const router = express.Router();
 
@@ -51,6 +51,8 @@ const registerSchema = yup.object().shape({
 const ticketSchema = yup.object().shape({
   title: yup.string().required("O título é obrigatório."),
   description: yup.string().required("A descrição é obrigatória."),
+  urgency: yup.string().required("A urgência é obrigatória."),
+  category: yup.string(),
 });
 const commentSchema = yup.object().shape({
   content: yup
@@ -344,7 +346,7 @@ router.get(
 
 router.get("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   const clientWithProject = await Client.findByPk(req.user.id, {
-    include: Project,
+    include: [{ model: Project, as: "Project" }],
   });
 
   // ===== INÍCIO DA MODIFICAÇÃO =====
@@ -654,7 +656,7 @@ router.post(
   multer(multerConfig).single("attachment"),
   async (req, res) => {
     try {
-      const { title, description, priority } = req.body;
+      const { title, description, urgency, category } = req.body;
       const client = req.user;
       const project = await Project.findByPk(client.projectId);
       if (project && project.support_hours_limit !== null) {
@@ -671,11 +673,13 @@ router.post(
           });
         }
       }
-      await ticketSchema.validate({ title, description });
+      await ticketSchema.validate({ title, description, urgency });
       const ticketData = {
         title,
         description,
-        priority,
+        urgency,
+        category,
+        type: "incident", // Os chamados do portal entram como incidentes por predefinição
         clientId: client.id,
         projectId: client.projectId,
         status: "open",
@@ -685,7 +689,7 @@ router.post(
         Object.assign(ticketData, {
           path: key,
           folder: process.env.AWS_BUCKET,
-          type: mimetype,
+          file_type: mimetype, // used file_type to match the refactored model
           filename: originalname,
           size: size,
         });

@@ -17,11 +17,25 @@ import MailService from "../services/mail.js";
 const router = express.Router();
 
 const isAuthenticatedAdmin = (req, res, next) => {
+  if (req.session.adminUser) return next();
   if (req.isAuthenticated() && req.user && req.user.role) {
     return next();
   }
   return res.status(403).json({ message: "Acesso negado." });
 };
+
+router.get("/debug/comments", async (req, res) => {
+  try {
+    const comments = await Comment.findAll({
+      order: [['id', 'DESC']],
+      limit: 5,
+      include: [User, Client]
+    });
+    res.json(comments);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 router.post(
   "/tickets/:ticketId/comments",
@@ -30,7 +44,7 @@ router.post(
     try {
       const { ticketId } = req.params;
       const { content } = req.body;
-      const adminUser = req.user;
+      const adminUser = req.session.adminUser || req.user;
 
       if (!content || content.trim() === "") {
         return res
@@ -92,7 +106,7 @@ router.post(
   async (req, res) => {
     try {
       const { ticketId } = req.params;
-      const adminUser = req.user;
+      const adminUser = req.session.adminUser || req.user;
 
       const originalTicket = await Ticket.findByPk(ticketId);
 

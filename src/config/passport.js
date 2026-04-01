@@ -2,8 +2,8 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as MicrosoftStrategy } from "passport-microsoft";
-import Client from "../models/client";
-import User from "../models/user";
+import Client from "../models/client.js";
+import User from "../models/user.js";
 
 passport.serializeUser((user, done) => {
   const userType = user instanceof Client ? "client" : "user";

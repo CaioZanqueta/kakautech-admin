@@ -1,0 +1,119 @@
+<%
+  var pageTitle = (isEdit ? 'Editar' : 'Criar') + ' ' + resourceLabel
+  var activeMenu = resourceId
+%>
+
+<div style="margin-bottom: 24px;">
+  <p class="page-subtitle" style="margin-bottom: 8px;">
+    <a href="/admin/resources/<%= resourceId %>">← Voltar para <%= resourceLabel %></a>
+  </p>
+  <h1 class="page-title"><%= isEdit ? 'Editar' : 'Criar' %> <%= resourceLabel %></h1>
+</div>
+
+<div class="card" style="max-width: 720px;">
+  <form id="adminForm" method="POST" enctype="multipart/form-data">
+    <% editFields.forEach(function(field) { %>
+      <% if (field === 'password' && isEdit) { %>
+        <div class="form-group">
+          <label for="field-<%= field %>">Senha (deixe em branco para não alterar)</label>
+          <input type="password" id="field-<%= field %>" name="<%= field %>" autocomplete="new-password" placeholder="••••••••">
+        </div>
+      <% } else if (fieldOptions && fieldOptions[field]) { %>
+        <div class="form-group">
+          <label for="field-<%= field %>"><%= fieldLabels[field] || field %></label>
+          <select id="field-<%= field %>" name="<%= field %>" required>
+            <option value="">Selecione...</option>
+            <% fieldOptions[field].forEach(function(opt) { %>
+              <option value="<%= opt.value %>" <%= (isEdit && record && record[field] == opt.value) ? 'selected' : '' %>><%= opt.label %></option>
+            <% }); %>
+          </select>
+        </div>
+      <% } else if (foreignKeys && foreignKeys[field]) { %>
+        <div class="form-group">
+          <label for="field-<%= field %>"><%= fieldLabels[field] || field %></label>
+          <select id="field-<%= field %>" name="<%= field %>">
+            <option value="">Selecione...</option>
+            <% foreignKeys[field].forEach(function(opt) { %>
+              <option value="<%= opt.value %>" <%= (isEdit && record && (record[field] == opt.value)) ? 'selected' : '' %>><%= opt.label %></option>
+            <% }); %>
+          </select>
+        </div>
+      <% } else if (field === 'description') { %>
+        <div class="form-group">
+          <label for="field-<%= field %>"><%= fieldLabels[field] || field %></label>
+          <textarea id="field-<%= field %>" name="<%= field %>" rows="5" placeholder="Descreva aqui..."><%= (isEdit && record) ? (record[field] || '') : '' %></textarea>
+        </div>
+      <% } else if (field === 'due_date') { %>
+        <div class="form-group">
+          <label for="field-<%= field %>"><%= fieldLabels[field] || field %></label>
+          <input type="date" id="field-<%= field %>" name="<%= field %>"
+            value="<%= (isEdit && record && record[field]) ? new Date(record[field]).toISOString().split('T')[0] : '' %>">
+        </div>
+      <% } else { %>
+        <div class="form-group">
+          <label for="field-<%= field %>"><%= fieldLabels[field] || field %></label>
+          <input type="<%= field === 'email' ? 'email' : (field === 'password' ? 'password' : 'text') %>"
+            id="field-<%= field %>" name="<%= field %>"
+            value="<%= (isEdit && record) ? (record[field] || '') : '' %>"
+            placeholder="<%= field === 'email' ? 'email@exemplo.com' : '' %>">
+        </div>
+      <% } %>
+    <% }); %>
+
+    <% if (hasAttachment) { %>
+      <div class="form-group">
+        <label for="field-attachment">Anexo</label>
+        <input type="file" id="field-attachment" name="attachment" accept="image/*,.pdf,.zip,.txt,.doc,.xlsx">
+        <% if (isEdit && record && record.filename) { %>
+          <p class="help-text">📎 Arquivo atual: <strong><%= record.filename %></strong></p>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div id="form-errors" style="display:none;" class="alert alert-error"></div>
+
+    <div style="margin-top: 28px; display: flex; gap: 12px;">
+      <button type="submit" class="btn btn-primary" id="submitBtn">
+        <%= isEdit ? 'Salvar Alterações' : 'Criar Registro' %>
+      </button>
+      <a href="/admin/resources/<%= resourceId %>" class="btn">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.getElementById('adminForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  var errorsDiv = document.getElementById('form-errors');
+  errorsDiv.style.display = 'none';
+
+  var formData = new FormData(this);
+  <% if (isEdit) { %>
+  if (!formData.get('password')) formData.delete('password');
+  <% } %>
+
+  try {
+    var url = '<%= isEdit ? "/admin/api/" + resourceId + "/" + record.id : "/admin/api/" + resourceId %>';
+    var method = '<%= isEdit ? "PUT" : "POST" %>';
+    var resp = await fetch(url, { method: method, body: formData });
+
+    if (resp.ok) {
+      window.location.href = '/admin/resources/<%= resourceId %>?success=' + encodeURIComponent('<%= isEdit ? "Registro atualizado com sucesso!" : "Registro criado com sucesso!" %>');
+    } else {
+      var data = await resp.json();
+      errorsDiv.textContent = data.message || (data.errors ? data.errors.join(', ') : 'Erro ao salvar.');
+      errorsDiv.style.display = 'flex';
+      btn.disabled = false;
+      btn.textContent = '<%= isEdit ? "Salvar Alterações" : "Criar Registro" %>';
+    }
+  } catch (err) {
+    errorsDiv.textContent = 'Erro de conexão.';
+    errorsDiv.style.display = 'flex';
+    btn.disabled = false;
+    btn.textContent = '<%= isEdit ? "Salvar Alterações" : "Criar Registro" %>';
+  }
+});
+</script>

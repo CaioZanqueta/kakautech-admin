@@ -22,7 +22,11 @@
                   <span>Criado por: <strong><%= ticket.Client.name %></strong></span>
                   <span style="margin: 0 8px;">•</span>
                 <% } %>
-                <span>Prioridade: <span class="badge priority-<%= ticket.priority %>"><%= {low: 'Baixa', medium: 'Média', high: 'Alta'}[ticket.priority] || 'Média' %></span></span>
+                <% if (ticket.category) { %>
+                  <span>Categoria: <strong><%= ticket.category %></strong></span>
+                  <span style="margin: 0 8px;">•</span>
+                <% } %>
+                <span>Urgência: <span class="badge priority-<%= ticket.urgency %>"><%= {low: 'Baixa', medium: 'Média', high: 'Alta'}[ticket.urgency] || 'Média' %></span></span>
                 <span style="margin: 0 8px;">•</span>
                 <span>Status: <span class="badge status-<%= ticket.status %>"><%= statusTranslations[ticket.status] || ticket.status %></span></span>
               </div>
@@ -52,7 +56,7 @@
               <div class="comment-header">
                 <span class="comment-author">
                   <% if (comment.client) { %> <%= comment.client.name %> <%= comment.client_id === user.id ? '(Você)' : '' %>
-                  <% } else if (comment.user) { %> <%= comment.user.name %> (Equipa)
+                  <% } else if (comment.user) { %> <%= comment.user.name %> (Equipe)
                   <% } else { %> Anônimo <% } %>
                 </span>
                 <span class="comment-date"><%= new Date(comment.createdAt).toLocaleString('pt-BR') %></span>

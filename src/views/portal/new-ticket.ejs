@@ -26,11 +26,22 @@
               <input type="text" id="title" name="title" required />
             </div>
             <div class="form-group">
-              <label for="priority">* Prioridade</label>
-              <select id="priority" name="priority" required>
-                <option value="low" selected>Baixa</option>
-                <option value="medium">Média</option>
-                <option value="high">Alta</option>
+              <label for="category">Categoria</label>
+              <select id="category" name="category">
+                <option value="">Selecione...</option>
+                <option value="Dúvida">Dúvida</option>
+                <option value="Problema/Falha">Problema/Falha</option>
+                <option value="Solicitação de Acesso">Solicitação de Acesso</option>
+                <option value="Melhoria">Melhoria</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="urgency">* Urgência (Sua necessidade de tempo)</label>
+              <select id="urgency" name="urgency" required>
+                <option value="low" selected>Baixa (Pode esperar)</option>
+                <option value="medium">Média (Normal)</option>
+                <option value="high">Alta (Urgente, prejudica o trabalho)</option>
               </select>
             </div>
             <div class="form-group">

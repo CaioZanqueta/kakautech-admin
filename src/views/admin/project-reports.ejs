@@ -1,83 +1,208 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Relatórios - <%= project.name %></title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <title>Relatórios — <%= project.name %> — Kakau Tech Admin</title>
+  <link rel="icon" type="image/webp" href="/public/favicon.webp" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-100: #1187BD; --grey-100: #0C0D0F; --grey-80: #1D1E21;
-      --grey-60: #64666B; --grey-20: #E9ECEF; --white: #fff;
-      --bg-color: #f8f9fa; --border-color: #dee2e6;
+      --primary: #1187BD; --primary-hover: #0e6a94; --primary-light: #e8f4fa;
+      --gray-50: #f9fafb; --gray-100: #f4f5f7; --gray-200: #e9ecef; --gray-300: #dee2e6;
+      --gray-500: #868e96; --gray-700: #495057; --gray-900: #212529;
     }
-    body { background-color: var(--bg-color); font-family: 'Roboto', sans-serif; margin: 0; color: var(--grey-80); }
-    .container { padding: 24px 40px; max-width: 1200px; margin: auto; }
-    .card { background-color: var(--white); padding: 24px; border-radius: 4px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); border: 1px solid var(--border-color); }
-    .header h2 { font-size: 24px; font-weight: 300; margin: 0; }
-    .header p { margin-top: 8px; color: var(--grey-60); }
-    hr { margin: 24px 0; border: 0; border-top: 1px solid var(--border-color); }
-    .filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; }
-    .form-group { display: flex; flex-direction: column; }
-    .form-group label { font-size: 12px; margin-bottom: 8px; font-weight: 500; color: var(--grey-60); }
-    select, button {
-      height: 38px; border: 1px solid #ccc; border-radius: 4px; padding: 0 12px;
-      font-size: 14px; background-color: var(--white); min-width: 180px;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-100); color: var(--gray-900);
+      -webkit-font-smoothing: antialiased; min-height: 100vh;
     }
-    button { font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
-    button.primary { background-color: var(--primary-100); border-color: var(--primary-100); color: var(--white); }
-    button.primary:hover { opacity: 0.9; }
-    button.secondary { background-color: var(--white); color: var(--grey-80); border-color: #ccc; }
-    button.secondary:hover { border-color: var(--grey-80); }
-    #results table { width: 100%; margin-top: 24px; border-collapse: collapse; border: 1px solid var(--border-color); }
-    #results th, #results td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-    #results th { background-color: #f8f9fa; font-size: 12px; text-transform: uppercase; }
+
+    .container { padding: 28px 40px; max-width: 1200px; margin: auto; }
+
+    /* HERO */
+    .report-hero {
+      background: linear-gradient(135deg, #0d1b2a 0%, #152238 60%, #0c5e84 100%);
+      border-radius: 14px; padding: 32px 36px; color: #fff; margin-bottom: 24px;
+      position: relative; overflow: hidden;
+    }
+    .report-hero::before { content: ''; position: absolute; top: -40%; right: -15%; width: 300px; height: 300px; border-radius: 50%; background: rgba(17,135,189,0.12); }
+    .report-hero::after { content: ''; position: absolute; bottom: -30%; left: -10%; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.04); }
+    .report-hero h1 { font-size: 26px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.3px; position: relative; z-index: 1; }
+    .report-hero p { font-size: 14px; opacity: 0.7; margin: 0; position: relative; z-index: 1; }
+    .back-link { color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 12px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.2s; position: relative; z-index: 1; }
+    .back-link:hover { color: #fff; }
+
+    /* CARDS */
+    .card {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: 14px;
+      padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.2s; margin-bottom: 20px;
+    }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    /* FILTERS */
+    .filters-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; flex: 1; min-width: 180px; }
+    .form-group label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--gray-500); margin-bottom: 8px;
+    }
+    .form-group select {
+      padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: 10px;
+      font-size: 14px; font-family: 'Inter', sans-serif; color: var(--gray-700);
+      background: #fff; transition: all 0.2s; height: 42px;
+    }
+    .form-group select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(17,135,189,0.12); }
+
+    /* BUTTONS */
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: 50px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid var(--gray-200); background: #fff; color: var(--gray-700);
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+      text-decoration: none;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); color: #fff; box-shadow: 0 4px 12px rgba(17,135,189,0.3); }
+
+    /* RESULTS */
+    #results h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--gray-900); }
+    .period-info { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+    #results table { width: 100%; border-collapse: collapse; }
+    #results th {
+      padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.8px; font-weight: 700; color: var(--gray-500); background: var(--gray-50);
+      border-bottom: 2px solid var(--gray-200);
+    }
+    #results td { padding: 12px 16px; border-bottom: 1px solid var(--gray-200); font-size: 14px; color: var(--gray-700); }
+    #results tr:hover td { background: rgba(17,135,189,0.04); }
+
+    /* STATUS/PRIORITY BADGES */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px;
+      border-radius: 50px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .status-open { background: var(--primary-light); color: #0c6a96; }
+    .status-pending { background: #fff8e6; color: #b57800; }
+    .status-in_progress { background: #e8eaf6; color: #283593; }
+    .status-closed { background: #e6f9ef; color: #1a7d4e; }
+    .priority-low { background: #e6f9ef; color: #1a7d4e; }
+    .priority-medium { background: var(--primary-light); color: #0c6a96; }
+    .priority-high { background: #fde8e8; color: #c23b33; }
+
+    /* METRIC CARD */
+    .metric-card {
+      display: inline-flex; flex-direction: column; padding: 24px 32px;
+      background: var(--gray-50); border-radius: 14px; border: 1px solid var(--gray-200);
+    }
+    .metric-value { font-size: 42px; font-weight: 800; color: var(--gray-900); letter-spacing: -1px; }
+    .metric-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-500); margin-top: 4px; }
+
+    /* LOADING */
+    .loading-text { color: var(--gray-500); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .loading-text::before { content: ""; width: 16px; height: 16px; border: 2px solid var(--primary); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .success-text { color: #1a7d4e; font-weight: 600; font-size: 14px; }
+    .error-text { color: #c23b33; font-weight: 600; font-size: 14px; }
+    .empty-text { color: var(--gray-500); font-size: 14px; padding: 20px 0; text-align: center; }
+
+    /* NAV BAR */
+    .topbar {
+      background: #fff; border-bottom: 1px solid var(--gray-200);
+      padding: 14px 40px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .topbar-logo { height: 24px; }
+    .topbar-sep { width: 1px; height: 24px; background: var(--gray-200); }
+    .topbar-title { font-size: 14px; font-weight: 600; color: var(--gray-700); }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-user { font-size: 13px; color: var(--gray-500); }
+    .btn-back-admin {
+      display: inline-flex; align-items: center; gap: 6px; padding: 7px 18px;
+      border-radius: 50px; font-size: 13px; font-weight: 600; background: var(--primary);
+      color: #fff; text-decoration: none; border: none; transition: all 0.2s;
+    }
+    .btn-back-admin:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(17,135,189,0.3); }
+
     @media (max-width: 768px) {
       .container { padding: 16px; }
-      .filters { flex-direction: column; align-items: stretch; }
-      .form-group select, .form-group button { width: 100%; }
+      .filters-row { flex-direction: column; }
+      .form-group { min-width: auto; }
+      .topbar { padding: 12px 16px; }
     }
   </style>
 </head>
 <body>
+  <!-- TOP NAV -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <img src="/public/kakau.webp" alt="Kakau Tech" class="topbar-logo">
+      <div class="topbar-sep"></div>
+      <span class="topbar-title">Relatórios</span>
+    </div>
+    <div class="topbar-right">
+      <% if (typeof adminUser !== 'undefined' && adminUser) { %>
+        <span class="topbar-user"><%= adminUser.name || adminUser.email %></span>
+      <% } %>
+      <a href="/admin" class="btn-back-admin">← Painel Admin</a>
+    </div>
+  </div>
+
   <div class="container">
+    <!-- HERO -->
+    <div class="report-hero">
+      <a href="/admin/resources/projects" class="back-link">← Voltar para Projetos</a>
+      <h1>📈 Relatórios: <%= project.name %></h1>
+      <p>Selecione os filtros abaixo para gerar o seu relatório.</p>
+    </div>
+
+    <!-- FILTERS -->
     <div class="card">
-      <div class="header">
-        <h2>Relatórios do Projeto: <%= project.name %></h2>
-        <p>Selecione os filtros abaixo para gerar o seu relatório.</p>
-      </div>
-      <hr />
-      <div class="filters">
+      <div class="filters-row">
         <div class="form-group">
           <label for="reportType">Tipo de Relatório</label>
-          <select id="reportType"><option value="hours">Horas Gastas</option><option value="tickets">Chamados</option></select>
+          <select id="reportType">
+            <option value="hours">Horas Gastas</option>
+            <option value="tickets">Chamados</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="period">Período</label>
           <select id="period">
-            <option value="current_month">Este Mês</option><option value="last_month">Mês Passado</option>
-            <option value="current_quarter">Este Trimestre</option><option value="current_year">Este Ano</option>
+            <option value="current_month">Este Mês</option>
+            <option value="last_month">Mês Passado</option>
+            <option value="current_quarter">Este Trimestre</option>
+            <option value="current_year">Este Ano</option>
           </select>
         </div>
-        <div class="form-group">
-          <button id="generateReport" class="primary">Visualizar</button>
-        </div>
-        <div class="form-group">
-          <button id="exportPdf" class="secondary">Exportar PDF</button>
-        </div>
-        <div class="form-group">
-          <button id="exportExcel" class="secondary">Exportar Excel</button>
-        </div>
-        <div class="form-group">
-          <button id="exportCsv" class="secondary">Exportar CSV</button>
+        <div class="btn-group">
+          <button id="generateReport" class="btn btn-primary">📊 Visualizar</button>
+          <button id="exportPdf" class="btn">📄 PDF</button>
+          <button id="exportExcel" class="btn">📗 Excel</button>
+          <button id="exportCsv" class="btn">📋 CSV</button>
         </div>
       </div>
-      <div id="results" style="margin-top: 24px;">
-        <p style="color: #64666B;">Selecione os filtros e clique em "Visualizar" para gerar um relatório.</p>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="card">
+      <div id="results">
+        <p class="empty-text">Selecione os filtros e clique em "Visualizar" para gerar um relatório.</p>
       </div>
     </div>
   </div>
+
+  <!-- Hidden form for native browser downloads -->
+  <form id="downloadForm" method="POST" style="display:none;">
+    <input type="hidden" name="data[reportType]" id="formReportType">
+    <input type="hidden" name="data[period]" id="formPeriod">
+    <input type="hidden" name="data[format]" id="formFormat">
+  </form>
 
   <script>
     const projectId = "<%= project.id %>";
@@ -90,107 +215,88 @@
     const exportPdfBtn = document.getElementById('exportPdf');
     const resultsDiv = document.getElementById('results');
 
-    async function fetchData(format = 'json') {
+    const statusLabels = { open: 'Aberto', pending: 'Pendente', in_progress: 'Em Andamento', closed: 'Fechado' };
+    const priorityLabels = { low: 'Baixa', medium: 'Média', high: 'Alta' };
+
+    // For JSON data (Visualizar button) — uses fetch
+    async function fetchJsonData() {
       const payload = {
-        data: {
-          reportType: reportTypeEl.value,
-          period: periodEl.value,
-          format: format,
-        }
+        data: { reportType: reportTypeEl.value, period: periodEl.value, format: 'json' }
       };
-      
       const response = await fetch(`/api/projects/${projectId}/reports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Falha ao buscar dados.');
       }
-      
-      const extension = format === 'xlsx' ? 'xlsx' : format;
-      if (['csv', 'xlsx', 'pdf'].includes(format)) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `relatorio_${payload.data.reportType}_${projectName}.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        return response.json();
-      }
+      return response.json();
+    }
+
+    // For file downloads (PDF/Excel/CSV) — direct navigation with filename in URL
+    function downloadFile(format) {
+      const ext = format === 'xlsx' ? 'xlsx' : format;
+      const filename = `relatorio_${reportTypeEl.value}_${projectName}.${ext}`;
+      const params = new URLSearchParams({
+        reportType: reportTypeEl.value,
+        period: periodEl.value,
+        format: format
+      });
+      // Filename in URL path ensures browser uses it regardless of Content-Disposition handling
+      window.location.href = `/admin/projects/${projectId}/reports/download/${encodeURIComponent(filename)}?${params.toString()}`;
     }
 
     generateBtn.addEventListener('click', async () => {
-      resultsDiv.innerHTML = '<p>A gerar...</p>';
+      resultsDiv.innerHTML = '<p class="loading-text">Gerando relatório...</p>';
       try {
-        const data = await fetchData('json');
+        const data = await fetchJsonData();
         renderResults(data);
       } catch (error) {
-        resultsDiv.innerHTML = `<p style="color: red;"><b>Erro:</b> ${error.message}</p>`;
+        resultsDiv.innerHTML = `<p class="error-text">❌ Erro: ${error.message}</p>`;
       }
     });
 
     exportCsvBtn.addEventListener('click', () => {
-        resultsDiv.innerHTML = '<p>A exportar CSV...</p>';
-        fetchData('csv')
-            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação CSV concluída!</p>'; })
-            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+      resultsDiv.innerHTML = '<p class="success-text">✅ Download CSV iniciado!</p>';
+      downloadFile('csv');
     });
 
     exportExcelBtn.addEventListener('click', () => {
-        resultsDiv.innerHTML = '<p>A exportar Excel...</p>';
-        fetchData('xlsx')
-            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação Excel concluída!</p>'; })
-            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+      resultsDiv.innerHTML = '<p class="success-text">✅ Download Excel iniciado!</p>';
+      downloadFile('xlsx');
     });
 
     exportPdfBtn.addEventListener('click', () => {
-        resultsDiv.innerHTML = '<p>A gerar PDF (isto pode demorar alguns segundos)...</p>';
-        fetchData('pdf')
-            .then(() => { resultsDiv.innerHTML = '<p style="color: green;">Exportação PDF concluída!</p>'; })
-            .catch(error => { resultsDiv.innerHTML = `<p style="color: red;"><b>Erro ao exportar:</b> ${error.message}</p>`; });
+      resultsDiv.innerHTML = '<p class="success-text">✅ Download PDF iniciado (pode demorar alguns segundos)...</p>';
+      downloadFile('pdf');
     });
 
     function renderResults(data) {
       let html = `
         <h3>Resultado do Relatório</h3>
-        <p style="color: #64666B;">Período de ${data.period.start} a ${data.period.end}</p>
+        <p class="period-info">📅 Período de ${data.period.start} a ${data.period.end}</p>
       `;
-
       if (data.type === 'hours') {
-        html += `
-          <table>
-            <thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
-            <tbody><tr><td>Total de Horas Gastas</td><td>${data.totalHours}h</td></tr></tbody>
-          </table>`;
+        html += `<div class="metric-card"><span class="metric-value">${data.totalHours}h</span><span class="metric-label">Total de Horas Gastas</span></div>`;
       }
-
       if (data.type === 'tickets' && data.tickets && data.tickets.length > 0) {
-        html += `
-          <table>
-            <thead><tr><th>Título</th><th>Criado Por</th><th>Status</th><th>Prioridade</th><th>Data</th></tr></thead>
-            <tbody>
-              ${data.tickets.map(t => `
-                <tr>
-                  <td>${t.title}</td>
-                  <td>${t.Client?.name || 'N/D'}</td>
-                  <td>${t.status}</td>
-                  <td>${t.priority}</td>
-                  <td>${new Date(t.createdAt).toLocaleDateString('pt-BR')}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+        html += `<div style="overflow-x:auto;"><table><thead><tr><th>Título</th><th>Criado Por</th><th>Status</th><th>Prioridade</th><th>Data</th></tr></thead><tbody>
+          ${data.tickets.map(t => {
+            const sCls = 'status-' + (t.status || 'open');
+            const pCls = 'priority-' + (t.priority || 'medium');
+            return `<tr>
+              <td style="font-weight:600;">${t.title}</td>
+              <td>${t.Client?.name || 'N/D'}</td>
+              <td><span class="status-badge ${sCls}">${statusLabels[t.status] || t.status}</span></td>
+              <td><span class="status-badge ${pCls}">${priorityLabels[t.priority] || t.priority}</span></td>
+              <td>${new Date(t.createdAt).toLocaleDateString('pt-BR')}</td>
+            </tr>`;
+          }).join('')}
+        </tbody></table></div>`;
       } else if (data.type === 'tickets') {
-        html += '<p style="margin-top: 16px;">Nenhum chamado encontrado para o período selecionado.</p>'
+        html += '<p class="empty-text">Nenhum chamado encontrado para o período selecionado.</p>';
       }
       resultsDiv.innerHTML = html;
     }

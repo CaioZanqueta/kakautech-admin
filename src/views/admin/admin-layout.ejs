@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof pageTitle !== 'undefined' ? pageTitle + ' — ' : '' %>Kakau Tech Admin</title>
+  <link rel="icon" type="image/webp" href="/public/favicon.webp">
+  <link rel="stylesheet" href="/public/admin-styles.css">
+  <script>
+    (function() {
+      const theme = localStorage.getItem('admin-theme') || 'light';
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dark-mode'));
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <a href="/admin"><img src="/public/kakauWhite.webp" alt="Kakau Tech"></a>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Menu Principal</div>
+        <a href="/admin" class="<%= typeof activeMenu !== 'undefined' && activeMenu === 'dashboard' ? 'active' : '' %>">
+          <span class="nav-icon">📊</span> Dashboard
+        </a>
+
+        <% if (typeof sidebarResources !== 'undefined' && sidebarResources.length > 0) { %>
+          <div class="nav-label">Recursos</div>
+          <% sidebarResources.forEach(function(r) { %>
+            <a href="/admin/resources/<%= r.id %>" class="<%= typeof activeMenu !== 'undefined' && activeMenu === r.id ? 'active' : '' %>">
+              <span class="nav-icon"><%= r.icon || '📁' %></span> <%= r.label %>
+            </a>
+          <% }); %>
+        <% } %>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+      <!-- HEADER -->
+      <header class="admin-header">
+        <div class="header-breadcrumb">
+          <% if (typeof pageTitle !== 'undefined' && pageTitle) { %>
+            <%= pageTitle %>
+          <% } %>
+        </div>
+        <div class="header-user">
+          <% if (typeof adminUser !== 'undefined' && adminUser) { %>
+            <div class="user-avatar"><%= adminUser.name ? adminUser.name.charAt(0).toUpperCase() : '?' %></div>
+            <span class="user-name"><%= adminUser.name || '' %></span>
+          <% } %>
+          <button id="theme-toggle" class="btn-theme" title="Alternar Modo Claro/Escuro">
+            <span class="sun-icon">☀️</span>
+            <span class="moon-icon">🌙</span>
+          </button>
+          <a href="/admin/logout" class="btn-logout">Sair</a>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <div class="admin-content">
+        <% if (typeof flashSuccess !== 'undefined' && flashSuccess) { %>
+          <div class="alert alert-success">✓ <%= flashSuccess %></div>
+        <% } %>
+        <% if (typeof flashError !== 'undefined' && flashError) { %>
+          <div class="alert alert-error">✕ <%= flashError %></div>
+        <% } %>
+
+        <%- body %>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      document.documentElement.classList.toggle('dark-mode');
+      localStorage.setItem('admin-theme', isDark ? 'dark' : 'light');
+    });
+  </script>
+</body>
+</html>

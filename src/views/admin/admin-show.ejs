@@ -1,0 +1,128 @@
+<%
+  var pageTitle = resourceLabel + ' #' + record.id
+  var activeMenu = resourceId
+  var allLabels = {}
+  if (fieldOptions) {
+    Object.values(fieldOptions).forEach(function(opts) {
+      opts.forEach(function(o) { allLabels[o.value] = o.label; })
+    })
+  }
+%>
+
+<div style="margin-bottom: 24px;">
+  <p class="page-subtitle" style="margin-bottom: 8px;">
+    <a href="/admin/resources/<%= resourceId %>">← Voltar para <%= resourceLabel %></a>
+  </p>
+  <h1 class="page-title"><%= resourceLabel %> #<%= record.id %></h1>
+</div>
+
+<div class="card">
+  <div class="ticket-details">
+    <% Object.keys(record).forEach(function(field) { %>
+      <%
+        if (['password_hash','google_id','microsoft_id','path','folder','size',
+             'in_progress_started_at','time_spent_seconds','shortName','signedUrl',
+             'password','avatar_path', 'file_type', 'user', 'project', 'client', 'ticket'].includes(field)) return;
+        if (typeof record[field] === 'object' && record[field] !== null && !(record[field] instanceof Date)) return;
+
+        var val = record[field];
+        var displayVal = allLabels[val] || val;
+        var label = fieldLabels[field] || field;
+
+        if (field === 'createdAt' || field === 'updatedAt' || field === 'due_date') {
+          if (val) {
+            var d = new Date(val);
+            displayVal = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+          } else { displayVal = '—'; }
+        }
+
+        if (field.endsWith('Id') || field === 'user_id' || field === 'client_id' || field === 'project_id' || field === 'ticket_id' || field === 'userId' || field === 'projectId' || field === 'clientId') {
+          var assocKey = field.replace(/Id$/, '').replace(/_id$/, '');
+          var assocNameCap = assocKey.charAt(0).toUpperCase() + assocKey.slice(1);
+          var assocNameLow = assocKey.toLowerCase();
+          
+          if (record[assocNameCap] && record[assocNameCap].name) displayVal = record[assocNameCap].name;
+          else if (record[assocNameLow] && record[assocNameLow].name) displayVal = record[assocNameLow].name;
+          else if (record[assocNameCap] && record[assocNameCap].title) displayVal = record[assocNameCap].title;
+          else if (record[assocNameLow] && record[assocNameLow].name) displayVal = record[assocNameLow].title;
+        }
+
+        var badgeClass = '';
+        if (field === 'status' || field === 'priority') {
+          if (['active','done','approved','closed'].includes(val)) badgeClass = 'badge-success';
+          else if (['pending','in_progress','doing','medium'].includes(val)) badgeClass = 'badge-warning';
+          else if (['open','low','backlog'].includes(val)) badgeClass = 'badge-info';
+          else if (['archived','rejected','inactive','high'].includes(val)) badgeClass = 'badge-danger';
+          else badgeClass = 'badge-secondary';
+        }
+      %>
+      <div class="detail-row">
+        <span class="detail-label"><%= label %></span>
+        <span class="detail-value">
+          <% if (badgeClass) { %>
+            <span class="badge <%= badgeClass %>"><%= displayVal %></span>
+          <% } else if (field === 'description') { %>
+            <div style="white-space: pre-wrap; line-height: 1.7; color: var(--gray-700);"><%= displayVal || '—' %></div>
+          <% } else { %>
+            <%= displayVal != null ? displayVal : '—' %>
+          <% } %>
+        </span>
+      </div>
+    <% }); %>
+  </div>
+
+  <% if (record.filename && record.signedUrl) { %>
+    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-500); font-weight: 700; margin-bottom: 10px;">Anexo</div>
+      <% 
+        var mime = record.file_type || record.type; 
+        if (mime && typeof mime === 'string' && mime.startsWith('image/')) { 
+      %>
+        <div class="attachment-preview">
+          <img src="<%= record.signedUrl %>" alt="<%= record.filename %>" onclick="openModal(this.src)">
+        </div>
+      <% } else { %>
+        <a href="<%= record.signedUrl %>" target="_blank" class="attachment-chip">
+          📎 <span class="filename"><%= record.filename %></span> ⬇
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+</div>
+
+<div style="margin-top: 16px;">
+  <div class="btn-group">
+    <% if (editFields && editFields.length > 0) { %>
+      <a href="/admin/resources/<%= resourceId %>/<%= record.id %>/edit" class="btn btn-primary">Editar</a>
+    <% } %>
+    <% if (resourceId === 'projects') { %>
+      <a href="/admin/projects/<%= record.id %>/reports" class="btn btn-success">Relatórios</a>
+    <% } %>
+    <button class="btn btn-danger" onclick="deleteAndRedirect()">Apagar</button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="imageModal" class="modal-overlay" style="display:none;" onclick="closeModal()">
+  <span class="modal-close" onclick="closeModal()">&times;</span>
+  <img id="modalImage" src="" onclick="event.stopPropagation()">
+</div>
+
+<script>
+function openModal(src) {
+  document.getElementById('modalImage').src = src;
+  document.getElementById('imageModal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+async function deleteAndRedirect() {
+  if (!confirm('Tem certeza que deseja remover este registro?')) return;
+  try {
+    var resp = await fetch('/admin/api/<%= resourceId %>/<%= record.id %>', { method: 'DELETE' });
+    if (resp.ok) {
+      window.location.href = '/admin/resources/<%= resourceId %>?success=' + encodeURIComponent('Registro apagado com sucesso!');
+    } else { var data = await resp.json(); alert(data.message || 'Erro ao apagar.'); }
+  } catch (err) { alert('Erro ao apagar.'); }
+}
+</script>

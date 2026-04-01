@@ -30,9 +30,23 @@ class Ticket extends Model {
         },
         path: Sequelize.STRING,
         folder: Sequelize.STRING,
-        type: Sequelize.STRING,
+        file_type: Sequelize.STRING,
         filename: Sequelize.STRING,
         size: Sequelize.INTEGER,
+        // Novos campos ITIL
+        type: {
+          type: Sequelize.ENUM("incident", "service_request"),
+          defaultValue: "incident",
+        },
+        category: Sequelize.STRING,
+        urgency: {
+          type: Sequelize.ENUM("low", "medium", "high"),
+          defaultValue: "medium",
+        },
+        impact: {
+          type: Sequelize.ENUM("low", "medium", "high"),
+          defaultValue: "medium",
+        },
       },
       {
         sequelize,
@@ -42,6 +56,30 @@ class Ticket extends Model {
         },
       }
     );
+
+    // ===================================================================
+    // ===== INÍCIO DA MODIFICAÇÃO: Cálculo de Prioridade ITIL =====
+    // ===================================================================
+    this.addHook("beforeSave", async (ticket, options) => {
+      // Matriz de Prioridade baseada no ITIL: (Urgência x Impacto)
+      if (ticket.changed("urgency") || ticket.changed("impact") || !ticket.priority) {
+        const u = ticket.urgency || "medium";
+        const i = ticket.impact || "medium";
+
+        if (u === "high" && i === "high") {
+          ticket.priority = "high"; // Crítico/Alta
+        } else if ((u === "high" && i === "medium") || (u === "medium" && i === "high")) {
+          ticket.priority = "high";
+        } else if (u === "low" && i === "low") {
+          ticket.priority = "low";
+        } else {
+          ticket.priority = "medium";
+        }
+      }
+    });
+    // ===================================================================
+    // ===== FIM DA MODIFICAÇÃO =====
+    // ===================================================================
 
     // ===================================================================
     // ===== INÍCIO DA MODIFICAÇÃO: Lógica de Tempo Refatorada =====
@@ -90,8 +128,8 @@ class Ticket extends Model {
 
   static associate(models) {
     this.belongsTo(models.Client, { foreignKey: "clientId", as: "Client" });
-    this.belongsTo(models.User, { foreignKey: "userId" });
-    this.belongsTo(models.Project, { foreignKey: "projectId" });
+    this.belongsTo(models.User, { foreignKey: "userId", as: "User" });
+    this.belongsTo(models.Project, { foreignKey: "projectId", as: "Project" });
     this.hasMany(models.Comment, { foreignKey: "ticket_id" });
     this.hasMany(models.TimeLog, { foreignKey: "ticketId" });
     this.hasMany(models.ActivityLog, { foreignKey: "ticketId" });

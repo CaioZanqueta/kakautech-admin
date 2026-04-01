@@ -20,10 +20,8 @@
   const applyTheme = (theme) => {
     if (theme === "dark") {
       body.classList.add("dark-mode");
-      if (logo) logo.src = "/public/kakauWhite.webp";
     } else {
       body.classList.remove("dark-mode");
-      if (logo) logo.src = "/public/kakau.webp";
     }
     // Para o gráfico do dashboard
     if (typeof drawChart === 'function') {
