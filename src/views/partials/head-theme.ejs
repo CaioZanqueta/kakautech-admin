@@ -1,0 +1,21 @@
+<script>
+  (function() {
+    // Detect theme from localStorage or fallback to 'light'
+    const savedTheme = localStorage.getItem('kakau-theme');
+    
+    // Migration: Check for old keys used in previous versions
+    const oldTheme = localStorage.getItem('admin-theme') || localStorage.getItem('theme');
+    const theme = savedTheme || oldTheme || 'light';
+    
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+    
+    // Unify key
+    if (!savedTheme && oldTheme) {
+      localStorage.setItem('kakau-theme', oldTheme);
+    }
+  })();
+</script>

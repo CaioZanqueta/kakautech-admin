@@ -9,7 +9,10 @@ class Project extends Model {
         name: Sequelize.STRING,
         description: Sequelize.TEXT,
         status: Sequelize.ENUM("active", "archived"),
-        support_hours_limit: Sequelize.FLOAT, // ADICIONADO AQUI
+        support_hours_limit: {
+          type: Sequelize.FLOAT,
+          allowNull: true,
+        },
         user_id: Sequelize.INTEGER,
       },
       {

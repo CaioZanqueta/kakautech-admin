@@ -9,14 +9,15 @@ module.exports = {
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   logging: false,
-  dialectOptions: isProduction
-    ? {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false,
-        },
-      }
-    : {},
+  dialectOptions:
+    isProduction && process.env.DB_SSL !== "false"
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false,
+          },
+        }
+      : {},
   define: {
     timestamp: true,
     underscored: true,

@@ -1,7 +1,11 @@
 import express from "express";
 import passport from "passport";
 import multer from "multer";
-import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as yup from "yup";
 import ejs from "ejs";
@@ -17,7 +21,7 @@ import TimeLog from "../models/timelog.js";
 import multerConfig from "../config/multer.js";
 import credentials from "../config/credentials.js";
 import MailService from "../services/mail.js";
-import { loginLimiter } from '../config/limiters.js';
+import { loginLimiter } from "../config/limiters.js";
 
 const router = express.Router();
 
@@ -353,12 +357,12 @@ router.get("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   // Gera um URL seguro para o avatar, se ele existir
   let avatarUrl = null;
   if (clientWithProject && clientWithProject.avatar_path) {
-      const command = new GetObjectCommand({
-          Bucket: process.env.AWS_BUCKET,
-          Key: clientWithProject.avatar_path,
-      });
-      // O URL será válido por 1 hora
-      avatarUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const command = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET,
+      Key: clientWithProject.avatar_path,
+    });
+    // O URL será válido por 1 hora
+    avatarUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
   }
   // ===================================
 
@@ -388,9 +392,9 @@ router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   // 2. Valida a nova senha
   if (!new_password || new_password.length < 6) {
     return res.render("portal/profile", {
-        user: client,
-        success: null,
-        error: "A nova senha deve ter no mínimo 6 caracteres.",
+      user: client,
+      success: null,
+      error: "A nova senha deve ter no mínimo 6 caracteres.",
     });
   }
 
@@ -406,7 +410,7 @@ router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   try {
     client.password = new_password;
     await client.save();
-    
+
     res.render("portal/profile", {
       user: client,
       error: null,
@@ -415,9 +419,9 @@ router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   } catch (error) {
     console.error("Erro ao salvar nova senha:", error);
     res.render("portal/profile", {
-        user: client,
-        success: null,
-        error: "Ocorreu um erro ao salvar a nova senha. Tente novamente.",
+      user: client,
+      success: null,
+      error: "Ocorreu um erro ao salvar a nova senha. Tente novamente.",
     });
   }
 });
@@ -434,7 +438,7 @@ router.post(
       }
 
       const client = await Client.findByPk(req.user.id);
-      
+
       // Se o cliente já tiver uma foto de perfil, apagamos a antiga do S3
       if (client.avatar_path) {
         const deleteParams = {
@@ -450,7 +454,6 @@ router.post(
 
       // Redireciona para a página de perfil (podemos adicionar uma mensagem de sucesso depois)
       return res.redirect("/portal/profile");
-
     } catch (error) {
       console.error("Erro no upload do avatar:", error);
       // Em caso de erro, redireciona de volta
@@ -572,7 +575,7 @@ router.post(
 
       const ticket = await Ticket.findOne({
         where: { id: ticketId, projectId: req.user.projectId },
-        include: User,
+        include: [{ model: User, as: "User" }],
       });
 
       if (!ticket) {
