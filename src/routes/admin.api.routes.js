@@ -77,6 +77,19 @@ async function generateSignedUrl(record) {
 }
 
 // ============================================================
+// Helper: Saneamento de dados (converte "" em null)
+// ============================================================
+function sanitizeData(body) {
+  const sanitized = { ...body };
+  for (const key in sanitized) {
+    if (sanitized[key] === "") {
+      sanitized[key] = null;
+    }
+  }
+  return sanitized;
+}
+
+// ============================================================
 // Helper: model map (resource name -> Sequelize model + config)
 // ============================================================
 const resourceConfig = {
@@ -113,7 +126,7 @@ const resourceConfig = {
         { value: "archived", label: "Arquivado" },
       ],
     },
-    includes: [{ model: User, attributes: ["id", "name"] }],
+    includes: [{ model: User, as: "User", attributes: ["id", "name"] }],
     writePermission: "manager",
   },
   tasks: {
@@ -417,7 +430,7 @@ router.post("/:resource", isAuthenticatedAdmin, upload.single("attachment"), asy
       return res.status(403).json({ message: "Acesso negado." });
     }
 
-    const data = { ...req.body };
+    const data = sanitizeData(req.body);
 
     // Se tem upload de arquivo
     if (req.file) {
@@ -468,7 +481,7 @@ router.put("/:resource/:id", isAuthenticatedAdmin, upload.single("attachment"), 
     const record = await config.model.findByPk(id);
     if (!record) return res.status(404).json({ message: "Registro não encontrado." });
 
-    const data = { ...req.body };
+    const data = sanitizeData(req.body);
 
     // Se tem upload de arquivo
     if (req.file) {

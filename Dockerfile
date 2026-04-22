@@ -13,14 +13,20 @@ WORKDIR /app
 # Copia node_modules e dist da build
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/.sequelizerc ./.sequelizerc
 
-# ===== LINHA DE GARANTIA (CORRIGIDA) =====
-# Copia a pasta de componentes originais (necessária para AdminJS.bundle)
-COPY --from=build /app/src/components ./src/components
+# Copia os arquivos necessários para as migrações
+COPY --from=build /app/src/config ./src/config
+COPY --from=build /app/src/database ./src/database
+COPY --from=build /app/src/models ./src/models
 
 # Copia assets e views
 COPY --from=build /app/public ./public
 COPY --from=build /app/src/views ./src/views
+COPY --from=build /app/src/components ./src/components
 
 EXPOSE 5000
-CMD ["node", "dist/server.js"]
+
+# Script de inicialização que tenta rodar migrações e sementes antes de iniciar o app
+CMD ["sh", "-c", "npx sequelize-cli db:migrate && (npx sequelize-cli db:seed:all || true) && node dist/server.js"]

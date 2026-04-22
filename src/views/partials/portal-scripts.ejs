@@ -19,8 +19,10 @@
   const logo = document.getElementById("sidebar-logo");
   const applyTheme = (theme) => {
     if (theme === "dark") {
+      document.documentElement.classList.add("dark-mode");
       body.classList.add("dark-mode");
     } else {
+      document.documentElement.classList.remove("dark-mode");
       body.classList.remove("dark-mode");
     }
     // Para o gráfico do dashboard
@@ -29,13 +31,17 @@
     }
   };
   const toggleTheme = () => {
-    const currentTheme = localStorage.getItem("theme") || "light";
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
+    const isDark = document.documentElement.classList.toggle('dark-mode');
+    body.classList.toggle('dark-mode', isDark);
+    localStorage.setItem('kakau-theme', isDark ? 'dark' : 'light');
+    
+    // Para o gráfico do dashboard
+    if (typeof drawChart === 'function') {
+        drawChart();
+    }
   };
   themeSwitcher.addEventListener("click", toggleTheme);
-  const savedTheme = localStorage.getItem("theme") || "light";
+  const savedTheme = localStorage.getItem("kakau-theme") || "light";
   applyTheme(savedTheme);
   const hamburger = document.getElementById("hamburger-menu");
   const sidebar = document.getElementById("sidebar");

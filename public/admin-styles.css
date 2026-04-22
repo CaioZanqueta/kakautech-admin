@@ -21,11 +21,11 @@
   --text-dim: #495057;
   --text-muted: #6c757d;
   --text-sidebar: #ffffff;
-  --border-color: #e9ecef;
+  --border-color: #dee2e6;
   --border-input: #ced4da;
   --sidebar-active: rgba(17, 135, 189, 0.2);
   --table-hover: #f8f9fa;
-  --shadow-color: rgba(0,0,0,0.06);
+  --shadow-color: rgba(0,0,0,0.08);
 
   /* Legacy / Core Palette */
   --navy-900: #0d1b2a;
@@ -39,29 +39,29 @@
   --card-radius: 14px;
   --btn-radius: 50px;
   --input-radius: 10px;
-  --shadow-sm: 0 1px 3px var(--shadow-color), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+  --shadow-sm: 0 2px 10px var(--shadow-color), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 18px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 35px rgba(0,0,0,0.15);
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Mode Overrides */
-body.dark-mode {
+/* Dark Mode Overrides (Scoped to .dark-mode class on html or body) */
+.dark-mode {
   --bg-body: #0b0e14;
-  --bg-card: #151921;
-  --bg-header: #151921;
-  --bg-input: #1b212c;
+  --bg-card: #1c222d;
+  --bg-header: #1c222d;
+  --bg-input: #232a36;
   --bg-sidebar: linear-gradient(180deg, #050a0f 0%, #0b0e14 100%);
   --bg-dash-header: linear-gradient(135deg, #050a0f 0%, #0a1421 60%, #062f42 100%);
   --text-main: #e9ecef;
   --text-dim: #adb5bd;
   --text-muted: #959fad;
   --text-sidebar: rgba(255, 255, 255, 0.6);
-  --border-color: rgba(255,255,255,0.08);
+  --border-color: rgba(255,255,255,0.14);
   --border-input: #2d3646;
   --sidebar-active: rgba(255, 255, 255, 0.05);
   --table-hover: #1c222d;
-  --shadow-color: rgba(0,0,0,0.3);
+  --shadow-color: rgba(0,0,0,0.45);
   
   --primary-light: #1a2a33;
   --danger: #ff6b6b;
@@ -69,6 +69,10 @@ body.dark-mode {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background-color: var(--bg-body);
+}
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -939,11 +943,12 @@ body.dark-mode .btn-theme { border-color: rgba(255,255,255,0.25); }
 
 .stat-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--card-radius);
-  padding: 22px 24px;
+  padding: 24px;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
+  text-align: center;
 }
 
 .stat-card:hover {
@@ -1087,8 +1092,8 @@ body.dark-mode .btn-theme { border-color: rgba(255,255,255,0.25); }
 .kanban-column {
   flex: 1 1 0;
   min-width: 0;
-  background: var(--bg-body);
-  border: 1px solid var(--border-color);
+  background: var(--bg-input); /* Slightly darker/lighter than body to define it as a box */
+  border: 1.5px solid var(--border-color);
   border-radius: var(--card-radius);
   display: flex;
   flex-direction: column;
@@ -1115,7 +1120,7 @@ body.dark-mode .btn-theme { border-color: rgba(255,255,255,0.25); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--gray-800);
+  color: var(--text-main);
   flex: 1;
 }
 
@@ -1126,11 +1131,12 @@ body.dark-mode .btn-theme { border-color: rgba(255,255,255,0.25); }
   min-width: 24px;
   height: 24px;
   padding: 0 6px;
-  background: var(--border-color);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--btn-radius);
   font-size: 11px;
   font-weight: 700;
-  color: var(--gray-600);
+  color: var(--text-dim);
 }
 
 .kanban-column-body {
@@ -1153,7 +1159,7 @@ body.dark-mode .btn-theme { border-color: rgba(255,255,255,0.25); }
 /* KANBAN CARD */
 .kanban-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   padding: 14px 16px;
   cursor: grab;

@@ -572,7 +572,7 @@ router.post(
 
       const ticket = await Ticket.findOne({
         where: { id: ticketId, projectId: req.user.projectId },
-        include: User,
+        include: [{ model: User, as: "User" }],
       });
 
       if (!ticket) {
