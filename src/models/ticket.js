@@ -43,6 +43,15 @@ class Ticket extends Model {
           type: Sequelize.ENUM("low", "medium", "high"),
           defaultValue: "medium",
         },
+        // Área de Suporte: grupo para o qual o chamado é direcionado
+        groupId: {
+          type: Sequelize.INTEGER,
+          field: "group_id",
+          allowNull: true,
+          references: { model: "groups", key: "id" },
+          onUpdate: "CASCADE",
+          onDelete: "SET NULL",
+        },
         impact: {
           type: Sequelize.ENUM("low", "medium", "high"),
           defaultValue: "medium",
@@ -130,6 +139,7 @@ class Ticket extends Model {
     this.belongsTo(models.Client, { foreignKey: "clientId", as: "Client" });
     this.belongsTo(models.User, { foreignKey: "userId", as: "User" });
     this.belongsTo(models.Project, { foreignKey: "projectId", as: "Project" });
+    this.belongsTo(models.Group, { foreignKey: "groupId", as: "Group" });
     this.hasMany(models.Comment, { foreignKey: "ticket_id" });
     this.hasMany(models.TimeLog, { foreignKey: "ticketId" });
     this.hasMany(models.ActivityLog, { foreignKey: "ticketId" });

@@ -24,7 +24,7 @@ COPY --from=build /app/src/models ./src/models
 # Copia assets e views
 COPY --from=build /app/public ./public
 COPY --from=build /app/src/views ./src/views
-COPY --from=build /app/src/components ./src/components
+# COPY --from=build /app/src/components ./src/components
 
 EXPOSE 5000
 

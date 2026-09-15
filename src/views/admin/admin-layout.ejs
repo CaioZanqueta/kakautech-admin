@@ -7,6 +7,59 @@
   <link rel="icon" type="image/webp" href="/public/favicon.webp">
   <link rel="stylesheet" href="/public/admin-styles.css">
   <%- include('../partials/head-theme') %>
+  <style>
+    /* ── Seletor de Grupo ── */
+    .group-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-right: 12px;
+    }
+    .group-selector label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .group-select {
+      appearance: none;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 28px 5px 10px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      min-width: 140px;
+      max-width: 200px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      color-scheme: dark light;
+    }
+    .group-select:hover,
+    .group-select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+    }
+    .group-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(59,130,246,0.12);
+      color: #3b82f6;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      letter-spacing: 0.03em;
+    }
+  </style>
 </head>
 <body>
   <div class="admin-layout">
@@ -29,6 +82,17 @@
             </a>
           <% }); %>
         <% } %>
+
+        <div class="nav-label">Gestão</div>
+        <a href="/admin/resources/groups" class="<%= typeof activeMenu !== 'undefined' && activeMenu === 'groups' ? 'active' : '' %>">
+          <span class="nav-icon">🗂</span> Grupos
+        </a>
+        <a href="/admin/overtime" class="<%= typeof activeMenu !== 'undefined' && activeMenu === 'overtime' ? 'active' : '' %>">
+          <span class="nav-icon">⏱</span> Horas Extras
+        </a>
+        <a href="/admin/plantonistas" class="<%= typeof activeMenu !== 'undefined' && activeMenu === 'plantonistas' ? 'active' : '' %>">
+          <span class="nav-icon">🟢</span> Plantão
+        </a>
       </nav>
     </aside>
 
@@ -42,6 +106,47 @@
           <% } %>
         </div>
         <div class="header-user">
+
+          <%
+            // Renderiza o seletor de grupo apenas se o usuário tiver mais de 1 grupo ou for admin
+            var _showSelector = typeof showGroupSelector !== 'undefined' && showGroupSelector;
+            var _userGroups   = typeof userGroups !== 'undefined' ? userGroups : [];
+            var _activeGroup  = typeof activeGroup !== 'undefined' ? activeGroup : null;
+          %>
+
+          <% if (_showSelector && _userGroups.length > 0) { %>
+            <div class="group-selector">
+              <label for="group-select-header">Grupo</label>
+              <form id="group-form" method="POST" action="/admin/set-group" style="margin:0;display:flex;align-items:center;">
+                <input type="hidden" name="redirect" value="<%= typeof reqUrl !== 'undefined' ? reqUrl : '/admin' %>">
+                <select
+                  id="group-select-header"
+                  name="groupId"
+                  class="group-select"
+                  onchange="document.getElementById('group-form').submit()"
+                >
+                  <% if (typeof adminUser !== 'undefined' && adminUser && adminUser.role === 'admin') { %>
+                    <option value="null" <%= !_activeGroup ? 'selected' : '' %>>Todos</option>
+                  <% } %>
+                  <% _userGroups.forEach(function(g) { %>
+                    <option value="<%= g.id %>" <%= (_activeGroup && _activeGroup == g.id) ? 'selected' : '' %>>
+                      <%= g.name %>
+                    </option>
+                  <% }); %>
+                </select>
+              </form>
+            </div>
+          <% } else if (_userGroups.length === 1) { %>
+            <%
+              // Usuário de grupo único: mostra badge informativo (sem seletor)
+              var singleGroup = _userGroups[0];
+            %>
+            <div class="group-selector">
+              <label>Grupo</label>
+              <span class="group-badge">🗂 <%= singleGroup.name %></span>
+            </div>
+          <% } %>
+
           <% if (typeof adminUser !== 'undefined' && adminUser) { %>
             <div class="user-avatar"><%= adminUser.name ? adminUser.name.charAt(0).toUpperCase() : '?' %></div>
             <span class="user-name"><%= adminUser.name || '' %></span>

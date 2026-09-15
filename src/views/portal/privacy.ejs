@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de Privacidade — Kakau Tech</title>
+  <link rel="icon" type="image/webp" href="/public/favicon.webp" />
+  <link rel="stylesheet" href="/public/portal.css" />
+  <style>
+    .legal-page { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+    .legal-page h1 { font-size: 28px; font-weight: 700; color: var(--text-primary, #212529); margin-bottom: 8px; }
+    .legal-page .subtitle { color: var(--text-secondary, #6c757d); font-size: 14px; margin-bottom: 40px; }
+    .legal-page h2 { font-size: 17px; font-weight: 700; color: var(--text-primary, #212529); margin: 32px 0 12px; }
+    .legal-page p, .legal-page li { font-size: 14px; color: var(--text-secondary, #495057); line-height: 1.8; margin-bottom: 12px; }
+    .legal-page ul { padding-left: 20px; margin-bottom: 12px; }
+    .legal-page a { color: #1187BD; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #1187BD; text-decoration: none; margin-bottom: 32px; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="legal-page">
+    <a href="/" class="back-link">← Voltar</a>
+
+    <h1>Política de Privacidade</h1>
+    <p class="subtitle">Última atualização: <%= new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }) %></p>
+
+    <p>
+      A <strong>Kakau Tech</strong> ("nós", "nosso") se compromete a proteger a privacidade dos usuários do portal KakauITSM ("Portal") em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD — Lei nº 13.709/2018).
+    </p>
+
+    <h2>1. Dados coletados</h2>
+    <p>Ao utilizar o Portal, coletamos os seguintes dados pessoais:</p>
+    <ul>
+      <li>Nome completo e endereço de e-mail (cadastro)</li>
+      <li>Dados de autenticação (senha armazenada de forma criptografada)</li>
+      <li>Informações dos chamados de suporte abertos (título, descrição, arquivos anexados)</li>
+      <li>Dados de navegação (IP, data/hora de acesso, sessão)</li>
+    </ul>
+
+    <h2>2. Finalidade do tratamento</h2>
+    <p>Seus dados são utilizados para:</p>
+    <ul>
+      <li>Autenticação e identificação no Portal</li>
+      <li>Gestão e acompanhamento de chamados de suporte</li>
+      <li>Envio de notificações relacionadas aos seus chamados</li>
+      <li>Cumprimento de obrigações contratuais e legais</li>
+    </ul>
+
+    <h2>3. Base legal</h2>
+    <p>
+      O tratamento de dados é realizado com base no contrato entre seu empresa e a Kakau Tech (art. 7º, V, LGPD) e no legítimo interesse para prestação do serviço de suporte.
+    </p>
+
+    <h2>4. Compartilhamento de dados</h2>
+    <p>
+      Seus dados não são vendidos ou compartilhados com terceiros para fins comerciais. Podemos compartilhá-los apenas com prestadores de serviços necessários para a operação do Portal (ex.: serviço de armazenamento em nuvem), sempre sob acordo de confidencialidade.
+    </p>
+
+    <h2>5. Armazenamento e segurança</h2>
+    <p>
+      Os dados são armazenados em servidores seguros. Senhas são armazenadas usando hash criptográfico (bcrypt). Arquivos são armazenados em serviço de nuvem com controle de acesso por URL assinada com validade limitada.
+    </p>
+
+    <h2>6. Seus direitos (LGPD)</h2>
+    <p>Como titular de dados, você tem direito a:</p>
+    <ul>
+      <li>Confirmar a existência de tratamento e acessar seus dados</li>
+      <li>Solicitar a correção de dados incompletos ou incorretos</li>
+      <li>Solicitar a exclusão de dados desnecessários ou tratados em desconformidade</li>
+      <li>Revogar o consentimento a qualquer momento</li>
+    </ul>
+    <p>Para exercer seus direitos, entre em contato pelo e-mail: <a href="mailto:privacidade@kakautech.com">privacidade@kakautech.com</a></p>
+
+    <h2>7. Retenção de dados</h2>
+    <p>
+      Os dados são mantidos durante o período de vigência do contrato de suporte. Após o encerramento, os dados são excluídos em até 90 dias, salvo obrigação legal de retenção.
+    </p>
+
+    <h2>8. Contato</h2>
+    <p>
+      Dúvidas sobre esta política podem ser enviadas para: <a href="mailto:privacidade@kakautech.com">privacidade@kakautech.com</a>
+    </p>
+  </div>
+</body>
+</html>

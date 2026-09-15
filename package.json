@@ -16,6 +16,7 @@
     "express-formidable": "^1.2.0",
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.1",
+    "helmet": "^8.2.0",
     "json2csv": "^6.0.0-alpha.2",
     "lodash": "^4.17.21",
     "multer": "^2.0.1",
@@ -51,6 +52,6 @@
     "db:seed": "sequelize-cli db:seed:all",
     "build": "babel src --out-dir dist --copy-files --extensions \".js\"",
     "start": "node dist/server.js"
-  }
+  },
+  "packageManager": "yarn@4.18.0+sha512.fcb8716fe7cd0eece141ffc18b92193a9df9204c1ba83189c288835223fc0bbe64af473bab0d5e9927a7daeb5caf2bb07eb2787cc9338ca040ea125f2a1f2f7e"
 }
-

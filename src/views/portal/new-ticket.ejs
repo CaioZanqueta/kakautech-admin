@@ -18,14 +18,37 @@
           <div class="card-header"><h1>Abrir Novo Chamado</h1></div>
           <% if (typeof message !== 'undefined' && message) { %>
           <div class="feedback-message success-message"><%= message %></div>
-          <% } %> <% if (typeof error !== 'undefined' && error) { %>
+          <% } %>
+          <% if (typeof error !== 'undefined' && error) { %>
           <div class="feedback-message error-message"><%= error %></div>
           <% } %>
-          <form action="/portal/tickets" method="POST" enctype="multipart/form-data">
+
+          <form id="ticket-form" action="/portal/tickets" method="POST" enctype="multipart/form-data"
+                onsubmit="handleSubmit(event)">
+
             <div class="form-group">
               <label for="title">* Título</label>
               <input type="text" id="title" name="title" required />
             </div>
+
+            <% if (typeof groups !== 'undefined' && groups.length > 1) { %>
+            <div class="form-group">
+              <label for="groupId">* Área de Suporte</label>
+              <select id="groupId" name="groupId" required>
+                <option value="">Selecione a área...</option>
+                <% groups.forEach(function(group) { %>
+                <option value="<%= group.id %>"><%= group.name %></option>
+                <% }); %>
+              </select>
+              <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+                Selecione a equipe responsável por este chamado.
+              </small>
+            </div>
+            <% } else if (typeof groups !== 'undefined' && groups.length === 1) { %>
+            <%/* Projeto em apenas 1 grupo: preenche invisível e mostra info */%>
+            <input type="hidden" name="groupId" value="<%= groups[0].id %>" />
+            <% } %>
+
             <div class="form-group">
               <label for="category">Categoria</label>
               <select id="category" name="category">
@@ -37,18 +60,21 @@
                 <option value="Outros">Outros</option>
               </select>
             </div>
+
             <div class="form-group">
-              <label for="urgency">* Urgência (Sua necessidade de tempo)</label>
+              <label for="urgency">* Urgência</label>
               <select id="urgency" name="urgency" required>
                 <option value="low" selected>Baixa (Pode esperar)</option>
                 <option value="medium">Média (Normal)</option>
                 <option value="high">Alta (Urgente, prejudica o trabalho)</option>
               </select>
             </div>
+
             <div class="form-group">
               <label for="description">* Descrição</label>
               <textarea id="description" name="description" rows="5" required></textarea>
             </div>
+
             <div class="form-group">
               <label for="attachment">Anexo</label>
               <label for="attachment" class="upload-zone">
@@ -58,8 +84,9 @@
               </label>
               <input type="file" id="attachment" name="attachment" />
             </div>
+
             <div class="form-footer">
-              <button type="submit" class="btn-submit">Enviar Chamado</button>
+              <button type="submit" id="submit-btn" class="btn-submit">Enviar Chamado</button>
             </div>
           </form>
         </div>
@@ -72,12 +99,18 @@
       const fileNameDisplay = document.getElementById("file-name");
       if (fileInput) {
         fileInput.addEventListener("change", function () {
-          if (this.files.length > 0) {
-            fileNameDisplay.textContent = "Arquivo selecionado: " + this.files[0].name;
-          } else {
-            fileNameDisplay.textContent = "";
-          }
+          fileNameDisplay.textContent = this.files.length > 0
+            ? "Arquivo selecionado: " + this.files[0].name
+            : "";
         });
+      }
+
+      function handleSubmit(e) {
+        const btn = document.getElementById('submit-btn');
+        if (btn.disabled) { e.preventDefault(); return; }
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        btn.style.opacity = '0.7';
       }
     </script>
   </body>

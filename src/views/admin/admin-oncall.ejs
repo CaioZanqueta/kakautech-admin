@@ -1,0 +1,789 @@
+<style>
+  /* ── Tokens locais (derivados da paleta global do painel) ── */
+  .oncall-page {
+    --oncall-nivel1-bg: rgba(17,135,189,0.14); --oncall-nivel1-fg: #0c5e84; --oncall-nivel1-dot: #1187BD;
+    --oncall-nivel2-bg: rgba(217,119,6,0.14);  --oncall-nivel2-fg: #92400e; --oncall-nivel2-dot: #d97706;
+    --oncall-nivel3-bg: rgba(220,38,38,0.14);  --oncall-nivel3-fg: #b91c1c; --oncall-nivel3-dot: #dc2626;
+    --oncall-nivel0-bg: var(--border-color);   --oncall-nivel0-fg: var(--text-muted); --oncall-nivel0-dot: var(--text-muted);
+    --oncall-weekend-bg: rgba(17,135,189,0.035);
+    --oncall-today-bg: rgba(17,135,189,0.08);
+    --oncall-danger: #dc2626; --oncall-danger-bg: rgba(220,38,38,0.08);
+  }
+  .dark-mode .oncall-page {
+    --oncall-nivel1-bg: rgba(17,135,189,0.22); --oncall-nivel1-fg: #7ecbe8;
+    --oncall-nivel2-bg: rgba(217,119,6,0.22);  --oncall-nivel2-fg: #fbbf24;
+    --oncall-nivel3-bg: rgba(220,38,38,0.24);  --oncall-nivel3-fg: #fca5a5;
+    --oncall-weekend-bg: rgba(255,255,255,0.02);
+    --oncall-today-bg: rgba(17,135,189,0.14);
+    --oncall-danger: #f87171; --oncall-danger-bg: rgba(220,38,38,0.16);
+  }
+
+  /* ── Layout ── */
+  .oncall-page { display: flex; flex-direction: column; gap: 20px; }
+  .oncall-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: var(--card-radius); padding: 14px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .oncall-toolbar h1 {
+    font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0 12px 0 0;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+
+  .btn-view-toggle {
+    display: flex; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: var(--btn-radius); padding: 3px; gap: 2px;
+  }
+  .btn-view-toggle button {
+    background: none; border: none; padding: 6px 16px; font-size: 13px;
+    color: var(--text-muted); cursor: pointer; transition: var(--transition);
+    border-radius: var(--btn-radius); font-family: inherit; font-weight: 500;
+  }
+  .btn-view-toggle button.active {
+    background: var(--primary); color: #fff; font-weight: 600; box-shadow: var(--shadow-sm);
+  }
+
+  .btn-nav, .btn-today {
+    background: var(--bg-input); border: 1.5px solid var(--border-input);
+    color: var(--text-main); border-radius: var(--btn-radius); padding: 7px 16px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: var(--transition); line-height: 1;
+  }
+  .btn-nav { padding: 7px 13px; }
+  .btn-nav:hover, .btn-today:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .btn-today { color: var(--primary); border-color: var(--primary); background: var(--bg-card); }
+  .btn-nav-primary {
+    background: var(--primary); border-color: var(--primary); color: #fff;
+  }
+  .btn-nav-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #fff; }
+  .btn-nav-danger {
+    background: transparent; border-color: var(--oncall-danger); color: var(--oncall-danger);
+  }
+  .btn-nav-danger:hover { background: var(--oncall-danger-bg); border-color: var(--oncall-danger); color: var(--oncall-danger); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+
+  .period-label { font-size: 14px; font-weight: 700; color: var(--text-main); min-width: 168px; text-align: center; letter-spacing: -0.2px; }
+
+  .group-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn-group-filter {
+    background: var(--bg-input); border: 1.5px solid var(--border-input);
+    color: var(--text-muted); border-radius: var(--btn-radius); padding: 6px 14px;
+    font-size: 12px; font-weight: 600; cursor: pointer; transition: var(--transition); font-family: inherit;
+  }
+  .btn-group-filter:hover { border-color: var(--primary); color: var(--primary); }
+  .btn-group-filter.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  .toolbar-divider { width: 1px; align-self: stretch; background: var(--border-color); margin: 0 2px; }
+
+  /* ── Calendário ── */
+  .calendar-container {
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: var(--card-radius); overflow: hidden; box-shadow: var(--shadow-sm);
+  }
+  .calendar-empty {
+    padding: 60px 20px; text-align: center; color: var(--text-muted); font-size: 13px;
+  }
+
+  /* Grade semanal */
+  .week-grid {
+    display: grid;
+    grid-template-columns: 130px repeat(7, 1fr);
+  }
+  .week-corner-cell {
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-body);
+    display: flex; align-items: center; padding: 0 14px;
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .week-header-cell {
+    padding: 10px 6px 12px; text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    font-size: 12px; background: var(--bg-body);
+  }
+  .week-header-cell .day-name { font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
+  .week-header-cell .day-num  {
+    font-size: 19px; font-weight: 700; color: var(--text-main); line-height: 1.6;
+    width: 30px; height: 30px; border-radius: 50%; margin: 2px auto 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .week-header-cell.today { background: var(--oncall-today-bg); }
+  .week-header-cell.today .day-name { color: var(--primary); }
+  .week-header-cell.today .day-num { background: var(--primary); color: #fff; }
+
+  .week-label-col {
+    border-right: 1px solid var(--border-color);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; color: var(--text-main); padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color); min-height: 76px;
+  }
+  .week-label-col .group-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+  .oncall-group-row:nth-child(odd) .week-label-col,
+  .oncall-group-row:nth-child(odd) .week-day-cell { background: var(--table-hover); }
+
+  .week-day-cell {
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px; min-height: 76px; vertical-align: top;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: background .15s;
+  }
+  .week-day-cell.weekend { background: var(--oncall-weekend-bg); }
+  .week-day-cell.today { background: var(--oncall-today-bg); }
+
+  /* Quando há apenas 1 grupo visível, a linha única fica mais confortável:
+     célula mais alta, com mais respiro, e os cartões de plantonista maiores. */
+  .week-grid.single-group .week-label-col,
+  .week-grid.single-group .week-day-cell {
+    min-height: 190px;
+  }
+  .week-grid.single-group .week-label-col {
+    font-size: 14px; padding: 14px 18px;
+  }
+  .week-grid.single-group .week-day-cell {
+    padding: 12px 10px; gap: 8px;
+  }
+  .week-grid.single-group .cal-event {
+    padding: 8px 12px 8px 10px; font-size: 13px; gap: 8px; border-radius: 10px;
+  }
+  .week-grid.single-group .cal-event .event-avatar {
+    width: 22px; height: 22px; font-size: 11px;
+  }
+
+  /* Grade mensal */
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .month-header-cell {
+    padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-body);
+  }
+  .month-day-cell {
+    min-height: 96px; padding: 6px; position: relative;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex; flex-direction: column; gap: 3px;
+    transition: background .15s;
+  }
+  .month-day-cell.weekend { background: var(--oncall-weekend-bg); }
+  .month-day-num {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .month-day-cell.today { background: var(--oncall-today-bg); }
+  .month-day-cell.today .month-day-num { background: var(--primary); color: #fff; }
+  .month-day-cell.other-month { opacity: .45; }
+  .month-more-badge {
+    font-size: 10px; font-weight: 700; color: var(--text-muted); background: var(--bg-input);
+    border-radius: var(--btn-radius); padding: 2px 8px; text-align: center; margin-top: 1px;
+  }
+
+  /* Evento */
+  .cal-event {
+    border-radius: 8px; padding: 4px 7px 4px 6px; font-size: 11.5px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; border-left: 3px solid transparent;
+    transition: var(--transition);
+  }
+  .cal-event:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .cal-event .event-avatar {
+    width: 17px; height: 17px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: #fff;
+  }
+  .cal-event .event-name { overflow: hidden; text-overflow: ellipsis; }
+  .nivel-1 { background: var(--oncall-nivel1-bg); color: var(--oncall-nivel1-fg); border-left-color: var(--oncall-nivel1-dot); }
+  .nivel-2 { background: var(--oncall-nivel2-bg); color: var(--oncall-nivel2-fg); border-left-color: var(--oncall-nivel2-dot); }
+  .nivel-3 { background: var(--oncall-nivel3-bg); color: var(--oncall-nivel3-fg); border-left-color: var(--oncall-nivel3-dot); }
+  .nivel-null { background: var(--oncall-nivel0-bg); color: var(--oncall-nivel0-fg); border-left-color: var(--oncall-nivel0-dot); }
+  .nivel-1 .event-avatar { background: var(--oncall-nivel1-dot); }
+  .nivel-2 .event-avatar { background: var(--oncall-nivel2-dot); }
+  .nivel-3 .event-avatar { background: var(--oncall-nivel3-dot); }
+  .nivel-null .event-avatar { background: var(--oncall-nivel0-dot); }
+
+  /* Tooltip / Popover de detalhe */
+  .event-popover {
+    position: fixed; z-index: 9999;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 16px; padding: 16px 18px; min-width: 230px; max-width: 300px;
+    box-shadow: var(--shadow-lg); display: none;
+  }
+  .event-popover.open { display: block; }
+  .popover-name { font-size: 14px; font-weight: 700; color: var(--text-main); }
+  .popover-nivel { font-size: 11px; font-weight: 700; border-radius: var(--btn-radius); padding: 2px 10px; display: inline-block; margin: 6px 0; }
+  .popover-info { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
+  .popover-info a { color: var(--primary); text-decoration: none; }
+  .btn-popover-end {
+    margin-top: 12px; width: 100%; background: none;
+    border: 1.5px solid rgba(220,38,38,0.4); color: #dc2626;
+    border-radius: var(--btn-radius); padding: 7px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: var(--transition);
+  }
+  .btn-popover-end:hover { background: rgba(220,38,38,0.08); }
+
+  /* Modal novo plantão (mesmo padrão visual de admin-groups.ejs) */
+  .oncall-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 9998;
+    align-items: center; justify-content: center;
+  }
+  .oncall-modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--text-main); margin-bottom: 20px; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label {
+    display: block; font-size: 12px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+  .modal-field input, .modal-field select, .modal-field textarea {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: var(--input-radius); color: var(--text-main); font-size: 14px;
+    padding: 9px 12px; outline: none; box-sizing: border-box; color-scheme: dark light;
+    font-family: inherit; resize: vertical;
+  }
+  .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(17,135,189,0.15);
+  }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .btn-cancel {
+    background: var(--bg-input); border: 1.5px solid var(--border-input); color: var(--text-main);
+    border-radius: var(--btn-radius); padding: 8px 20px; font-size: 14px; cursor: pointer;
+    font-weight: 600; font-family: inherit; transition: var(--transition);
+  }
+  .btn-cancel:hover { border-color: var(--text-muted); }
+  .btn-save {
+    background: var(--primary); color: #fff; border: none; border-radius: var(--btn-radius);
+    padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: var(--transition);
+  }
+  .btn-save:hover { background: var(--primary-hover); }
+  .btn-save:disabled { opacity: .6; cursor: default; }
+</style>
+
+<div class="oncall-page">
+
+  <!-- Toolbar -->
+  <div class="oncall-toolbar">
+    <h1>🟢 Plantão de Suporte</h1>
+
+    <!-- Filtro de grupo -->
+    <div class="group-filter-bar">
+      <button class="btn-group-filter active" data-group="" onclick="setGroupFilter(this, '')">Todos</button>
+      <% groups.forEach(function(g) { %>
+        <button class="btn-group-filter" data-group="<%= g.id %>" onclick="setGroupFilter(this, '<%= g.id %>')">
+          <%= g.name %>
+        </button>
+      <% }); %>
+    </div>
+
+    <!-- Alternância semana/mês -->
+    <div class="btn-view-toggle">
+      <button id="btn-week" class="active" onclick="setView('week')">Semana</button>
+      <button id="btn-month" onclick="setView('month')">Mês</button>
+    </div>
+
+    <!-- Navegação -->
+    <button class="btn-nav" onclick="navigate(-1)">&#8592;</button>
+    <span class="period-label" id="period-label"></span>
+    <button class="btn-nav" onclick="navigate(1)">&#8594;</button>
+    <button class="btn-today" onclick="goToday()">Hoje</button>
+
+    <% if (isAdmin) { %>
+    <button class="btn-nav btn-nav-primary" onclick="openNewModal()">
+      + Plantão
+    </button>
+    <button class="btn-nav btn-nav-danger" onclick="deleteAllSchedules()" title="Remove todos os plantões cadastrados">
+      Excluir todos
+    </button>
+    <% } %>
+  </div>
+
+  <!-- Calendário -->
+  <div class="calendar-container" id="calendar"></div>
+
+</div>
+
+<!-- Popover de detalhe do evento -->
+<div class="event-popover" id="event-popover">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <span class="popover-name" id="pop-name"></span>
+    <button style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;" onclick="closePopover()">&#10005;</button>
+  </div>
+  <span class="popover-nivel" id="pop-nivel"></span>
+  <div class="popover-info" id="pop-email"></div>
+  <div class="popover-info" id="pop-phone"></div>
+  <div class="popover-info" id="pop-period"></div>
+  <div class="popover-info" id="pop-group"></div>
+  <% if (isAdmin) { %>
+  <button class="btn-popover-end" id="pop-end-btn" onclick="endFromPopover()">Encerrar plantão</button>
+  <% } %>
+</div>
+
+<!-- Modal novo plantão manual -->
+<div class="oncall-modal-overlay" id="new-oncall-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">🟢 Novo Plantão</div>
+    <div class="modal-field">
+      <label>Grupo</label>
+      <select id="new-group-select">
+        <option value="">Selecionar...</option>
+        <% groups.forEach(function(g) { %>
+          <option value="<%= g.id %>"><%= g.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Plantonista</label>
+      <select id="new-user-select">
+        <option value="">Selecionar...</option>
+        <% allUsers.forEach(function(u) { %>
+          <option value="<%= u.id %>"><%= u.name %> (<%= u.email %>)</option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Nível</label>
+      <select id="new-nivel-select">
+        <option value="">Sem nível definido</option>
+        <option value="1">1º Nível</option>
+        <option value="2">2º Nível</option>
+        <option value="3">3º Nível</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Início</label>
+      <input type="datetime-local" id="new-starts-at" style="color-scheme: dark light;">
+    </div>
+    <div class="modal-field">
+      <label>Término (opcional)</label>
+      <input type="datetime-local" id="new-ends-at" style="color-scheme: dark light;">
+    </div>
+    <div class="modal-field">
+      <label>Telefone alternativo</label>
+      <input type="text" id="new-phone" placeholder="(11) 99999-9999">
+    </div>
+    <div id="new-modal-error" style="color:#ef4444;font-size:13px;display:none;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNewModal()">Cancelar</button>
+      <button class="btn-save" id="new-save-btn" onclick="saveNewOncall()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Estado ───────────────────────────────────────────────
+  var _view       = 'week';   // 'week' | 'month'
+  var _cursor     = new Date(); // data de referência
+  var _groupFilter = '';       // '' = todos, ou groupId
+  var _schedules  = [];        // dados carregados
+  var _popoverScheduleId = null;
+
+  // ─── Inicialização ────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    goToday();
+  });
+
+  document.getElementById('new-oncall-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeNewModal();
+  });
+  document.addEventListener('click', function(e) {
+    var pop = document.getElementById('event-popover');
+    if (pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.cal-event')) {
+      closePopover();
+    }
+  });
+
+  // ─── Controles ────────────────────────────────────────────
+  function setView(v) {
+    _view = v;
+    document.getElementById('btn-week').classList.toggle('active', v === 'week');
+    document.getElementById('btn-month').classList.toggle('active', v === 'month');
+    loadAndRender();
+  }
+
+  function navigate(dir) {
+    if (_view === 'week') {
+      _cursor = new Date(_cursor.getTime() + dir * 7 * 86400000);
+    } else {
+      _cursor = new Date(_cursor.getFullYear(), _cursor.getMonth() + dir, 1);
+    }
+    loadAndRender();
+  }
+
+  function goToday() {
+    _cursor = new Date();
+    loadAndRender();
+  }
+
+  function setGroupFilter(btn, groupId) {
+    _groupFilter = groupId;
+    document.querySelectorAll('.btn-group-filter').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    btn.classList.add('active');
+    loadAndRender();
+  }
+
+  // ─── Datas auxiliares ─────────────────────────────────────
+  function getWeekBounds(date) {
+    // Segunda a domingo
+    var d = new Date(date);
+    var day = d.getDay(); // 0=dom
+    var diff = (day === 0 ? -6 : 1 - day);
+    var mon = new Date(d);
+    mon.setDate(d.getDate() + diff);
+    mon.setHours(0, 0, 0, 0);
+    var sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    sun.setHours(23, 59, 59, 999);
+    return { start: mon, end: sun };
+  }
+
+  function getMonthBounds(date) {
+    var start = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0);
+    var end   = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+    return { start, end };
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+  function fmtShort(d) {
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  }
+
+  var DIAS_PT  = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  var MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  // ─── Carregar dados ───────────────────────────────────────
+  async function loadAndRender() {
+    var bounds = _view === 'week' ? getWeekBounds(_cursor) : getMonthBounds(_cursor);
+
+    // Expandir bounds para pegar plantões que cruzam o período
+    var url = '/admin/api/oncall/calendar?start=' + bounds.start.toISOString() + '&end=' + bounds.end.toISOString();
+    if (_groupFilter) url += '&groupId=' + _groupFilter;
+
+    try {
+      var res  = await fetch(url);
+      var data = await res.json();
+      _schedules = data.schedules || [];
+    } catch (e) {
+      console.error('Erro ao carregar plantões:', e);
+      _schedules = [];
+    }
+
+    if (_view === 'week') renderWeek(bounds);
+    else renderMonth(bounds);
+  }
+
+  // ─── Eventos ativos em um dia ─────────────────────────────
+  function schedulesForDay(day) {
+    var dayStart = new Date(day); dayStart.setHours(0,0,0,0);
+    var dayEnd   = new Date(day); dayEnd.setHours(23,59,59,999);
+    return _schedules.filter(function(s) {
+      var st = new Date(s.startsAt);
+      var en = s.endsAt ? new Date(s.endsAt) : new Date('2099-12-31');
+      return st <= dayEnd && en >= dayStart && !s.endedAt;
+    }).sort(function(a, b) {
+      var na = a.nivel || 99, nb = b.nivel || 99;
+      return na - nb;
+    });
+  }
+
+  function nivelClass(nivel) {
+    if (nivel === 1) return 'nivel-1';
+    if (nivel === 2) return 'nivel-2';
+    if (nivel === 3) return 'nivel-3';
+    return 'nivel-null';
+  }
+  function nivelTag(nivel) {
+    if (nivel === 1) return '①';
+    if (nivel === 2) return '②';
+    if (nivel === 3) return '③';
+    return '';
+  }
+
+  function initials(nome) {
+    var parts = nome.trim().split(/\s+/);
+    var first = parts[0] ? parts[0].charAt(0) : '';
+    var last  = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+    return (first + last).toUpperCase() || '?';
+  }
+
+  function renderEvent(s) {
+    var user  = s.User  || {};
+    var nome  = user.name || '?';
+    var tag   = nivelTag(s.nivel);
+    return '<div class="cal-event ' + nivelClass(s.nivel) + '" onclick="showPopover(event,' + s.id + ')" title="' + nome + (s.nivel ? ' · ' + s.nivel + 'º Nível' : '') + '">' +
+      '<span class="event-avatar">' + initials(nome) + '</span>' +
+      (tag ? '<span>' + tag + '</span>' : '') +
+      '<span class="event-name">' + nome.split(' ')[0] + '</span>' +
+    '</div>';
+  }
+
+  // ─── Render semanal ───────────────────────────────────────
+  function renderWeek(bounds) {
+    var mon = bounds.start;
+    var days = [];
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      days.push(d);
+    }
+
+    // Atualiza label
+    document.getElementById('period-label').textContent =
+      fmtShort(days[0]) + ' – ' + fmtShort(days[6]) + ' / ' + days[0].getFullYear();
+
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    // Linhas por grupo (calculado antes do cabeçalho para saber se é grupo único)
+    var groupsToShow = _groupFilter
+      ? [{ id: parseInt(_groupFilter), name: '' }]
+      : <%- JSON.stringify(groups.map(function(g) { return { id: g.id, name: g.name }; })) %>;
+
+    // Cabeçalho
+    var html = '<div class="week-grid' + (groupsToShow.length === 1 ? ' single-group' : '') + '">';
+    html += '<div class="week-corner-cell">Grupo</div>';
+    days.forEach(function(d) {
+      var isToday   = d.getTime() === today.getTime();
+      var isWeekend = d.getDay() === 0 || d.getDay() === 6;
+      html += '<div class="week-header-cell' + (isToday ? ' today' : '') + (isWeekend ? ' weekend' : '') + '">';
+      html += '<div class="day-name">' + DIAS_PT[d.getDay()] + '</div>';
+      html += '<div class="day-num">' + d.getDate() + '</div>';
+      html += '</div>';
+    });
+
+    if (groupsToShow.length === 0) {
+      html += '</div>';
+      document.getElementById('calendar').innerHTML = html + '<div class="calendar-empty">Nenhum grupo cadastrado.</div>';
+      return;
+    }
+
+    groupsToShow.forEach(function(g) {
+      html += '<div class="oncall-group-row" style="display:contents;">';
+      html += '<div class="week-label-col"><span class="group-dot"></span>' + (g.name || 'Grupo') + '</div>';
+      days.forEach(function(d) {
+        var isToday   = d.getTime() === today.getTime();
+        var isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        var events = schedulesForDay(d).filter(function(s) {
+          return !_groupFilter || (s.Group && s.Group.id == _groupFilter) || (s.groupId == g.id);
+        });
+        // se não filtrando por grupo, filtra pelo grupo desta linha
+        if (!_groupFilter) {
+          events = schedulesForDay(d).filter(function(s) { return s.groupId === g.id; });
+        }
+        html += '<div class="week-day-cell' + (isToday ? ' today' : '') + (isWeekend ? ' weekend' : '') + '">';
+        events.forEach(function(s) { html += renderEvent(s); });
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    html += '</div>';
+    document.getElementById('calendar').innerHTML = html;
+  }
+
+  // ─── Render mensal ────────────────────────────────────────
+  function renderMonth(bounds) {
+    var year  = _cursor.getFullYear();
+    var month = _cursor.getMonth();
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    document.getElementById('period-label').textContent = MESES_PT[month] + ' ' + year;
+
+    // Primeiro dia do mês e quantos dias tem
+    var firstDay = new Date(year, month, 1);
+    var lastDay  = new Date(year, month + 1, 0);
+
+    // Começa na segunda antes do dia 1
+    var startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    var gridStart   = new Date(firstDay);
+    gridStart.setDate(firstDay.getDate() - startOffset);
+
+    var html = '<div class="month-grid">';
+    ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(function(d) {
+      html += '<div class="month-header-cell">' + d + '</div>';
+    });
+
+    // 6 semanas = 42 células
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(gridStart);
+      d.setDate(gridStart.getDate() + i);
+      var isToday     = d.getTime() === today.getTime();
+      var otherMonth  = d.getMonth() !== month;
+      var isWeekend   = d.getDay() === 0 || d.getDay() === 6;
+      var events      = _groupFilter ? schedulesForDay(d).filter(function(s) { return (s.Group && s.Group.id == _groupFilter) || s.groupId == _groupFilter; }) : schedulesForDay(d);
+
+      html += '<div class="month-day-cell' + (isToday ? ' today' : '') + (otherMonth ? ' other-month' : '') + (isWeekend ? ' weekend' : '') + '">';
+      html += '<div class="month-day-num">' + d.getDate() + '</div>';
+      // Máximo 3 eventos visíveis + "+N"
+      var visible = events.slice(0, 3);
+      var hidden  = events.length - visible.length;
+      visible.forEach(function(s) { html += renderEvent(s); });
+      if (hidden > 0) {
+        html += '<div class="month-more-badge">+' + hidden + ' mais</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    document.getElementById('calendar').innerHTML = html;
+  }
+
+  // ─── Popover ──────────────────────────────────────────────
+  function showPopover(event, scheduleId) {
+    event.stopPropagation();
+    var s = _schedules.find(function(x) { return x.id === scheduleId; });
+    if (!s) return;
+
+    _popoverScheduleId = scheduleId;
+    var user  = s.User  || {};
+    var group = s.Group || {};
+    var phone = s.phoneOverride || user.phone || null;
+
+    var nivelLabels = { 1: '1º Nível', 2: '2º Nível', 3: '3º Nível' };
+    var nivelColors = { 1: '#1d4ed8', 2: '#92400e', 3: '#991b1b' };
+    var nivelBg     = { 1: 'rgba(59,130,246,0.15)', 2: 'rgba(245,158,11,0.15)', 3: 'rgba(239,68,68,0.15)' };
+
+    document.getElementById('pop-name').textContent  = user.name || '?';
+
+    var nivelEl = document.getElementById('pop-nivel');
+    if (s.nivel) {
+      nivelEl.textContent = nivelLabels[s.nivel] || '';
+      nivelEl.style.background = nivelBg[s.nivel]   || 'rgba(107,114,128,0.15)';
+      nivelEl.style.color      = nivelColors[s.nivel] || '#374151';
+      nivelEl.style.display    = 'inline-block';
+    } else {
+      nivelEl.style.display = 'none';
+    }
+
+    document.getElementById('pop-email').innerHTML = user.email
+      ? '✉ <a href="mailto:' + user.email + '">' + user.email + '</a>'
+      : '';
+    document.getElementById('pop-phone').innerHTML = phone
+      ? '📞 <a href="tel:' + phone.replace(/\D/g,'') + '">' + phone + '</a>'
+      : '';
+
+    var starts = new Date(s.startsAt);
+    var ends   = s.endsAt ? new Date(s.endsAt) : null;
+    document.getElementById('pop-period').textContent =
+      '📅 ' + fmtDate(starts) + (ends ? ' → ' + fmtDate(ends) : ' → em aberto');
+
+    document.getElementById('pop-group').textContent = group.name ? '🏷 ' + group.name : '';
+
+    // Posicionar
+    var pop = document.getElementById('event-popover');
+    pop.style.display = 'none';
+    pop.classList.add('open');
+    var rect = event.target.getBoundingClientRect();
+    var left = Math.min(rect.left, window.innerWidth - 320);
+    pop.style.left = left + 'px';
+    pop.style.top  = (rect.bottom + 6) + 'px';
+    pop.style.display = 'block';
+  }
+
+  function closePopover() {
+    document.getElementById('event-popover').classList.remove('open');
+    _popoverScheduleId = null;
+  }
+
+  async function endFromPopover() {
+    if (!_popoverScheduleId) return;
+    if (!confirm('Encerrar este plantão agora?')) return;
+    try {
+      var res = await fetch('/admin/api/oncall/' + _popoverScheduleId + '/end', { method: 'PATCH' });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      closePopover();
+      loadAndRender();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ─── Excluir todos os plantões ─────────────────────────────
+  async function deleteAllSchedules() {
+    var filtroGrupo = _groupFilter ? (document.querySelector('.btn-group-filter.active') ? document.querySelector('.btn-group-filter.active').textContent.trim() : 'grupo selecionado') : null;
+    var escopo = filtroGrupo ? ('todos os plantões do grupo "' + filtroGrupo + '"') : 'TODOS os plantões de TODOS os grupos';
+
+    if (!confirm('Isso vai excluir permanentemente ' + escopo + '. Esta ação não pode ser desfeita. Deseja continuar?')) return;
+
+    var digitado = prompt('Para confirmar, digite EXCLUIR em letras maiúsculas:');
+    if (digitado !== 'EXCLUIR') {
+      if (digitado !== null) alert('Confirmação incorreta. Nenhum plantão foi excluído.');
+      return;
+    }
+
+    try {
+      var url = '/admin/api/oncall/all';
+      if (_groupFilter) url += '?groupId=' + _groupFilter;
+      var res = await fetch(url, { method: 'DELETE' });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro.');
+      alert((data.count || 0) + ' plantão(ões) removido(s).');
+      closePopover();
+      loadAndRender();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ─── Modal novo plantão ───────────────────────────────────
+  function openNewModal() {
+    var now  = new Date();
+    var week = new Date(now.getTime() + 7 * 86400000);
+    var fmt  = function(d) { return d.toISOString().slice(0, 16); };
+    document.getElementById('new-starts-at').value = fmt(now);
+    document.getElementById('new-ends-at').value   = fmt(week);
+    document.getElementById('new-modal-error').style.display = 'none';
+    document.getElementById('new-oncall-modal').classList.add('open');
+  }
+  function closeNewModal() {
+    document.getElementById('new-oncall-modal').classList.remove('open');
+  }
+
+  async function saveNewOncall() {
+    var groupId  = document.getElementById('new-group-select').value;
+    var userId   = document.getElementById('new-user-select').value;
+    var nivel    = document.getElementById('new-nivel-select').value;
+    var startsAt = document.getElementById('new-starts-at').value;
+    var endsAt   = document.getElementById('new-ends-at').value;
+    var phone    = document.getElementById('new-phone').value.trim();
+    var errEl    = document.getElementById('new-modal-error');
+
+    errEl.style.display = 'none';
+    if (!groupId) { errEl.textContent = 'Selecione o grupo.';       errEl.style.display = 'block'; return; }
+    if (!userId)  { errEl.textContent = 'Selecione o plantonista.'; errEl.style.display = 'block'; return; }
+    if (!startsAt){ errEl.textContent = 'Informe a data de início.';errEl.style.display = 'block'; return; }
+
+    var btn = document.getElementById('new-save-btn');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+
+    try {
+      var res = await fetch('/admin/api/oncall/' + groupId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, nivel: nivel || null, startsAt, endsAt: endsAt || null, phoneOverride: phone || null }),
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro.');
+      closeNewModal();
+      loadAndRender();
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Salvar';
+    }
+  }
+</script>

@@ -4,7 +4,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </div>
         <div class="breadcrumbs">
-            </div>
+            <%= locals.breadcrumb || '' %>
+        </div>
     </div>
     <div class="topbar-right-controls">
         <% if (locals.supportHoursLimit) { %>
@@ -17,9 +18,17 @@
         </div>
         <div class="dropdown">
             <div class="dropdown-toggle" id="user-menu-toggle">
-                <span><% if (typeof user !== 'undefined' && user) { %><%= user.email %><% } %></span>
+                <%
+                  // Fix #5: exibir nome curto em vez do e-mail
+                  let displayName = '';
+                  if (typeof user !== 'undefined' && user) {
+                    displayName = user.shortName || user.name || user.email || '';
+                  }
+                %>
+                <span><%= displayName %></span>
             </div>
             <div class="dropdown-content" id="user-menu-content">
+                <a href="/portal/profile">Meu Perfil</a>
                 <a href="/portal/logout">Sair</a>
             </div>
         </div>

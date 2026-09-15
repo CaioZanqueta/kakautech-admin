@@ -17,26 +17,26 @@ class User extends Model {
             return '';
           },
         },
-        // ===== CAMPO VIRTUAL ADICIONADO =====
         shortName: {
           type: Sequelize.VIRTUAL,
           get() {
             const fullName = this.name || '';
-            const names = fullName.split(' ').filter(Boolean); // filter(Boolean) remove espaços extra
+            const names = fullName.split(' ').filter(Boolean);
             if (names.length > 1) {
               return `${names[0]} ${names[names.length - 1]}`;
             }
             return fullName;
           },
         },
-        // ===================================
-        name: Sequelize.STRING,
-        email: Sequelize.STRING,
-        password: Sequelize.VIRTUAL,
-        password_hash: Sequelize.STRING,
-        google_id: Sequelize.STRING,
-        role: Sequelize.ENUM("admin", "manager", "developer"),
-        status: Sequelize.ENUM("active", "archived"),
+        name:           Sequelize.STRING,
+        email:          Sequelize.STRING,
+        phone:          Sequelize.STRING,  // ← campo adicionado para plantão
+        password:       Sequelize.VIRTUAL,
+        password_hash:  Sequelize.STRING,
+        google_id:      Sequelize.STRING,
+        microsoft_id:   Sequelize.STRING,
+        role:           Sequelize.ENUM("admin", "manager", "developer"),
+        status:         Sequelize.ENUM("active", "archived"),
       },
       {
         sequelize,
@@ -63,12 +63,21 @@ class User extends Model {
     this.hasMany(models.Comment, { foreignKey: "user_id" });
     this.hasMany(models.TimeLog, { foreignKey: "userId" });
     this.hasMany(models.ActivityLog, { foreignKey: "userId" });
+    if (models.Group) {
+      this.belongsToMany(models.Group, {
+        through: "user_groups",
+        as: "Groups",
+        foreignKey: "user_id",
+        otherKey: "group_id",
+      });
+    }
+    if (models.OnCallSchedule) {
+      this.hasMany(models.OnCallSchedule, { foreignKey: "userId", as: "OnCallSchedules" });
+    }
   }
 
   checkPassword(password) {
-    if (!this.password_hash) {
-      return false;
-    }
+    if (!this.password_hash) return false;
     return checkPassword(this, password);
   }
 }

@@ -22,10 +22,12 @@
             </div>
             <div class="filters-and-search">
               <div class="filter-buttons">
-                <a href="/portal/tickets?search=<%= currentSearch %>" class="btn-filter <%= currentStatus === '' ? 'active' : '' %>">Todos</a>
-                <a href="/portal/tickets?status=open&search=<%= currentSearch %>" class="btn-filter <%= currentStatus === 'open' ? 'active' : '' %>">Abertos</a>
-                <a href="/portal/tickets?status=in_progress&search=<%= currentSearch %>" class="btn-filter <%= currentStatus === 'in_progress' ? 'active' : '' %>">Em Andamento</a>
-                <a href="/portal/tickets?status=closed&search=<%= currentSearch %>" class="btn-filter <%= currentStatus === 'closed' ? 'active' : '' %>">Fechados</a>
+                <% var s = currentStatus; %>
+                <a href="/portal/tickets?search=<%= currentSearch %>" class="btn-filter <%= s === '' ? 'active' : '' %>">Todos</a>
+                <a href="/portal/tickets?status=open&search=<%= currentSearch %>" class="btn-filter <%= s === 'open' ? 'active' : '' %>">Abertos</a>
+                <a href="/portal/tickets?status=pending&search=<%= currentSearch %>" class="btn-filter <%= s === 'pending' ? 'active' : '' %>">Pendente</a>
+                <a href="/portal/tickets?status=in_progress&search=<%= currentSearch %>" class="btn-filter <%= s === 'in_progress' ? 'active' : '' %>">Em Andamento</a>
+                <a href="/portal/tickets?status=closed&search=<%= currentSearch %>" class="btn-filter <%= s === 'closed' ? 'active' : '' %>">Fechados</a>
               </div>
               <form action="/portal/tickets" method="GET" class="search-form">
                 <input type="hidden" name="status" value="<%= currentStatus %>">
@@ -44,26 +46,38 @@
               <thead>
                 <tr>
                   <th>Título</th>
-                  <th>Criado Por</th>
+                  <th>Área</th>
                   <th>Prioridade</th>
                   <th>Status</th>
-                  <th>Última Atualização</th>
+                  <th>Aberto em</th>
+                  <th>Atualizado em</th>
                 </tr>
               </thead>
               <tbody>
-                <% tickets.forEach(ticket => { %>
+                <% tickets.forEach(function(ticket) { %>
                 <tr>
                   <td data-label="Título">
                     <a href="/portal/tickets/<%= ticket.id %>"><%= ticket.title %></a>
                   </td>
-                  <td data-label="Criado Por"><%= ticket.Client ? ticket.Client.name : 'N/D' %></td>
+                  <td data-label="Área">
+                    <% if (ticket.Group) { %>
+                    <span style="font-size:13px; color: var(--text-muted);"><%= ticket.Group.name %></span>
+                    <% } else { %>
+                    <span style="font-size:13px; color: var(--text-muted);">—</span>
+                    <% } %>
+                  </td>
                   <td data-label="Prioridade"><%= {low: 'Baixa', medium: 'Média', high: 'Alta'}[ticket.priority] || 'Média' %></td>
                   <td data-label="Status">
                     <span class="badge status-<%= ticket.status %>"><%= statusTranslations[ticket.status] || ticket.status %></span>
                   </td>
-                  <td data-label="Última Atualização"><%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric'}) %></td>
+                  <td data-label="Aberto em">
+                    <%= new Date(ticket.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+                  </td>
+                  <td data-label="Atualizado em">
+                    <%= new Date(ticket.updatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+                  </td>
                 </tr>
-                <% }) %>
+                <% }); %>
               </tbody>
             </table>
           </div>

@@ -9,8 +9,18 @@ import Ticket from "../models/ticket.js";
 import Comment from "../models/comment.js";
 import TimeLog from "../models/timelog.js";
 import ActivityLog from "../models/activitylog.js";
+import Holiday from "../models/holiday.js";
+import OvertimeRecord from "../models/overtimerecord.js";
+import Group from "../models/group.js";
+import OnCallSchedule from "../models/on-call-schedule.js";
 
-const models = [User, Project, Task, Client, Ticket, Comment, TimeLog, ActivityLog];
+const models = [
+  User, Project, Task, Client, Ticket,
+  Comment, TimeLog, ActivityLog,
+  Holiday, OvertimeRecord,
+  Group,
+  OnCallSchedule, // deve vir após Group e User
+];
 
 class Database {
   constructor() {

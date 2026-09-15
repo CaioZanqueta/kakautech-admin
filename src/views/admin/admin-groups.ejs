@@ -1,0 +1,1334 @@
+<style>
+  .groups-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .groups-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+  }
+  .groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .group-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .group-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .group-card-header-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .group-card-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .group-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+  .group-card-slug {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+    background: var(--bg-input);
+    border-radius: 4px;
+    padding: 2px 6px;
+    border: 1px solid var(--border-input);
+    white-space: nowrap;
+  }
+  .group-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .group-status.active  { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .group-status.archived { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .group-description {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    min-height: 20px;
+  }
+  .group-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .group-members-list, .group-projects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-main);
+    padding: 3px 10px 3px 6px;
+  }
+  .member-chip .chip-remove {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+  .member-chip .chip-remove:hover { color: #ef4444; }
+  .member-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .project-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6366f1;
+    padding: 3px 10px 3px 6px;
+  }
+  .project-chip .chip-remove {
+    background: none;
+    border: none;
+    color: rgba(99,102,241,0.5);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+  .project-chip .chip-remove:hover { color: #ef4444; }
+  .empty-chips {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  /* Inline add form */
+  .add-chip-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .add-chip-form select {
+    flex: 1;
+    min-width: 0;
+    width: 0; /* force flex shrink */
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 13px;
+    padding: 5px 8px;
+    outline: none;
+    color-scheme: dark light;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .add-chip-form select:focus { border-color: #3b82f6; }
+  .btn-add-chip {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-add-chip:hover { background: #2563eb; }
+  /* New group button */
+  .btn-new-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .btn-new-group:hover { background: #2563eb; }
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 9998;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 9999;
+  }
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 20px;
+  }
+  .modal-field {
+    margin-bottom: 16px;
+  }
+  .modal-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .modal-field input,
+  .modal-field select,
+  .modal-field textarea {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+    box-sizing: border-box;
+    color-scheme: dark light;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .modal-field input:focus,
+  .modal-field select:focus,
+  .modal-field textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  .btn-cancel {
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    color: var(--text-main);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-save {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-save:hover { background: #2563eb; }
+  .btn-danger { background: #ef4444 !important; }
+  .btn-danger:hover { background: #dc2626 !important; }
+  .btn-edit-group {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-edit-group:hover { border-color: #3b82f6; color: #3b82f6; }
+  .divider { height: 1px; background: var(--border-color); margin: 4px 0; }
+
+  /* ── Plantão ── */
+  .oncall-list { display: flex; flex-direction: column; gap: 8px; }
+  .oncall-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: 8px;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .oncall-item.active-item { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+  .oncall-user-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .oncall-user-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+  .oncall-user-meta { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .oncall-badge-active {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    background: rgba(34,197,94,0.15); color: #16a34a;
+    border-radius: 20px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0;
+  }
+  .oncall-badge-ended {
+    font-size: 10px; font-weight: 600;
+    background: rgba(107,114,128,0.1); color: #6b7280;
+    border-radius: 20px; padding: 2px 7px; white-space: nowrap; flex-shrink: 0;
+  }
+  .btn-end-oncall {
+    background: none; border: 1px solid rgba(239,68,68,0.4);
+    color: #ef4444; border-radius: 6px; padding: 3px 8px;
+    font-size: 11px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+  }
+  .btn-end-oncall:hover { background: rgba(239,68,68,0.08); }
+  .btn-add-oncall {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+    color: #16a34a; border-radius: 6px; padding: 4px 10px;
+    font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px;
+  }
+  .btn-add-oncall:hover { background: rgba(34,197,94,0.18); }
+  /* Modal plantão */
+  .oncall-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 9998;
+    align-items: center; justify-content: center;
+  }
+  .oncall-modal-overlay.open { display: flex; }
+</style>
+
+<div class="groups-header">
+  <h1>🗂 Grupos</h1>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/admin/api/oncall/modelo" download class="btn-new-group" style="background:#16a34a;">
+      ⬇️ Modelo Excel
+    </a>
+    <button class="btn-new-group" style="background:#7c3aed;" onclick="document.getElementById('import-modal').classList.add('open')">
+      📂 Importar (Modelo)
+    </button>
+    <button class="btn-new-group" style="background:#0891b2;" onclick="document.getElementById('custom-import-modal').classList.add('open')">
+      📅 Importar Planilha Própria
+    </button>
+    <button class="btn-new-group" onclick="openNewGroupModal()">+ Novo Grupo</button>
+  </div>
+</div>
+
+<% if (typeof groups !== 'undefined' && groups.length > 0) { %>
+  <div class="groups-grid">
+    <% groups.forEach(function(group) { %>
+      <div class="group-card" id="group-card-<%= group.id %>">
+        <!-- Header -->
+        <div class="group-card-header">
+          <div class="group-card-header-left">
+            <span class="group-card-title"><%= group.name %></span>
+            <span class="group-card-slug"><%= group.slug %></span>
+          </div>
+          <div class="group-card-header-right">
+            <span class="group-status <%= group.status %>">
+              <%= group.status === 'active' ? 'Ativo' : 'Arquivado' %>
+            </span>
+            <button class="btn-edit-group" onclick="openEditGroupModal(<%= JSON.stringify(group) %>)">Editar</button>
+          </div>
+        </div>
+
+        <!-- Descrição -->
+        <% if (group.description) { %>
+          <p class="group-description"><%= group.description %></p>
+        <% } %>
+
+        <div class="divider"></div>
+
+        <!-- Usuários -->
+        <div>
+          <div class="group-section-title">
+            <span>👤 Usuários (<%= group.Users ? group.Users.length : 0 %>)</span>
+          </div>
+          <div class="group-members-list" id="members-<%= group.id %>">
+            <% if (group.Users && group.Users.length > 0) { %>
+              <% group.Users.forEach(function(u) { %>
+                <span class="member-chip">
+                  <span class="member-avatar"><%= u.name ? u.name.charAt(0).toUpperCase() : '?' %></span>
+                  <%= u.name %>
+                  <button
+                    class="chip-remove"
+                    title="Remover do grupo"
+                    onclick="removeUserFromGroup(<%= group.id %>, <%= u.id %>, '<%= u.name.replace(/'/g, "\\'") %>')"
+                  >×</button>
+                </span>
+              <% }); %>
+            <% } else { %>
+              <span class="empty-chips">Nenhum usuário</span>
+            <% } %>
+          </div>
+          <div class="add-chip-form">
+            <select id="user-select-<%= group.id %>">
+              <option value="">Adicionar usuário...</option>
+              <% if (typeof allUsers !== 'undefined') { allUsers.forEach(function(u) { %>
+                <option value="<%= u.id %>"><%= u.name %> (<%= u.email %>)</option>
+              <% }); } %>
+            </select>
+            <button class="btn-add-chip" onclick="addUserToGroup(<%= group.id %>)">+ Add</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Plantão -->
+        <div>
+          <div class="group-section-title">
+            <span>🟢 Plantão</span>
+          </div>
+          <div class="oncall-list" id="oncall-list-<%= group.id %>"></div>
+          <button class="btn-add-oncall" onclick="openOncallModal(<%= group.id %>)">
+            + Definir plantonista
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Projetos -->
+        <div>
+          <div class="group-section-title">
+            <span>📁 Projetos (<%= group.Projects ? group.Projects.length : 0 %>)</span>
+          </div>
+          <div class="group-projects-list" id="projects-<%= group.id %>">
+            <% if (group.Projects && group.Projects.length > 0) { %>
+              <% group.Projects.forEach(function(p) { %>
+                <span class="project-chip">
+                  <%= p.name %>
+                  <button
+                    class="chip-remove"
+                    title="Remover projeto do grupo"
+                    onclick="removeProjectFromGroup(<%= group.id %>, <%= p.id %>, '<%= p.name.replace(/'/g, "\\'") %>')"
+                  >×</button>
+                </span>
+              <% }); %>
+            <% } else { %>
+              <span class="empty-chips">Nenhum projeto</span>
+            <% } %>
+          </div>
+          <div class="add-chip-form">
+            <select id="project-select-<%= group.id %>">
+              <option value="">Adicionar projeto...</option>
+              <% if (typeof allProjects !== 'undefined') { allProjects.forEach(function(p) { %>
+                <option value="<%= p.id %>"><%= p.name %></option>
+              <% }); } %>
+            </select>
+            <button class="btn-add-chip" onclick="addProjectToGroup(<%= group.id %>)">+ Add</button>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } else { %>
+  <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+    <div style="font-size:40px;margin-bottom:12px;">🗂</div>
+    <p style="font-size:15px;">Nenhum grupo criado ainda.</p>
+    <button class="btn-new-group" onclick="openNewGroupModal()" style="margin-top:16px;">+ Criar primeiro grupo</button>
+  </div>
+<% } %>
+
+<!-- Modal: Novo / Editar Grupo -->
+<div class="modal-overlay" id="group-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Novo Grupo</div>
+    <input type="hidden" id="modal-group-id" value="">
+    <div class="modal-field">
+      <label>Nome</label>
+      <input type="text" id="modal-name" placeholder="Ex.: Cyber Security">
+    </div>
+    <div class="modal-field">
+      <label>Slug</label>
+      <input type="text" id="modal-slug" placeholder="Ex.: cyber-security">
+    </div>
+    <div class="modal-field">
+      <label>Descrição</label>
+      <textarea id="modal-description" rows="3" placeholder="Descrição opcional..."></textarea>
+    </div>
+    <div class="modal-field">
+      <label>Status</label>
+      <select id="modal-status">
+        <option value="active">Ativo</option>
+        <option value="archived">Arquivado</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeGroupModal()">Cancelar</button>
+      <button class="btn-save" id="modal-save-btn" onclick="saveGroup()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ─── Modal helpers ───
+  function openNewGroupModal() {
+    document.getElementById('modal-title').textContent = 'Novo Grupo';
+    document.getElementById('modal-group-id').value = '';
+    document.getElementById('modal-name').value = '';
+    document.getElementById('modal-slug').value = '';
+    document.getElementById('modal-description').value = '';
+    document.getElementById('modal-status').value = 'active';
+    document.getElementById('group-modal').classList.add('open');
+    document.getElementById('modal-name').focus();
+  }
+
+  function openEditGroupModal(group) {
+    document.getElementById('modal-title').textContent = 'Editar Grupo';
+    document.getElementById('modal-group-id').value = group.id;
+    document.getElementById('modal-name').value = group.name || '';
+    document.getElementById('modal-slug').value = group.slug || '';
+    document.getElementById('modal-description').value = group.description || '';
+    document.getElementById('modal-status').value = group.status || 'active';
+    document.getElementById('group-modal').classList.add('open');
+    document.getElementById('modal-name').focus();
+  }
+
+  function closeGroupModal() {
+    document.getElementById('group-modal').classList.remove('open');
+  }
+
+  // Auto-generate slug from name
+  document.getElementById('modal-name').addEventListener('input', function() {
+    const slug = this.value.toLowerCase()
+      .replace(/[áàãâä]/g, 'a').replace(/[éèêë]/g, 'e')
+      .replace(/[íìîï]/g, 'i').replace(/[óòõôö]/g, 'o')
+      .replace(/[úùûü]/g, 'u').replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!document.getElementById('modal-group-id').value) {
+      document.getElementById('modal-slug').value = slug;
+    }
+  });
+
+  // Close modal on overlay click
+  document.getElementById('group-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeGroupModal();
+  });
+
+  async function saveGroup() {
+    const id   = document.getElementById('modal-group-id').value;
+    const name = document.getElementById('modal-name').value.trim();
+    const slug = document.getElementById('modal-slug').value.trim();
+    const description = document.getElementById('modal-description').value.trim();
+    const status = document.getElementById('modal-status').value;
+
+    if (!name) { alert('Informe um nome para o grupo.'); return; }
+
+    const btn = document.getElementById('modal-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+      const method = id ? 'PUT' : 'POST';
+      const url    = id ? `/admin/api/groups/${id}` : '/admin/api/groups';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, slug, description, status }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Erro ao salvar grupo.');
+      }
+
+      // Recarrega a página para refletir as mudanças
+      window.location.reload();
+    } catch (e) {
+      alert(e.message);
+      btn.disabled = false;
+      btn.textContent = 'Salvar';
+    }
+  }
+
+  // ─── Usuários ───
+  async function addUserToGroup(groupId) {
+    const select = document.getElementById(`user-select-${groupId}`);
+    const userId = select.value;
+    if (!userId) return;
+
+    try {
+      const res = await fetch(`/admin/api/groups/${groupId}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      window.location.reload();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function removeUserFromGroup(groupId, userId, userName) {
+    if (!confirm(`Remover "${userName}" do grupo?`)) return;
+    try {
+      const res = await fetch(`/admin/api/groups/${groupId}/users/${userId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      window.location.reload();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ─── Projetos ───
+  async function addProjectToGroup(groupId) {
+    const select = document.getElementById(`project-select-${groupId}`);
+    const projectId = select.value;
+    if (!projectId) return;
+
+    try {
+      const res = await fetch(`/admin/api/groups/${groupId}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      window.location.reload();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function removeProjectFromGroup(groupId, projectId, projectName) {
+    if (!confirm(`Remover "${projectName}" do grupo?`)) return;
+    try {
+      const res = await fetch(`/admin/api/groups/${groupId}/projects/${projectId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      window.location.reload();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ── Plantão ──
+
+  // Carrega os plantões de todos os grupos ao abrir a página
+  async function loadAllOncall() {
+    <% if (typeof groups !== 'undefined' && groups.length > 0) { %>
+      const groupIds = [<%= groups.map(g => g.id).join(',') %>];
+      await Promise.all(groupIds.map(loadOncallForGroup));
+    <% } %>
+  }
+
+  async function loadOncallForGroup(groupId) {
+    try {
+      const res = await fetch(`/admin/api/oncall/${groupId}?active=true`);
+      const data = await res.json();
+      renderOncallList(groupId, data.schedules || []);
+    } catch (e) {
+      console.error('Erro ao carregar plantão do grupo', groupId, e);
+    }
+  }
+
+  function renderOncallList(groupId, schedules) {
+    const container = document.getElementById(`oncall-list-${groupId}`);
+    if (!container) return;
+
+    if (schedules.length === 0) {
+      container.innerHTML = '<span class="empty-chips">Nenhum plantonista ativo</span>';
+      return;
+    }
+
+    container.innerHTML = schedules.map(s => {
+      const user = s.User || {};
+      const phone = s.phoneOverride || user.phone || '—';
+      const endsAt = s.endsAt ? new Date(s.endsAt).toLocaleDateString('pt-BR') : 'Em aberto';
+      return `
+        <div class="oncall-item active-item" id="oncall-item-${s.id}">
+          <div class="oncall-user-info">
+            <span class="oncall-user-name">${user.name || '?'}</span>
+            <span class="oncall-user-meta">${user.email || ''} &middot; ${phone} &middot; até ${endsAt}</span>
+          </div>
+          <span class="oncall-badge-active">EM PLANTÃO</span>
+          <button class="btn-end-oncall" onclick="endOncall(${s.id}, ${groupId})">Encerrar</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  let oncallTargetGroupId = null;
+
+  function openOncallModal(groupId) {
+    oncallTargetGroupId = groupId;
+    document.getElementById('oncall-modal-groupid').value = groupId;
+    // Popula select de usuários com membros do grupo
+    const userSelect = document.getElementById('oncall-user-select');
+    userSelect.innerHTML = '<option value="">Selecionar plantonista...</option>';
+
+    <% if (typeof allUsers !== 'undefined') { %>
+      const allUsers = <%- JSON.stringify(allUsers.map(u => ({ id: u.id, name: u.name, email: u.email }))) %>;
+      allUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.name} (${u.email})`;
+        userSelect.appendChild(opt);
+      });
+    <% } %>
+
+    // Default: início = agora, fim = 7 dias
+    const now = new Date();
+    const week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const fmt = d => d.toISOString().slice(0, 16);
+    document.getElementById('oncall-starts-at').value = fmt(now);
+    document.getElementById('oncall-ends-at').value   = fmt(week);
+    document.getElementById('oncall-phone').value     = '';
+    document.getElementById('oncall-notes').value     = '';
+
+    document.getElementById('oncall-modal').classList.add('open');
+  }
+
+  function closeOncallModal() {
+    document.getElementById('oncall-modal').classList.remove('open');
+    oncallTargetGroupId = null;
+  }
+
+  async function saveOncall() {
+    const groupId      = document.getElementById('oncall-modal-groupid').value;
+    const userId       = document.getElementById('oncall-user-select').value;
+    const startsAt     = document.getElementById('oncall-starts-at').value;
+    const endsAt       = document.getElementById('oncall-ends-at').value;
+    const phoneOverride = document.getElementById('oncall-phone').value.trim();
+    const notes        = document.getElementById('oncall-notes').value.trim();
+
+    if (!userId)   { alert('Selecione o plantonista.'); return; }
+    if (!startsAt) { alert('Informe a data de início.'); return; }
+
+    const btn = document.getElementById('oncall-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+      const res = await fetch(`/admin/api/oncall/${groupId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, startsAt, endsAt: endsAt || null, phoneOverride, notes }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Erro ao salvar.');
+      }
+
+      const data = await res.json();
+      const s = data.schedule;
+      const user = s.User || {};
+      const phone = s.phoneOverride || user.phone || '—';
+      const endsAtLabel = s.endsAt ? new Date(s.endsAt).toLocaleDateString('pt-BR') : 'Em aberto';
+
+      const container = document.getElementById(`oncall-list-${groupId}`);
+      // Remove mensagem de "vazio" se houver
+      const emptyMsg = container.querySelector('.empty-chips');
+      if (emptyMsg) emptyMsg.remove();
+
+      container.insertAdjacentHTML('beforeend', `
+        <div class="oncall-item active-item" id="oncall-item-${s.id}">
+          <div class="oncall-user-info">
+            <span class="oncall-user-name">${user.name || '?'}</span>
+            <span class="oncall-user-meta">${user.email || ''} &middot; ${phone} &middot; até ${endsAtLabel}</span>
+          </div>
+          <span class="oncall-badge-active">EM PLANTÃO</span>
+          <button class="btn-end-oncall" onclick="endOncall(${s.id}, ${groupId})">Encerrar</button>
+        </div>
+      `);
+
+      closeOncallModal();
+    } catch (e) {
+      alert(e.message);
+      btn.disabled = false;
+      btn.textContent = 'Salvar';
+    }
+  }
+
+  async function endOncall(scheduleId, groupId) {
+    if (!confirm('Encerrar este plantão agora?')) return;
+    try {
+      const res = await fetch(`/admin/api/oncall/${scheduleId}/end`, { method: 'PATCH' });
+      if (!res.ok) throw new Error((await res.json()).message || 'Erro.');
+      // Remove o item da lista sem reload
+      const item = document.getElementById(`oncall-item-${scheduleId}`);
+      if (item) item.remove();
+      // Se ficou vazio, mostra mensagem
+      const container = document.getElementById(`oncall-list-${groupId}`);
+      if (container && container.children.length === 0) {
+        container.innerHTML = '<span class="empty-chips">Nenhum plantonista ativo</span>';
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // Carrega plantões ao iniciar
+  document.addEventListener('DOMContentLoaded', loadAllOncall);
+
+  // Fecha modal plantão ao clicar fora
+  document.getElementById('oncall-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeOncallModal();
+  });
+
+  // ====== IMPORTAÇÃO PLANILHA PRÓPRIA ======
+
+  var _customPreviewData = null; // var em vez de let evita TDZ no Sucrase
+
+  document.getElementById('custom-import-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+  document.getElementById('custom-preview-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+
+  async function uploadCustomImport() {
+    const groupId  = document.getElementById('custom-import-group').value;
+    const fileInp  = document.getElementById('custom-import-file');
+    const errEl    = document.getElementById('custom-import-error');
+    const btn      = document.getElementById('custom-import-upload-btn');
+
+    errEl.style.display = 'none';
+    if (!groupId) { errEl.textContent = 'Selecione o grupo de destino.'; errEl.style.display = 'block'; return; }
+    if (!fileInp.files || !fileInp.files[0]) { errEl.textContent = 'Selecione o arquivo .xlsx.'; errEl.style.display = 'block'; return; }
+
+    const fd = new FormData();
+    fd.append('file', fileInp.files[0]);
+    fd.append('groupId', groupId);
+
+    btn.disabled = true;
+    btn.textContent = 'Carregando...';
+
+    try {
+      const res  = await fetch('/admin/api/oncall/import/custom-preview', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro ao processar planilha.');
+
+      _customPreviewData = data;
+      renderCustomPreview(data);
+      document.getElementById('custom-import-modal').classList.remove('open');
+      document.getElementById('custom-preview-modal').classList.add('open');
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Carregar e Visualizar';
+    }
+  }
+
+  function renderCustomPreview(data) {
+    // Resumo
+    document.getElementById('custom-summary').innerHTML = `
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#16a34a">${data.totalEntries}</strong> entrada(s) detectada(s)
+      </div>
+      <div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#3b82f6">${data.autoMapped}</strong> mapeada(s) automaticamente
+      </div>
+      ${data.unmappedNames.length > 0 ? `
+      <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#d97706">${data.unmappedNames.length}</strong> nome(s) não identificado(s)
+      </div>` : ''}
+      ${data.conflicts.length > 0 ? `
+      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#ef4444">${data.conflicts.length}</strong> conflito(s)
+      </div>` : ''}
+    `;
+
+    // Nomes não mapeados — mostra select para vincular ao usuário certo
+    const unmappedSection = document.getElementById('custom-unmapped-section');
+    if (data.unmappedNames.length > 0) {
+      unmappedSection.style.display = 'block';
+      document.getElementById('custom-unmapped-list').innerHTML = data.unmappedNames.map(nome => `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:13px;font-weight:600;color:var(--text-main);min-width:130px;">${nome}</span>
+          <span style="color:var(--text-muted);font-size:13px;">&#8594;</span>
+          <select data-nome="${nome}" class="unmapped-user-select"
+            style="flex:1;background:var(--bg-input);border:1px solid var(--border-input);border-radius:6px;color:var(--text-main);font-size:13px;padding:5px 8px;">
+            <option value="">Não importar este nome</option>
+            ${data.users.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('')}
+          </select>
+        </div>
+      `).join('');
+    } else {
+      unmappedSection.style.display = 'none';
+    }
+
+    // Conflitos
+    const conflictsSection = document.getElementById('custom-conflicts-section');
+    if (data.conflicts.length > 0) {
+      conflictsSection.style.display = 'block';
+      document.getElementById('custom-conflicts-list').innerHTML = data.conflicts.map(c => `
+        <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);">
+          <strong>${c.groupName}</strong> — ${c.userName}
+          <span style="color:var(--text-muted);"> desde ${new Date(c.startsAt).toLocaleDateString('pt-BR')}</span>
+        </div>
+      `).join('');
+    } else {
+      conflictsSection.style.display = 'none';
+    }
+
+    // Lista de entradas (amostra — mostra as próximas a partir de hoje)
+    const now = new Date();
+    const upcoming = data.entries
+      .filter(e => new Date(e.startsAt) >= now || !e.endsAt || new Date(e.endsAt) >= now)
+      .slice(0, 40);
+
+    document.getElementById('custom-entries-list').innerHTML = upcoming.length === 0
+      ? '<span style="font-size:12px;color:var(--text-muted);font-style:italic;">Nenhuma entrada futura detectada.</span>'
+      : upcoming.map(e => {
+          const mapped = e.matchedUser ? e.matchedUser.name : `<span style="color:#f59e0b;">? ${e.nomeNaPlanilha}</span>`;
+          const inicio = new Date(e.startsAt).toLocaleDateString('pt-BR');
+          const fim    = e.endsAt ? new Date(e.endsAt).toLocaleDateString('pt-BR') : 'em aberto';
+          return `
+            <div style="background:var(--bg-input);border:1px solid var(--border-input);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text-main);display:flex;gap:8px;align-items:center;">
+              <span style="color:var(--text-muted);min-width:70px;">${inicio}</span>
+              <span style="color:var(--text-muted);">→ ${fim}</span>
+              <span style="flex:1;">${mapped}</span>
+              <span style="color:var(--text-muted);font-size:11px;">${e.nivelLabel}</span>
+              ${e.telefone ? `<span style="color:var(--text-muted);">${e.telefone}</span>` : ''}
+            </div>
+          `;
+        }).join('');
+  }
+
+  async function confirmCustomImport() {
+    if (!_customPreviewData) return;
+
+    // Coletar mapeamentos manuais dos selects
+    const manualMap = {};
+    document.querySelectorAll('.unmapped-user-select').forEach(sel => {
+      const nome = sel.dataset.nome;
+      if (sel.value) manualMap[nome] = parseInt(sel.value, 10);
+    });
+
+    // Aplicar mapeamentos nas entries
+    const resolvedEntries = _customPreviewData.entries.map(e => {
+      let userId = e.matchedUser ? e.matchedUser.id : null;
+      if (!userId && manualMap[e.nomeNaPlanilha]) userId = manualMap[e.nomeNaPlanilha];
+      return { ...e, userId };
+    });
+
+    const toImport = resolvedEntries.filter(e => e.userId);
+    if (toImport.length === 0) {
+      alert('Nenhuma entrada com usuário vinculado. Preencha os mapeamentos pendentes.');
+      return;
+    }
+
+    const endConflicts = document.getElementById('custom-end-conflicts').checked;
+    const conflictIds  = (_customPreviewData.conflicts || []).map(c => c.id);
+
+    const btn = document.getElementById('custom-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Importando...';
+    document.getElementById('custom-preview-error').style.display = 'none';
+
+    try {
+      const res  = await fetch('/admin/api/oncall/import/custom-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entries: toImport,
+          groupId: _customPreviewData.groupId,
+          endConflicts,
+          conflictIds,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro.');
+
+      alert(data.message);
+      document.getElementById('custom-preview-modal').classList.remove('open');
+      _customPreviewData = null;
+      loadAllOncall();
+    } catch (e) {
+      const errEl = document.getElementById('custom-preview-error');
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Importação';
+    }
+  }
+
+  // ====== IMPORTAÇÃO ======
+
+  var _importPreviewData = null; // guarda dados do preview para o confirm
+
+  // Fecha modais ao clicar fora
+  ['import-modal', 'import-preview-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  });
+
+  async function uploadImport() {
+    const fileInput = document.getElementById('import-file-input');
+    const errEl    = document.getElementById('import-upload-error');
+    const btn      = document.getElementById('import-upload-btn');
+
+    errEl.style.display = 'none';
+    if (!fileInput.files || !fileInput.files[0]) {
+      errEl.textContent = 'Selecione um arquivo .xlsx.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    btn.disabled = true;
+    btn.textContent = 'Carregando...';
+
+    try {
+      const res  = await fetch('/admin/api/oncall/import/preview', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Erro ao processar planilha.');
+
+      _importPreviewData = data;
+      renderPreview(data);
+
+      document.getElementById('import-modal').classList.remove('open');
+      document.getElementById('import-preview-modal').classList.add('open');
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Carregar e Visualizar';
+    }
+  }
+
+  function renderPreview(data) {
+    // Resumo
+    document.getElementById('import-summary').innerHTML = `
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#16a34a">${data.validCount}</strong> linha(s) válida(s)
+      </div>
+      ${data.invalidCount > 0 ? `
+      <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#ef4444">${data.invalidCount}</strong> linha(s) com erro
+      </div>` : ''}
+      ${data.conflicts.length > 0 ? `
+      <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 14px;font-size:13px;">
+        <strong style="color:#d97706">${data.conflicts.length}</strong> conflito(s)
+      </div>` : ''}
+    `;
+
+    // Conflitos
+    const conflictsSection = document.getElementById('import-conflicts-section');
+    if (data.conflicts.length > 0) {
+      conflictsSection.style.display = 'block';
+      document.getElementById('import-conflicts-list').innerHTML = data.conflicts.map(c => `
+        <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);">
+          <strong>${c.groupName}</strong> — ${c.userName} (${c.userEmail})
+          <span style="color:var(--text-muted);"> desde ${new Date(c.startsAt).toLocaleDateString('pt-BR')}</span>
+        </div>
+      `).join('');
+    } else {
+      conflictsSection.style.display = 'none';
+    }
+
+    // Válidas
+    const validList = document.getElementById('import-valid-list');
+    const validRows = data.rows.filter(r => r.valid);
+    validList.innerHTML = validRows.length === 0
+      ? '<span style="font-size:12px;color:var(--text-muted);font-style:italic;">Nenhuma linha válida.</span>'
+      : validRows.map(r => `
+        <div style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);">
+          <strong>${r.groupName}</strong> — ${r.userName}
+          <span style="color:var(--text-muted);"> ${r.inicioStr} → ${r.fimStr || 'em aberto'}</span>
+          ${r.telefone ? `<span style="color:var(--text-muted);"> · ${r.telefone}</span>` : ''}
+        </div>
+      `).join('');
+
+    // Inválidas
+    const invalidSection = document.getElementById('import-invalid-section');
+    const invalidRows = data.rows.filter(r => !r.valid);
+    if (invalidRows.length > 0) {
+      invalidSection.style.display = 'block';
+      document.getElementById('import-invalid-list').innerHTML = invalidRows.map(r => `
+        <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);">
+          Linha ${r.rowNum}: ${r.errors.join(' · ')}
+        </div>
+      `).join('');
+    } else {
+      invalidSection.style.display = 'none';
+    }
+
+    // Bloqueia confirmar se não há válidas
+    document.getElementById('import-confirm-btn').disabled = validRows.length === 0;
+  }
+
+  function closePreviewModal() {
+    document.getElementById('import-preview-modal').classList.remove('open');
+    _importPreviewData = null;
+  }
+
+  async function confirmImport() {
+    if (!_importPreviewData) return;
+
+    const endConflicts = document.getElementById('import-end-conflicts').checked;
+    const conflictIds  = (_importPreviewData.conflicts || []).map(c => c.id);
+    const validRows    = (_importPreviewData.rows || []).filter(r => r.valid);
+
+    const btn = document.getElementById('import-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Importando...';
+
+    const errEl = document.getElementById('import-preview-error');
+    errEl.style.display = 'none';
+
+    try {
+      const res  = await fetch('/admin/api/oncall/import/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: validRows, endConflicts, conflictIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erro ao importar.');
+
+      alert(data.message);
+      closePreviewModal();
+      // Recarrega os cards de plantão
+      loadAllOncall();
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Importação';
+    }
+  }
+</script>
+
+<!-- ======================================================
+     Modal: Importar Planilha Própria (formato Escala)
+     ====================================================== -->
+<div class="oncall-modal-overlay" id="custom-import-modal">
+  <div class="modal-box" style="max-width:540px;">
+    <div class="modal-title">📅 Importar Planilha de Escala</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+      Importe sua planilha de escala existente (formato com colunas Semana, Datas, Primeiro Nível, Segundo Nível, Terceiro Nível).
+      A aba <strong>CONTATOS</strong> será lida automaticamente para obter os telefones.
+    </p>
+    <div class="modal-field">
+      <label>Grupo de destino</label>
+      <select id="custom-import-group">
+        <option value="">Selecionar grupo...</option>
+        <% if (typeof groups !== 'undefined') { groups.forEach(function(g) { %>
+          <option value="<%= g.id %>"><%= g.name %></option>
+        <% }); } %>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Arquivo (.xlsx)</label>
+      <input type="file" id="custom-import-file" accept=".xlsx"
+        style="background:var(--bg-input);border:1px solid var(--border-input);border-radius:8px;color:var(--text-main);padding:8px;width:100%;box-sizing:border-box;">
+    </div>
+    <div id="custom-import-error" style="color:#ef4444;font-size:13px;margin-top:8px;display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('custom-import-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn-save" id="custom-import-upload-btn" onclick="uploadCustomImport()">Carregar e Visualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal preview importação customizada -->
+<div class="oncall-modal-overlay" id="custom-preview-modal">
+  <div class="modal-box" style="max-width:700px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title">🛠 Preview — Escala de Plantão</div>
+
+    <!-- Resumo -->
+    <div id="custom-summary" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;"></div>
+
+    <!-- Mapeamento de nomes não encontrados -->
+    <div id="custom-unmapped-section" style="display:none;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:10px;">
+        &#9888; Os nomes abaixo não foram encontrados no sistema. Vincule cada um a um usuário:
+      </div>
+      <div id="custom-unmapped-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Conflitos ativos -->
+    <div id="custom-conflicts-section" style="display:none;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px;">&#9888; Plantões ativos que podem conflitar:</div>
+      <div id="custom-conflicts-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text-main);cursor:pointer;">
+        <input type="checkbox" id="custom-end-conflicts" style="width:16px;height:16px;">
+        Encerrar esses plantões ao importar
+      </label>
+    </div>
+
+    <!-- Amostra das entradas -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:8px;">Próximas semanas detectadas</div>
+      <div id="custom-entries-list" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;"></div>
+    </div>
+
+    <div id="custom-preview-error" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('custom-preview-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn-save" id="custom-confirm-btn" onclick="confirmCustomImport()">Confirmar Importação</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     Modal 1: Upload do arquivo Excel
+     ====================================================== -->
+<div class="oncall-modal-overlay" id="import-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">📂 Importar Plantonistas via Excel</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+      Faça upload da planilha preenchida. O sistema irá mostrar um preview
+      antes de confirmar a importação.
+      <a href="/admin/api/oncall/modelo" download style="color:#3b82f6;">Baixar modelo</a>
+    </p>
+    <div class="modal-field">
+      <label>Arquivo (.xlsx)</label>
+      <input type="file" id="import-file-input" accept=".xlsx"
+        style="background:var(--bg-input);border:1px solid var(--border-input);border-radius:8px;color:var(--text-main);padding:8px;width:100%;box-sizing:border-box;">
+    </div>
+    <div id="import-upload-error" style="color:#ef4444;font-size:13px;margin-top:8px;display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="document.getElementById('import-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn-save" id="import-upload-btn" onclick="uploadImport()">Carregar e Visualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     Modal 2: Preview + conflitos
+     ====================================================== -->
+<div class="oncall-modal-overlay" id="import-preview-modal">
+  <div class="modal-box" style="max-width:680px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">🛠 Preview da Importação</div>
+
+    <!-- Resumo -->
+    <div id="import-summary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;"></div>
+
+    <!-- Conflitos -->
+    <div id="import-conflicts-section" style="display:none;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:8px;">&#9888; Plantões ativos que podem conflitar:</div>
+      <div id="import-conflicts-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--text-main);cursor:pointer;">
+        <input type="checkbox" id="import-end-conflicts" style="width:16px;height:16px;">
+        Encerrar esses plantões ao importar
+      </label>
+    </div>
+
+    <!-- Linhas válidas -->
+    <div id="import-valid-section" style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:8px;">Linhas válidas</div>
+      <div id="import-valid-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+
+    <!-- Linhas inválidas -->
+    <div id="import-invalid-section" style="display:none;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#ef4444;margin-bottom:8px;">Linhas com erro (serão ignoradas)</div>
+      <div id="import-invalid-list" style="display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+
+    <div id="import-preview-error" style="color:#ef4444;font-size:13px;margin-bottom:8px;display:none;"></div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePreviewModal()">Cancelar</button>
+      <button class="btn-save" id="import-confirm-btn" onclick="confirmImport()">Confirmar Importação</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Plantão -->
+<div class="oncall-modal-overlay" id="oncall-modal">
+  <div class="modal-box">
+    <div class="modal-title">🟢 Definir Plantonista</div>
+    <input type="hidden" id="oncall-modal-groupid">
+    <div class="modal-field">
+      <label>Plantonista</label>
+      <select id="oncall-user-select">
+        <option value="">Selecionar...</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Início do Plantão</label>
+      <input type="datetime-local" id="oncall-starts-at" style="color-scheme: dark light;">
+    </div>
+    <div class="modal-field">
+      <label>Término (opcional)</label>
+      <input type="datetime-local" id="oncall-ends-at" style="color-scheme: dark light;">
+    </div>
+    <div class="modal-field">
+      <label>Telefone alternativo <span style="font-weight:400;text-transform:none;">(sobrescreve o do perfil)</span></label>
+      <input type="text" id="oncall-phone" placeholder="(11) 99999-9999">
+    </div>
+    <div class="modal-field">
+      <label>Observações</label>
+      <textarea id="oncall-notes" rows="2" placeholder="Ex.: Plantão de recesso"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeOncallModal()">Cancelar</button>
+      <button class="btn-save" id="oncall-save-btn" onclick="saveOncall()">Salvar Plantão</button>
+    </div>
+  </div>
+</div>

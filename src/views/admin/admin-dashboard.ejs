@@ -42,15 +42,15 @@
         { label: 'Total de Tarefas', value: data.tasks.total, cls: 'primary' },
         { label: 'Total de Chamados', value: data.tickets.total, cls: 'primary' },
         { label: 'Chamados em Aberto', value: (data.tickets.byStatus.open || 0) + (data.tickets.byStatus.pending || 0), cls: 'warning' },
-        { label: 'Concluídos', value: (data.tasks.byStatus.done || 0) + (data.tasks.byStatus.approved || 0), cls: 'success' },
+        { label: 'Concluídos', value: (data.tasks.byStatus.done || 0), cls: 'success' },
       ].map(function(s) {
         return '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value ' + s.cls + '">' + s.value + '</div></div>';
       }).join('');
       document.getElementById('stats-container').innerHTML = statsHtml;
 
       // Tasks PieChart
-      var taskLabels = { backlog: 'Backlog', doing: 'Em Execução', done: 'Pronto', approved: 'Aprovado', rejected: 'Rejeitado' };
-      var taskColors = ['#1187BD', '#f5a623', '#2bb673', '#6c63ff', '#e5534b'];
+      var taskLabels = { backlog: 'Backlog', doing: 'Em Execução', done: 'Concluído' };
+      var taskColors = ['#1187BD', '#f5a623', '#2bb673'];
       drawDonutChart('tasks-chart', data.tasks.byStatus, taskLabels, taskColors, 'Sem tarefas', '/admin/resources/tasks');
 
       // Tickets PieChart

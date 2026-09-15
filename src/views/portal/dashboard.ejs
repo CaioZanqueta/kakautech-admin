@@ -36,6 +36,135 @@
                     <% } %>
                 </div>
             </div>
+
+            <!-- Card de Plantão — 1º Nível em destaque + outros colapsáveis -->
+            <% if (locals.onCallSchedules && locals.onCallSchedules.length > 0) { %>
+            <%
+              var nivel1 = locals.onCallSchedules.filter(function(s){ return s.nivel === 1; });
+              var outros = locals.onCallSchedules.filter(function(s){ return s.nivel !== 1; });
+              var principal = nivel1.length > 0 ? nivel1[0] : locals.onCallSchedules[0];
+              var principalU = principal.User || {};
+              var principalPhone = principal.phoneOverride || principalU.phone || null;
+              // demais: tudo exceto o principal
+              var demais = locals.onCallSchedules.filter(function(s){ return s.id !== principal.id; });
+            %>
+            <div style="margin-top: 28px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                <h2 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin:0;">
+                  🟢 Plantão de Suporte
+                </h2>
+                <% if (demais.length > 0) { %>
+                <button onclick="toggleDemais()" id="btn-toggle-demais" style="
+                  background: none; border: 1px solid var(--border-input); color: var(--text-muted);
+                  border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+                ">Ver todos (<%= locals.onCallSchedules.length %>)</button>
+                <% } %>
+              </div>
+
+              <!-- Principal (1º Nível ou o primeiro disponível) -->
+              <div style="
+                background: var(--bg-card);
+                border: 2px solid rgba(34,197,94,0.5);
+                border-radius: 14px;
+                padding: 18px 22px;
+                max-width: 420px;
+                margin-bottom: 12px;
+              ">
+                <div style="font-size:10px; font-weight:700; color:#16a34a; letter-spacing:.04em; margin-bottom:8px; text-transform:uppercase;">
+                  <%= nivel1.length > 0 ? "1º Nível · Contato Principal" : "Plantonista Ativo" %>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                  <span style="
+                    width: 44px; height: 44px; border-radius: 50%;
+                    background: #16a34a; color: #fff;
+                    font-size: 18px; font-weight: 800;
+                    display: inline-flex; align-items:center; justify-content:center;
+                    flex-shrink: 0;
+                  "><%= principalU.name ? principalU.name.charAt(0).toUpperCase() : '?' %></span>
+                  <div>
+                    <div style="font-size:16px; font-weight:800; color:var(--text-main);"><%= principalU.name || 'Plantonista' %></div>
+                    <div style="font-size:11px; color:#16a34a; font-weight:700;">🟢 EM PLANTÃO</div>
+                  </div>
+                </div>
+                <% if (principalU.email) { %>
+                <div style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); margin-bottom:6px;">
+                  ✉ <a href="mailto:<%= principalU.email %>" style="color:#3b82f6; text-decoration:none;"><%= principalU.email %></a>
+                </div>
+                <% } %>
+                <% if (principalPhone) { %>
+                <div style="display:flex; align-items:center; gap:6px; font-size:14px; font-weight:700; color:var(--text-main);">
+                  📞 <a href="tel:<%= principalPhone.replace(/\D/g,'') %>" style="color:#16a34a; text-decoration:none;"><%= principalPhone %></a>
+                </div>
+                <% } %>
+              </div>
+
+              <!-- Demais plantonistas (colapsável) -->
+              <% if (demais.length > 0) { %>
+              <div id="demais-plantonistas" style="display:none;">
+                <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px;">
+                  Outros plantonistas ativos
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                  <% demais.forEach(function(s) { %>
+                    <% var u = s.User || {}; %>
+                    <% var phone = s.phoneOverride || u.phone || null; %>
+                    <% var nivelLabels = {1:'1º Nível', 2:'2º Nível', 3:'3º Nível'}; %>
+                    <div style="
+                      background: var(--bg-card);
+                      border: 1px solid var(--border-color);
+                      border-radius: 10px;
+                      padding: 12px 16px;
+                      min-width: 200px;
+                      max-width: 280px;
+                      flex: 1;
+                    ">
+                      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="
+                          width: 32px; height: 32px; border-radius: 50%;
+                          background: #3b82f6; color: #fff;
+                          font-size: 12px; font-weight: 700;
+                          display: inline-flex; align-items:center; justify-content:center;
+                          flex-shrink: 0;
+                        "><%= u.name ? u.name.charAt(0).toUpperCase() : '?' %></span>
+                        <div>
+                          <div style="font-size:13px; font-weight:700; color:var(--text-main);"><%= u.name || 'Plantonista' %></div>
+                          <% if (s.nivel) { %>
+                          <div style="font-size:10px; font-weight:600; color:var(--text-muted);"><%= nivelLabels[s.nivel] || '' %></div>
+                          <% } %>
+                        </div>
+                      </div>
+                      <% if (u.email) { %>
+                      <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">
+                        ✉ <a href="mailto:<%= u.email %>" style="color:#3b82f6; text-decoration:none;"><%= u.email %></a>
+                      </div>
+                      <% } %>
+                      <% if (phone) { %>
+                      <div style="font-size:12px; font-weight:600; color:var(--text-main);">
+                        📞 <a href="tel:<%= phone.replace(/\D/g,'') %>" style="color:#3b82f6; text-decoration:none;"><%= phone %></a>
+                      </div>
+                      <% } %>
+                    </div>
+                  <% }); %>
+                </div>
+              </div>
+              <% } %>
+            </div>
+            <script>
+              function toggleDemais() {
+                var el  = document.getElementById('demais-plantonistas');
+                var btn = document.getElementById('btn-toggle-demais');
+                if (!el) return;
+                if (el.style.display === 'none') {
+                  el.style.display = 'block';
+                  btn.textContent = 'Ocultar outros';
+                } else {
+                  el.style.display = 'none';
+                  btn.textContent = 'Ver todos (<%= locals.onCallSchedules.length %>)';
+                }
+              }
+            </script>
+            <% } %>
+
         </main>
         <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>

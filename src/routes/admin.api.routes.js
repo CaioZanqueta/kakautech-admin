@@ -15,8 +15,12 @@ import Ticket from "../models/ticket.js";
 import Comment from "../models/comment.js";
 import ActivityLog from "../models/activitylog.js";
 import TimeLog from "../models/timelog.js";
+import OvertimeRecord from "../models/overtimerecord.js";
+import Group from "../models/group.js";
+import { calcOvertimeMinutes, ensureHolidaysForYear } from "../services/overtime.js";
 import { hasAdminPermission, hasManagerPermission } from "../services/auth.js";
 import MailService from "../services/mail.js";
+import { Op } from "sequelize";
 
 const router = express.Router();
 const upload = multer(multerConfig);
@@ -90,6 +94,47 @@ function sanitizeData(body) {
 }
 
 // ============================================================
+// Helper: Retorna cláusula WHERE de projetos filtrados por grupo
+// Retorna lista de projectIds se há filtro ativo, ou null para "sem filtro"
+// ============================================================
+async function getGroupProjectIds(req) {
+  const currentUser = req.session.adminUser || req.user;
+
+  // Admin vendo "todos" (activeGroup === null)
+  if (hasAdminPermission(currentUser) && !req.session.activeGroup) {
+    return null; // sem restrição
+  }
+
+  const activeGroup = req.session.activeGroup;
+
+  if (activeGroup) {
+    // Filtrar apenas pelo grupo ativo
+    const group = await Group.findByPk(activeGroup, {
+      include: [{ model: Project, as: "Projects", attributes: ["id"] }],
+    });
+    if (!group) return [];
+    return group.Projects.map((p) => p.id);
+  }
+
+  // Usuário não-admin sem grupo ativo: retorna projetos de todos os seus grupos
+  if (!hasAdminPermission(currentUser)) {
+    const user = await User.findByPk(currentUser.id, {
+      include: [{ model: Group, as: "Groups", include: [{ model: Project, as: "Projects", attributes: ["id"] }] }],
+    });
+    if (!user) return [];
+    const projectIds = [];
+    for (const g of user.Groups || []) {
+      for (const p of g.Projects || []) {
+        if (!projectIds.includes(p.id)) projectIds.push(p.id);
+      }
+    }
+    return projectIds;
+  }
+
+  return null; // admin sem filtro ativo
+}
+
+// ============================================================
 // Helper: model map (resource name -> Sequelize model + config)
 // ============================================================
 const resourceConfig = {
@@ -128,6 +173,8 @@ const resourceConfig = {
     },
     includes: [{ model: User, as: "User", attributes: ["id", "name"] }],
     writePermission: "manager",
+    groupFiltered: true,   // <-- filtra por grupo via projectId
+    groupFilterField: "id",
   },
   tasks: {
     model: Task,
@@ -144,9 +191,7 @@ const resourceConfig = {
       status: [
         { value: "backlog", label: "Backlog" },
         { value: "doing", label: "Em Execução" },
-        { value: "done", label: "Pronto" },
-        { value: "approved", label: "Aprovado" },
-        { value: "rejected", label: "Rejeitado" },
+        { value: "done", label: "Concluído" },
       ],
     },
     includes: [
@@ -154,6 +199,8 @@ const resourceConfig = {
       { model: Project, as: "Project", attributes: ["id", "name"] },
     ],
     hasAttachment: true,
+    groupFiltered: true,
+    groupFilterField: "project_id",
   },
   clients: {
     model: Client,
@@ -171,13 +218,15 @@ const resourceConfig = {
     includes: [{ model: Project, as: "Project", attributes: ["id", "name"] }],
     listPermission: "admin",
     writePermission: "admin",
+    groupFiltered: true,
+    groupFilterField: "projectId",
   },
   tickets: {
     model: Ticket,
     label: "Chamados",
     searchField: "title",
-    listFields: ["id", "title", "status", "priority", "clientId", "projectId", "userId", "createdAt"],
-    editFields: ["title", "description", "type", "category", "urgency", "impact", "status", "clientId", "projectId", "userId"],
+    listFields: ["id", "title", "status", "priority", "groupId", "clientId", "projectId", "userId", "createdAt"],
+    editFields: ["title", "description", "type", "category", "urgency", "impact", "status", "groupId", "clientId", "projectId", "userId"],
     fieldOptions: {
       type: [
         { value: "incident", label: "Incidente" },
@@ -201,13 +250,16 @@ const resourceConfig = {
       ],
     },
     includes: [
-      { model: Client, as: "Client", attributes: ["id", "name"] },
-      { model: User, as: "User", attributes: ["id", "name"] },
+      { model: Client,  as: "Client",  attributes: ["id", "name"] },
+      { model: User,    as: "User",    attributes: ["id", "name"] },
       { model: Project, as: "Project", attributes: ["id", "name"] },
+      { model: Group,   as: "Group",   attributes: ["id", "name"] },
     ],
     defaultSort: [["createdAt", "DESC"]],
     writePermission: "manager",
     hasAttachment: true,
+    groupFiltered: true,
+    groupFilterField: "projectId",
   },
   comments: {
     model: Comment,
@@ -236,6 +288,22 @@ const resourceConfig = {
     hidden: true,
     writePermission: "manager",
   },
+  groups: {
+    model: Group,
+    label: "Grupos",
+    searchField: "name",
+    listFields: ["id", "name", "slug", "description", "status", "createdAt"],
+    editFields: ["name", "slug", "description", "status"],
+    fieldOptions: {
+      status: [
+        { value: "active", label: "Ativo" },
+        { value: "archived", label: "Arquivado" },
+      ],
+    },
+    includes: [],
+    listPermission: "admin",
+    writePermission: "admin",
+  },
 };
 
 // ============================================================
@@ -252,12 +320,17 @@ router.get("/me", isAuthenticatedAdmin, (req, res) => {
 });
 
 // ============================================================
-// GET /dashboard — Dados para o dashboard
+// GET /dashboard — Dados para o dashboard (filtrado por grupo)
 // ============================================================
 router.get("/dashboard", isAuthenticatedAdmin, async (req, res) => {
   try {
-    const tasks = await Task.findAll({ attributes: ["id", "status"] });
-    const tickets = await Ticket.findAll({ attributes: ["id", "status"] });
+    const projectIds = await getGroupProjectIds(req);
+
+    const taskWhere = projectIds !== null ? { project_id: { [Op.in]: projectIds } } : {};
+    const ticketWhere = projectIds !== null ? { projectId: { [Op.in]: projectIds } } : {};
+
+    const tasks = await Task.findAll({ where: taskWhere, attributes: ["id", "status"] });
+    const tickets = await Ticket.findAll({ where: ticketWhere, attributes: ["id", "status"] });
 
     // Agrupar tasks por status
     const tasksByStatus = {};
@@ -325,6 +398,108 @@ router.get("/select-options/:resource", isAuthenticatedAdmin, async (req, res) =
 });
 
 // ============================================================
+// GET /groups/:groupId/users — Usuários de um grupo
+// ============================================================
+router.get("/groups/:groupId/users", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const group = await Group.findByPk(req.params.groupId, {
+      include: [{ model: User, as: "Users", attributes: ["id", "name", "email", "role"] }],
+    });
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    res.json(group.Users);
+  } catch (error) {
+    console.error("Erro ao listar usuários do grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
+// POST /groups/:groupId/users — Adicionar usuário ao grupo
+// ============================================================
+router.post("/groups/:groupId/users", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const group = await Group.findByPk(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado." });
+    await group.addUser(user);
+    res.json({ message: "Usuário adicionado ao grupo." });
+  } catch (error) {
+    console.error("Erro ao adicionar usuário ao grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
+// DELETE /groups/:groupId/users/:userId — Remover usuário do grupo
+// ============================================================
+router.delete("/groups/:groupId/users/:userId", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const group = await Group.findByPk(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    const user = await User.findByPk(req.params.userId);
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado." });
+    await group.removeUser(user);
+    res.json({ message: "Usuário removido do grupo." });
+  } catch (error) {
+    console.error("Erro ao remover usuário do grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
+// GET /groups/:groupId/projects — Projetos de um grupo
+// ============================================================
+router.get("/groups/:groupId/projects", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const group = await Group.findByPk(req.params.groupId, {
+      include: [{ model: Project, as: "Projects", attributes: ["id", "name", "status"] }],
+    });
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    res.json(group.Projects);
+  } catch (error) {
+    console.error("Erro ao listar projetos do grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
+// POST /groups/:groupId/projects — Adicionar projeto ao grupo
+// ============================================================
+router.post("/groups/:groupId/projects", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const { projectId } = req.body;
+    const group = await Group.findByPk(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    const project = await Project.findByPk(projectId);
+    if (!project) return res.status(404).json({ message: "Projeto não encontrado." });
+    await group.addProject(project);
+    res.json({ message: "Projeto adicionado ao grupo." });
+  } catch (error) {
+    console.error("Erro ao adicionar projeto ao grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
+// DELETE /groups/:groupId/projects/:projectId — Remover projeto do grupo
+// ============================================================
+router.delete("/groups/:groupId/projects/:projectId", isAuthenticatedAdmin, requireAdmin, async (req, res) => {
+  try {
+    const group = await Group.findByPk(req.params.groupId);
+    if (!group) return res.status(404).json({ message: "Grupo não encontrado." });
+    const project = await Project.findByPk(req.params.projectId);
+    if (!project) return res.status(404).json({ message: "Projeto não encontrado." });
+    await group.removeProject(project);
+    res.json({ message: "Projeto removido do grupo." });
+  } catch (error) {
+    console.error("Erro ao remover projeto do grupo:", error);
+    res.status(500).json({ message: "Erro interno." });
+  }
+});
+
+// ============================================================
 // GET /:resource — Listagem com paginação, filtros, ordenação
 // ============================================================
 router.get("/:resource", isAuthenticatedAdmin, async (req, res) => {
@@ -345,7 +520,7 @@ router.get("/:resource", isAuthenticatedAdmin, async (req, res) => {
     const direction = req.query.direction || "DESC";
     const offset = (page - 1) * perPage;
 
-    // Construir filtros
+    // Construir filtros manuais
     const where = {};
     Object.keys(req.query).forEach((key) => {
       if (key.startsWith("filter.") && req.query[key]) {
@@ -353,6 +528,18 @@ router.get("/:resource", isAuthenticatedAdmin, async (req, res) => {
         where[field] = req.query[key];
       }
     });
+
+    // Aplicar filtro de grupo se o recurso suporta
+    if (config.groupFiltered) {
+      const projectIds = await getGroupProjectIds(req);
+      if (projectIds !== null) {
+        if (projectIds.length === 0) {
+          // Usuário sem projetos no grupo: retorna vazio
+          return res.json({ records: [], total: 0, page, perPage, totalPages: 0 });
+        }
+        where[config.groupFilterField] = { [Op.in]: projectIds };
+      }
+    }
 
     const { count, rows } = await config.model.findAndCountAll({
       where,
@@ -439,7 +626,6 @@ router.post("/:resource", isAuthenticatedAdmin, upload.single("attachment"), asy
       data.filename = req.file.originalname;
       data.size = req.file.size;
 
-      // Se for Ticket, o campo 'type' é ENUM ITIL, então usamos 'file_type' para o anexo
       if (config.model.name === 'Ticket' || config.model.name === 'ticket') {
         data.file_type = req.file.contentType || req.file.mimetype;
       } else {
@@ -515,7 +701,7 @@ router.put("/:resource/:id", isAuthenticatedAdmin, upload.single("attachment"), 
       }
     }
 
-    // TICKETS: Activity log ao mudar status/responsável + email ao cliente
+    // TICKETS: Activity log ao mudar status/responsável + email ao cliente + HE automática
     if (resource === "tickets") {
       const statusTranslations = {
         open: "Aberto",
@@ -525,6 +711,9 @@ router.put("/:resource/:id", isAuthenticatedAdmin, upload.single("attachment"), 
       };
 
       const originalTicket = record.toJSON();
+
+      // ─── CAPTURA o started_at ANTES do update ───
+      const inProgressStartedAt = record.in_progress_started_at;
 
       // Log de mudança de status
       if (data.status && data.status !== originalTicket.status) {
@@ -575,6 +764,39 @@ router.put("/:resource/:id", isAuthenticatedAdmin, upload.single("attachment"), 
           } catch (mailError) {
             console.error("Falha ao enviar email de mudança de status:", mailError);
           }
+        }
+      }
+
+      // ─── HE AUTOMÁTICA: ao fechar ticket ───
+      if (data.status === "closed" && originalTicket.status !== "closed") {
+        try {
+          const start = inProgressStartedAt || originalTicket.createdAt;
+          const end   = new Date();
+
+          if (start) {
+            const startDate = new Date(start);
+            await ensureHolidaysForYear(startDate.getFullYear());
+            if (startDate.getFullYear() !== end.getFullYear()) {
+              await ensureHolidaysForYear(end.getFullYear());
+            }
+
+            const overtimeMinutes = await calcOvertimeMinutes(startDate, end);
+
+            if (overtimeMinutes > 0) {
+              await OvertimeRecord.create({
+                userId:           originalTicket.userId || currentUser.id,
+                ticketId:         parseInt(id),
+                projectId:        originalTicket.projectId || null,
+                started_at:       startDate,
+                ended_at:         end,
+                overtime_minutes: overtimeMinutes,
+                description:      `Atendimento do chamado: ${originalTicket.title}`,
+                source:           "ticket",
+              });
+            }
+          }
+        } catch (heError) {
+          console.error("Erro ao registrar HE automática do ticket:", heError);
         }
       }
     }
@@ -648,7 +870,6 @@ router.get("/tickets/:ticketId/comments", isAuthenticatedAdmin, async (req, res)
       order: [["createdAt", "ASC"]],
     });
 
-    // Gerar signed URLs para anexos dos comentários
     const results = [];
     for (const comment of comments) {
       const json = comment.toJSON();
@@ -692,16 +913,13 @@ router.get("/resource-config/:resource", isAuthenticatedAdmin, async (req, res) 
     const config = resourceConfig[resource];
     if (!config) return res.status(404).json({ message: "Recurso não encontrado." });
 
-    // Listar FKs e buscar opções
     const foreignKeys = {};
     for (const inc of (config.includes || [])) {
       const modelName = inc.as || inc.model.name;
-      const tableName = inc.model.tableName || inc.model.name.toLowerCase() + "s";
       const records = await inc.model.findAll({
         attributes: inc.attributes || ["id", "name"],
         limit: 500,
       });
-      // Determinar o campo FK no editFields
       const possibleFkFields = config.editFields.filter(
         (f) =>
           f.toLowerCase().includes(modelName.toLowerCase()) ||

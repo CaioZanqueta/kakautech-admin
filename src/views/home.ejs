@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KakauITSM — Bem-vindo</title>
+    <link rel="icon" type="image/webp" href="/public/favicon.webp" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #0d1b2a 0%, #152238 40%, #0c5e84 100%);
+        color: #495057;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrapper {
+        display: flex;
+        max-width: 1000px;
+        width: 100%;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        animation: slideUp 0.5s ease;
+      }
+
+      @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      /* ── LADO ESQUERDO — Portal do Cliente ── */
+      .panel-portal {
+        background: linear-gradient(180deg, #1187BD 0%, #0c5e84 100%);
+        color: #fff;
+        padding: 60px 48px;
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .panel-portal::before {
+        content: '';
+        position: absolute;
+        top: -40%; right: -30%;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.08);
+        pointer-events: none;
+      }
+
+      .panel-portal::after {
+        content: '';
+        position: absolute;
+        bottom: -30%; left: -20%;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+      }
+
+      .panel-portal .panel-tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 100px;
+        padding: 4px 12px;
+        margin-bottom: 16px;
+        color: rgba(255,255,255,0.9);
+        width: fit-content;
+        position: relative;
+        z-index: 1;
+      }
+
+      .panel-portal h2 {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .panel-portal .subtitle {
+        font-size: 15px;
+        opacity: 0.8;
+        line-height: 1.6;
+        position: relative;
+        z-index: 1;
+      }
+
+      .panel-portal .features {
+        margin-top: 36px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+        flex: 1;
+      }
+
+      .feature {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        opacity: 0.88;
+      }
+
+      .feature-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .feature-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: #fff;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .btn-portal {
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+        padding: 13px 24px;
+        border-radius: 50px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        background: #fff;
+        color: #0e6a94;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 36px;
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      }
+
+      .btn-portal:hover {
+        background: #f0f9ff;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      }
+
+      /* ── LADO DIREITO — Área Admin ── */
+      .panel-admin {
+        padding: 60px 48px;
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-left: 1px solid #f1f3f5;
+      }
+
+      .panel-admin .logo {
+        display: block;
+        max-width: 140px;
+        margin: 0 auto 28px auto;
+      }
+
+      .panel-admin .divider {
+        width: 48px;
+        height: 3px;
+        background: linear-gradient(90deg, #1187BD, #0c5e84);
+        border-radius: 100px;
+        margin: 20px auto;
+      }
+
+      .panel-admin h3 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1f2e;
+        letter-spacing: -0.2px;
+        margin-bottom: 8px;
+      }
+
+      .panel-admin .desc {
+        font-size: 14px;
+        color: #6c757d;
+        line-height: 1.6;
+        max-width: 240px;
+        margin: 0 auto 32px auto;
+      }
+
+      .btn-admin {
+        display: block;
+        width: 100%;
+        max-width: 280px;
+        text-align: center;
+        text-decoration: none;
+        padding: 13px 24px;
+        border-radius: 50px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: inherit;
+        background: #1187BD;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 16px rgba(17, 135, 189, 0.3);
+      }
+
+      .btn-admin:hover {
+        background: #0e6a94;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(17, 135, 189, 0.4);
+      }
+
+      .internal-note {
+        font-size: 12px;
+        color: #ced4da;
+        margin-top: 12px;
+        letter-spacing: 0.02em;
+      }
+
+      /* ── RESPONSIVO ── */
+      @media (max-width: 768px) {
+        .wrapper { flex-direction: column; max-width: 480px; }
+        .panel-portal, .panel-admin { width: 100%; padding: 40px 28px; }
+        .panel-portal h2 { font-size: 24px; }
+        .panel-admin { border-left: none; border-top: 1px solid #f1f3f5; }
+        .btn-admin { max-width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+
+      <!-- PORTAL DO CLIENTE -->
+      <div class="panel-portal">
+        <div>
+          <div class="panel-tag">Acesso Kakau Tech</div>
+          <h2>Portal do Cliente</h2>
+          <p class="subtitle">Gerencie seus chamados com facilidade</p>
+
+          <div class="features">
+            <div class="feature">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </div>
+              <span>Abrir e acompanhar chamados</span>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <span>Visualizar status em tempo real</span>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <span>Histórico de atendimentos</span>
+            </div>
+            <div class="feature">
+              <div class="feature-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                </svg>
+              </div>
+              <span>Comunicação direta com o suporte</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="/portal" class="btn-portal">Acessar Portal</a>
+      </div>
+
+      <!-- ÁREA ADMIN -->
+      <div class="panel-admin">
+        <img src="/public/kakau.webp" alt="Logo Kakau Tech" class="logo" />
+
+        <div class="divider"></div>
+
+        <h3>Área Restrita</h3>
+        <p class="desc">Acesso exclusivo para colaboradores Kakau Tech</p>
+
+        <a href="/admin/login" class="btn-admin">Acessar como Admin</a>
+
+        <p class="internal-note">Apenas para uso interno</p>
+      </div>
+
+    </div>
+  </body>
+</html>

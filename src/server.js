@@ -2,21 +2,24 @@ import "dotenv/config";
 import "./database/index.js";
 
 import express from "express";
+import helmet from "helmet";
 import session from "express-session";
 import path from "path";
 import fs from 'fs';
-import os from 'os';
 import passport from "./config/passport.js";
 import MailService from "./services/mail.js";
 import portalRoutes from "./routes/portal.routes.js";
 import apiRoutes from "./routes/api.routes.js";
 import adminApiRoutes from "./routes/admin.api.routes.js";
 import adminPagesRoutes from "./routes/admin.pages.routes.js";
+import overtimeApiRoutes from "./routes/overtime.api.routes.js";
+import overtimePagesRoutes from "./routes/overtime.pages.routes.js";
+import oncallApiRoutes from "./routes/oncall.api.routes.js";
+import oncallPagesRoutes from "./routes/oncall.pages.routes.js";
 
-import User from "./models/user.js";
+import User    from "./models/user.js";
 import Project from "./models/project.js";
-import Ticket from "./models/ticket.js";
-import Client from "./models/client.js";
+import Ticket  from "./models/ticket.js";
 import TimeLog from "./models/timelog.js";
 import { loginLimiter, apiLimiter } from './config/limiters.js';
 import { Op } from 'sequelize';
@@ -25,8 +28,48 @@ import ExcelJS from 'exceljs';
 import puppeteer from 'puppeteer';
 import ejs from 'ejs';
 
+// ============================================================
+// Validação de variáveis de ambiente críticas na inicialização
+// O servidor não sobe se SESSION_SECRET não estiver definido
+// ============================================================
+if (!process.env.SECRET || process.env.SECRET.length < 32) {
+  console.error('ERRO FATAL: A variável de ambiente SECRET não está definida ou é muito curta (mínimo 32 chars). O servidor não pode iniciar de forma segura.');
+  process.exit(1);
+}
+
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
+const isProd   = process.env.NODE_ENV === 'production';
+
 const app = express();
 app.set('trust proxy', 1);
+
+// ============================================================
+// Helmet — Headers de segurança HTTP
+// ============================================================
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc:    ["'self'"],
+        scriptSrc:     ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.gstatic.com", "https://www.google.com", "https://apis.google.com", "https://fonts.googleapis.com"],
+        scriptSrcAttr: ["'unsafe-inline'"],
+        styleSrc:      ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://www.gstatic.com"],
+        fontSrc:       ["'self'", "https://fonts.gstatic.com", "https://www.gstatic.com"],
+        imgSrc:        ["'self'", "data:", "https:"],
+        connectSrc:    ["'self'"],
+        frameSrc:      ["'none'"],
+        objectSrc:     ["'none'"],
+        upgradeInsecureRequests: isProd ? [] : null,
+      },
+    },
+    frameguard: { action: 'deny' },
+    noSniff: true,
+    hsts: isProd ? { maxAge: 31536000, includeSubDomains: true } : false,
+    hidePoweredBy: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 app.use("/public", express.static("public"));
 app.use("/uploads", express.static("uploads"));
@@ -36,24 +79,49 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ============================================================
+// Sessão segura
+// ============================================================
 app.use(
   session({
     secret: process.env.SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 },
+    cookie: {
+      maxAge:   24 * 60 * 60 * 1000,
+      httpOnly: true,           // cookie inacessível via JS
+      secure:   isProd,         // HTTPS-only em produção
+      sameSite: 'lax',          // proteção CSRF básica
+    },
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
 
 // ============================================================
+// Health check — usado por load balancer e monitoramento
+// ============================================================
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// ============================================================
 // API pública (tickets, comentários, relatórios)
 // ============================================================
 app.use('/api', apiLimiter, apiRoutes);
 
+app.get("/", (req, res) => {
+  if (req.session.adminUser || req.isAuthenticated()) {
+    return res.redirect("/admin");
+  }
+  if (req.session.clientUser) {
+    return res.redirect("/portal");
+  }
+  res.render("home");
+});
+
 // ============================================================
-// LOGIN ADMIN (EJS — mantido inalterado)
+// LOGIN ADMIN
 // ============================================================
 app.get("/admin/login", (req, res) => {
   const messages = req.session.messages || [];
@@ -74,14 +142,11 @@ app.post("/admin/login", loginLimiter, async (req, res, next) => {
     const isPasswordCorrect = await adminUser.checkPassword(password);
     if (isPasswordCorrect) {
       req.login(adminUser, (err) => {
-        if (err) {
-          return next(err);
-        }
+        if (err) return next(err);
         req.session.adminUser = adminUser.toJSON();
+        req.session.activeGroup = null;
         req.session.save((saveErr) => {
-          if (saveErr) {
-            return next(saveErr);
-          }
+          if (saveErr) return next(saveErr);
           return res.redirect("/admin");
         });
       });
@@ -95,19 +160,34 @@ app.post("/admin/login", loginLimiter, async (req, res, next) => {
 });
 
 // ============================================================
-// RELATÓRIOS DE PROJETO (EJS — mantido inalterado)
+// SELETOR DE GRUPO
+// ============================================================
+app.post("/admin/set-group", (req, res) => {
+  const isAuthenticated = req.session.adminUser || req.isAuthenticated();
+  if (!isAuthenticated) return res.status(401).json({ message: "Não autenticado." });
+
+  const { groupId } = req.body;
+  req.session.activeGroup = (!groupId || groupId === "null" || groupId === "") ? null : parseInt(groupId, 10);
+
+  req.session.save((err) => {
+    if (err) return res.status(500).json({ message: "Erro ao salvar sessão." });
+    if (req.headers.accept && req.headers.accept.includes("text/html")) {
+      return res.redirect(req.body.redirect || req.headers.referer || "/admin");
+    }
+    res.json({ ok: true, activeGroup: req.session.activeGroup });
+  });
+});
+
+// ============================================================
+// RELATÓRIOS DE PROJETO
 // ============================================================
 app.get('/admin/projects/:projectId/reports', async (req, res) => {
   const isAuthenticated = req.session.adminUser || req.isAuthenticated();
-  if (!isAuthenticated) {
-    return res.redirect('/admin/login');
-  }
+  if (!isAuthenticated) return res.redirect('/admin/login');
 
   const { projectId } = req.params;
   const project = await Project.findByPk(projectId);
-  if (!project) {
-    return res.status(404).render("errors/404", { context: "admin" });
-  }
+  if (!project) return res.status(404).render("errors/404", { context: "admin" });
 
   res.render('admin/project-reports', {
     project: project.toJSON(),
@@ -116,7 +196,6 @@ app.get('/admin/projects/:projectId/reports', async (req, res) => {
   });
 });
 
-// GET endpoint: generate report file, save to public/reports/, redirect to static file
 app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res) => {
   const isAuthenticated = req.session.adminUser || req.isAuthenticated();
   if (!isAuthenticated) return res.redirect('/admin/login');
@@ -129,7 +208,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
     if (!project) return res.status(404).send('Projeto não encontrado.');
     if (!['csv', 'xlsx', 'pdf'].includes(format)) return res.status(400).send('Formato inválido.');
 
-    // Calculate date range
     let start, end = new Date();
     const now = new Date();
     end.setHours(23, 59, 59, 999);
@@ -152,7 +230,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
     }
     start.setHours(0, 0, 0, 0);
 
-    // Generate report data
     let reportResult = {};
     if (reportType === 'hours') {
       const totalSeconds = await TimeLog.sum('seconds_spent', {
@@ -179,7 +256,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
     };
 
     const reportsDir = path.join(process.cwd(), 'public', 'reports');
-    // Clean up old files (older than 5 min)
     try {
       const files = fs.readdirSync(reportsDir);
       const fiveMinAgo = Date.now() - 5 * 60 * 1000;
@@ -192,7 +268,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
 
     const baseFilename = `relatorio_${reportType}_${projectSlug}`;
 
-    // CSV — using json2csv
     if (format === 'csv') {
       const json2csvParser = new Parser();
       let csv;
@@ -206,7 +281,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
       return res.redirect(`/public/reports/${baseFilename}.csv`);
     }
 
-    // XLSX — using exceljs
     if (format === 'xlsx') {
       const workbook = new ExcelJS.Workbook();
       const ws = workbook.addWorksheet('Relatório');
@@ -222,7 +296,6 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
       return res.redirect(`/public/reports/${baseFilename}.xlsx`);
     }
 
-    // PDF — using puppeteer
     if (format === 'pdf') {
       const html = await ejs.renderFile(path.join(__dirname, 'views/reports/pdf-template.ejs'), responsePayload);
       const pBrowser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -241,13 +314,17 @@ app.get('/admin/projects/:projectId/reports/download/:filename', async (req, res
 });
 
 // ============================================================
-// ADMIN API (nova API REST para o painel)
+// HORAS EXTRAS — API e páginas
 // ============================================================
-app.use('/admin/api', adminApiRoutes);
+app.use('/api/admin/overtime', overtimeApiRoutes);
+app.use('/admin/overtime', overtimePagesRoutes);
+app.use("/admin/api/oncall", oncallApiRoutes);
+app.use("/admin", oncallPagesRoutes);
 
 // ============================================================
-// ADMIN PAGES (EJS — novas páginas do painel)
+// ADMIN API e PÁGINAS
 // ============================================================
+app.use('/admin/api', adminApiRoutes);
 app.use('/admin', adminPagesRoutes);
 
 // ============================================================
@@ -263,6 +340,29 @@ app.get(
   (req, res, next) => {
     if (req.user) {
       req.session.adminUser = req.user.toJSON();
+      req.session.activeGroup = null;
+      req.session.save(() => res.redirect("/admin"));
+    } else {
+      res.redirect("/admin/login");
+    }
+  }
+);
+
+// ============================================================
+// AUTH MICROSOFT (Admin)
+// Suporta tanto @kakautech.com quanto @kakau.com.br
+// ============================================================
+app.get("/admin/auth/microsoft", passport.authenticate("microsoft-admin"));
+app.get(
+  "/admin/auth/microsoft/callback",
+  passport.authenticate("microsoft-admin", {
+    failureRedirect: "/admin/login",
+    failureMessage: true,
+  }),
+  (req, res, next) => {
+    if (req.user) {
+      req.session.adminUser = req.user.toJSON();
+      req.session.activeGroup = null;
       req.session.save(() => res.redirect("/admin"));
     } else {
       res.redirect("/admin/login");
@@ -272,13 +372,9 @@ app.get(
 
 app.get("/admin/logout", (req, res, next) => {
   req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
+    if (err) return next(err);
     delete req.session.adminUser;
-    req.session.destroy(() => {
-      res.redirect("/admin/login");
-    });
+    req.session.destroy(() => res.redirect("/admin/login"));
   });
 });
 
@@ -286,6 +382,9 @@ app.get("/admin/logout", (req, res, next) => {
 // PORTAL DO CLIENTE
 // ============================================================
 app.use(portalRoutes);
+
+// Fix #4: rotas /portal/privacy e /portal/terms movidas para portal.routes.js
+// para garantir que sejam resolvidas ANTES do catch-all do Express
 
 // ============================================================
 // ERROR PAGES
@@ -301,15 +400,27 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
+// Tratamento de erros não capturados — evita queda silenciosa
+// ============================================================
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Promise não tratada:', promise, 'Motivo:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Exceção não capturada:', err);
+  // Não derruba o processo em produção — apenas loga
+});
+
+// ============================================================
 // START SERVER
 // ============================================================
 const startServer = async () => {
   await MailService.initialize();
   const port = process.env.PORT || 5000;
   app.listen(port, () => {
-    console.log(`🚀 Servidor a todo vapor!`);
-    console.log(`Admin em http://localhost:${port}/admin`);
-    console.log(`Portal do Cliente em http://localhost:${port}/portal`);
+    console.log(`Servidor iniciado na porta ${port}`);
+    console.log(`Admin em ${BASE_URL}/admin`);
+    console.log(`Portal do Cliente em ${BASE_URL}/portal`);
+    console.log(`Modo: ${isProd ? 'produção' : 'desenvolvimento'}`);
   });
 };
 

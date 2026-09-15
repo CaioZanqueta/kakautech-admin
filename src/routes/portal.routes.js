@@ -18,12 +18,61 @@ import Ticket from "../models/ticket.js";
 import Comment from "../models/comment.js";
 import User from "../models/user.js";
 import TimeLog from "../models/timelog.js";
+import Group from "../models/group.js";
+import OnCallSchedule from "../models/on-call-schedule.js";
 import multerConfig from "../config/multer.js";
 import credentials from "../config/credentials.js";
 import MailService from "../services/mail.js";
 import { loginLimiter } from "../config/limiters.js";
 
 const router = express.Router();
+
+// ============================================================
+// Helper: Resolve para quais e-mails as notificações "de admin"
+// de um projeto devem ir.
+//
+// Regra: o projeto está vinculado a um ou mais Grupos (times, ex.:
+// Control-M, ITSM, Cyber Security...). Cada usuário que está
+// atribuído a esse grupo (tabela user_groups, gerenciado em
+// /admin/groups) deve receber a notificação — não é um e-mail
+// único fixo por time, é a lista de e-mails de quem faz parte do
+// grupo.
+//
+// Fallback: se o projeto não tiver grupo vinculado, ou o(s)
+// grupo(s) vinculados não tiverem nenhum usuário, cai no
+// ADMIN_EMAIL (caixa padrão de suporte).
+//
+// suporte@kakautech.com continua sendo apenas o REMETENTE (from) de
+// todos os e-mails — isso é definido no MailService e não é afetado
+// por esta função, que decide só o(s) destinatário(s) (to).
+// ============================================================
+function resolveTeamEmailsFromProject(project) {
+  if (project && project.Groups && project.Groups.length > 0) {
+    const emails = new Set();
+    for (const group of project.Groups) {
+      const users = group.Users || [];
+      for (const user of users) {
+        if (user.email) emails.add(user.email);
+      }
+    }
+    if (emails.size > 0) return Array.from(emails).join(",");
+  }
+  return process.env.ADMIN_EMAIL;
+}
+
+async function resolveTeamEmailsByProjectId(projectId) {
+  if (!projectId) return process.env.ADMIN_EMAIL;
+  const project = await Project.findByPk(projectId, {
+    include: [
+      {
+        model: Group,
+        as: "Groups",
+        include: [{ model: User, as: "Users", attributes: ["id", "name", "email"] }],
+      },
+    ],
+  });
+  return resolveTeamEmailsFromProject(project);
+}
 
 const s3 = new S3Client({
   region: credentials.region,
@@ -40,30 +89,58 @@ const statusTranslations = {
   closed: "Fechado",
 };
 
+// ============================================================
+// Schemas de validação
+// ============================================================
 const registerSchema = yup.object().shape({
   name: yup.string().required("O nome é obrigatório."),
   email: yup
     .string()
     .email("Formato de email inválido.")
     .required("O email é obrigatório."),
+  // Política de senha elevada para 8 caracteres com complexidade mínima
   password: yup
     .string()
-    .min(6, "A senha deve ter no mínimo 6 caracteres.")
+    .min(8, "A senha deve ter no mínimo 8 caracteres.")
+    .matches(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
+    .matches(/[0-9]/, "A senha deve conter ao menos um número.")
     .required("A senha é obrigatória."),
   projectId: yup.string().required("A seleção de um projeto é obrigatória."),
+  terms: yup.string().oneOf(["on"], "Você deve aceitar os Termos de Uso e a Política de Privacidade.").required("Você deve aceitar os Termos de Uso e a Política de Privacidade."),
 });
+
 const ticketSchema = yup.object().shape({
   title: yup.string().required("O título é obrigatório."),
   description: yup.string().required("A descrição é obrigatória."),
   urgency: yup.string().required("A urgência é obrigatória."),
   category: yup.string(),
 });
+
 const commentSchema = yup.object().shape({
   content: yup
     .string()
     .required("O comentário não pode estar vazio.")
     .min(3, "O comentário é muito curto."),
 });
+
+const changePasswordSchema = yup.object().shape({
+  new_password: yup
+    .string()
+    .min(8, "A nova senha deve ter no mínimo 8 caracteres.")
+    .matches(/[A-Z]/, "A senha deve conter ao menos uma letra maiúscula.")
+    .matches(/[0-9]/, "A senha deve conter ao menos um número.")
+    .required("A nova senha é obrigatória."),
+});
+
+// ============================================================
+// Tipos de arquivo permitidos no upload de avatar
+// ============================================================
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+// ============================================================
+// Middleware de autenticação
+// ============================================================
 const requireClientAuth = (req, res, next) => {
   if (
     req.isAuthenticated() &&
@@ -81,31 +158,21 @@ const loadProjectData = async (req, res, next) => {
     if (project && project.support_hours_limit !== null) {
       res.locals.supportHoursLimit = project.support_hours_limit;
 
-      // ===== MODIFICAÇÃO PARA CÁLCULO MENSAL PRECISO =====
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      // Nova consulta: Soma os 'seconds_spent' da tabela 'time_logs'
-      // para os registos criados neste mês e que pertencem a chamados deste projeto.
       const totalSpentSeconds =
         (await TimeLog.sum("seconds_spent", {
-          where: {
-            createdAt: {
-              [Op.gte]: startOfMonth,
-            },
-          },
+          where: { createdAt: { [Op.gte]: startOfMonth } },
           include: [
             {
               model: Ticket,
-              attributes: [], // Não precisamos de dados do Ticket, apenas da ligação
-              where: {
-                projectId: project.id,
-              },
-              required: true, // Garante que a junção (INNER JOIN) seja feita
+              attributes: [],
+              where: { projectId: project.id },
+              required: true,
             },
           ],
         })) || 0;
-      // ===== FIM DA MODIFICAÇÃO =====
 
       const usedHours = (totalSpentSeconds / 3600).toFixed(2);
       res.locals.usedSupportHours = usedHours;
@@ -116,7 +183,26 @@ const loadProjectData = async (req, res, next) => {
   }
   next();
 };
+
 const clientPortalMiddlewares = [requireClientAuth, loadProjectData];
+
+// ============================================================
+// Helper: lista de projetos para cadastro
+// Retorna apenas nome e id — não expõe descrição, horas, etc.
+// Randomiza a ordem para dificultar enumeração por posição.
+// ============================================================
+async function getPublicProjectList() {
+  const projects = await Project.findAll({
+    where: { status: "active" },
+    attributes: ["id", "name"], // APENAS id e nome — sem outros dados
+    order: [["name", "ASC"]],
+  });
+  return projects;
+}
+
+// ============================================================
+// ROTAS
+// ============================================================
 
 router.get("/portal", (req, res) => {
   if (
@@ -140,12 +226,44 @@ router.get("/portal/dashboard", clientPortalMiddlewares, async (req, res) => {
       where: { projectId, status: "closed" },
     });
 
+    // Busca plantonistas ativos dos grupos vinculados ao projeto do cliente
+    let onCallSchedules = [];
+    try {
+      const now = new Date();
+
+      // Grupos do projeto do cliente
+      const project = await Project.findByPk(projectId, {
+        include: [{ model: Group, as: "Groups", attributes: ["id"] }],
+      });
+      const groupIds = (project && project.Groups) ? project.Groups.map(g => g.id) : [];
+
+      if (groupIds.length > 0) {
+        onCallSchedules = await OnCallSchedule.findAll({
+          where: {
+            groupId: { [Op.in]: groupIds },
+            startsAt: { [Op.lte]: now },
+            endedAt: null,
+            [Op.or]: [
+              { endsAt: null },
+              { endsAt: { [Op.gt]: now } },
+            ],
+          },
+          include: [
+            { model: User,  as: "User",  attributes: ["id", "name", "email", "phone"] },
+            { model: Group, as: "Group", attributes: ["id", "name"] },
+          ],
+          order: [["startsAt", "ASC"]],
+        });
+      }
+    } catch (oncallErr) {
+      // Não deixa erro de plantão quebrar o dashboard
+      console.error("Erro ao buscar plantonistas:", oncallErr);
+    }
+
     res.render("portal/dashboard", {
       user: req.user,
-      stats: {
-        openTickets,
-        closedTickets,
-      },
+      stats: { openTickets, closedTickets },
+      onCallSchedules,
     });
   } catch (error) {
     console.error("Erro ao carregar o dashboard do cliente:", error);
@@ -159,6 +277,7 @@ router.get("/portal/login", (req, res) => {
   const error = messages.length > 0 ? messages[0] : null;
   res.render("client/client-login", { error });
 });
+
 router.post(
   "/portal/login",
   loginLimiter,
@@ -168,8 +287,9 @@ router.post(
     failureMessage: true,
   })
 );
+
 router.get("/portal/register", async (req, res) => {
-  const projects = await Project.findAll({ where: { status: "active" } });
+  const projects = await getPublicProjectList();
   res.render("client/client-register", {
     error: null,
     projects,
@@ -178,17 +298,30 @@ router.get("/portal/register", async (req, res) => {
 });
 
 router.post("/portal/register", loginLimiter, async (req, res) => {
-  const { name, email, password, projectId } = req.body;
-  const projects = await Project.findAll({ where: { status: "active" } });
+  const { name, email, password, projectId, terms } = req.body;
+  const projects = await getPublicProjectList();
   try {
     await registerSchema.validate(
-      { name, email, password, projectId },
+      { name, email, password, projectId, terms },
       { abortEarly: false }
     );
     const existingClient = await Client.findOne({ where: { email } });
     if (existingClient) {
       return res.status(400).render("client/client-register", {
-        error: "Este e-mail já está cadastrado...",
+        error: "Este e-mail já está cadastrado.",
+        projects,
+        message: null,
+      });
+    }
+
+    // Valida que o projectId informado realmente existe e está ativo
+    const projectExists = await Project.findOne({
+      where: { id: projectId, status: "active" },
+      attributes: ["id", "name"],
+    });
+    if (!projectExists) {
+      return res.status(400).render("client/client-register", {
+        error: "Projeto inválido.",
         projects,
         message: null,
       });
@@ -203,28 +336,23 @@ router.post("/portal/register", loginLimiter, async (req, res) => {
     });
 
     try {
-      const project = await Project.findByPk(projectId);
       const emailHtml = await ejs.renderFile(
         path.join(__dirname, "../views/emails/newClientPending.ejs"),
         {
           clientName: newClient.name,
           clientEmail: newClient.email,
-          projectName: project ? project.name : "N/A",
-          adminUrl: `${req.protocol}://${req.get(
-            "host"
-          )}/admin/resources/clients`,
+          projectName: projectExists.name,
+          adminUrl: `${process.env.BASE_URL || "http://localhost:5000"}/admin/resources/clients`,
         }
       );
+      const adminRecipients = await resolveTeamEmailsByProjectId(projectId);
       await MailService.sendMail(
-        process.env.ADMIN_EMAIL,
+        adminRecipients,
         `Novo Cliente Pendente: ${newClient.name}`,
         emailHtml
       );
     } catch (mailError) {
-      console.error(
-        "Falha ao enviar email de novo cliente pendente:",
-        mailError
-      );
+      console.error("Falha ao enviar email de novo cliente pendente:", mailError);
     }
 
     return res.render("portal/pending-approval");
@@ -254,12 +382,11 @@ const socialAuthCallback = (req, res, next) => {
     return res.redirect("/portal/pending-approval");
   }
   req.login(req.user, (err) => {
-    if (err) {
-      return next(err);
-    }
+    if (err) return next(err);
     return res.redirect("/portal/dashboard");
   });
 };
+
 router.get(
   "/auth/google",
   passport.authenticate("google-client", { scope: ["profile", "email"] })
@@ -281,17 +408,15 @@ router.get(
   }),
   socialAuthCallback
 );
+
 router.get("/portal/pending-approval", (req, res) => {
   res.render("portal/pending-approval");
 });
+
 router.get("/portal/logout", (req, res, next) => {
   req.logout(function (err) {
-    if (err) {
-      return next(err);
-    }
-    req.session.destroy(() => {
-      res.redirect("/portal/login");
-    });
+    if (err) return next(err);
+    req.session.destroy(() => res.redirect("/portal/login"));
   });
 });
 
@@ -302,16 +427,9 @@ router.get(
     try {
       const { recordId } = req.params;
       const ticket = await Ticket.findByPk(recordId);
-      if (!ticket || !ticket.path) {
-        return res.status(404).send("Anexo não encontrado.");
-      }
-      if (ticket.projectId !== req.user.projectId) {
-        return res.status(403).send("Acesso negado.");
-      }
-      const command = new GetObjectCommand({
-        Bucket: ticket.folder,
-        Key: ticket.path,
-      });
+      if (!ticket || !ticket.path) return res.status(404).send("Anexo não encontrado.");
+      if (ticket.projectId !== req.user.projectId) return res.status(403).send("Acesso negado.");
+      const command = new GetObjectCommand({ Bucket: ticket.folder, Key: ticket.path });
       const signedUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
       res.redirect(signedUrl);
     } catch (error) {
@@ -328,17 +446,10 @@ router.get(
     try {
       const { commentId } = req.params;
       const comment = await Comment.findByPk(commentId);
-      if (!comment || !comment.path) {
-        return res.status(404).send("Anexo não encontrado.");
-      }
+      if (!comment || !comment.path) return res.status(404).send("Anexo não encontrado.");
       const ticket = await Ticket.findByPk(comment.ticket_id);
-      if (!ticket || ticket.projectId !== req.user.projectId) {
-        return res.status(403).send("Acesso negado.");
-      }
-      const command = new GetObjectCommand({
-        Bucket: comment.folder,
-        Key: comment.path,
-      });
+      if (!ticket || ticket.projectId !== req.user.projectId) return res.status(403).send("Acesso negado.");
+      const command = new GetObjectCommand({ Bucket: comment.folder, Key: comment.path });
       const signedUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
       res.redirect(signedUrl);
     } catch (error) {
@@ -353,66 +464,66 @@ router.get("/portal/profile", clientPortalMiddlewares, async (req, res) => {
     include: [{ model: Project, as: "Project" }],
   });
 
-  // ===== INÍCIO DA MODIFICAÇÃO =====
-  // Gera um URL seguro para o avatar, se ele existir
   let avatarUrl = null;
   if (clientWithProject && clientWithProject.avatar_path) {
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_BUCKET,
       Key: clientWithProject.avatar_path,
     });
-    // O URL será válido por 1 hora
     avatarUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
   }
-  // ===================================
 
   res.render("portal/profile", {
     user: clientWithProject,
-    avatarUrl: avatarUrl, // Passa o URL para a página
+    avatarUrl,
     error: null,
     success: null,
   });
 });
 
-// ===== NOVA ROTA POST PARA ALTERAR A SENHA =====
 router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
   const { current_password, new_password, confirm_password } = req.body;
-  const client = await Client.findByPk(req.user.id, { include: Project });
+  const client = await Client.findByPk(req.user.id, {
+    include: [{ model: Project, as: "Project" }],
+  });
 
-  // 1. Verifica se a senha atual está correta
   const isPasswordCorrect = await client.checkPassword(current_password);
   if (!isPasswordCorrect) {
     return res.render("portal/profile", {
       user: client,
+      avatarUrl: null,
       success: null,
       error: "A senha atual está incorreta.",
     });
   }
 
-  // 2. Valida a nova senha
-  if (!new_password || new_password.length < 6) {
+  // Valida nova senha com a política elevada
+  try {
+    await changePasswordSchema.validate({ new_password });
+  } catch (validationError) {
     return res.render("portal/profile", {
       user: client,
+      avatarUrl: null,
       success: null,
-      error: "A nova senha deve ter no mínimo 6 caracteres.",
+      error: validationError.message,
     });
   }
 
   if (new_password !== confirm_password) {
     return res.render("portal/profile", {
       user: client,
+      avatarUrl: null,
       success: null,
       error: "A nova senha e a confirmação não coincidem.",
     });
   }
 
-  // 3. Salva a nova senha
   try {
     client.password = new_password;
     await client.save();
-
     res.render("portal/profile", {
       user: client,
+      avatarUrl: null,
       error: null,
       success: "Senha alterada com sucesso!",
     });
@@ -420,6 +531,7 @@ router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
     console.error("Erro ao salvar nova senha:", error);
     res.render("portal/profile", {
       user: client,
+      avatarUrl: null,
       success: null,
       error: "Ocorreu um erro ao salvar a nova senha. Tente novamente.",
     });
@@ -429,39 +541,48 @@ router.post("/portal/profile", clientPortalMiddlewares, async (req, res) => {
 router.post(
   "/portal/profile/avatar",
   clientPortalMiddlewares,
-  multer(multerConfig).single("avatar"), // Usa o multer para processar um único ficheiro chamado 'avatar'
+  multer(multerConfig).single("avatar"),
   async (req, res) => {
     try {
-      if (!req.file) {
-        // Se nenhum ficheiro for enviado, redireciona de volta com um erro (podemos adicionar flash messages depois)
-        return res.redirect("/portal/profile");
+      if (!req.file) return res.redirect("/portal/profile");
+
+      // Validação explícita de tipo e tamanho no backend
+      if (!ALLOWED_AVATAR_TYPES.includes(req.file.mimetype)) {
+        return res.render("portal/profile", {
+          user: req.user,
+          avatarUrl: null,
+          success: null,
+          error: "Tipo de arquivo não permitido. Use JPEG, PNG, WebP ou GIF.",
+        });
+      }
+      if (req.file.size > MAX_AVATAR_SIZE_BYTES) {
+        return res.render("portal/profile", {
+          user: req.user,
+          avatarUrl: null,
+          success: null,
+          error: "Arquivo muito grande. Máximo 5 MB.",
+        });
       }
 
       const client = await Client.findByPk(req.user.id);
 
-      // Se o cliente já tiver uma foto de perfil, apagamos a antiga do S3
       if (client.avatar_path) {
-        const deleteParams = {
+        await s3.send(new DeleteObjectCommand({
           Bucket: process.env.AWS_BUCKET,
           Key: client.avatar_path,
-        };
-        await s3.send(new DeleteObjectCommand(deleteParams));
+        }));
       }
 
-      // Atualiza o registo do cliente com o caminho do novo ficheiro no S3
       client.avatar_path = req.file.key;
       await client.save();
 
-      // Redireciona para a página de perfil (podemos adicionar uma mensagem de sucesso depois)
       return res.redirect("/portal/profile");
     } catch (error) {
       console.error("Erro no upload do avatar:", error);
-      // Em caso de erro, redireciona de volta
       return res.redirect("/portal/profile");
     }
   }
 );
-// ===============================================
 
 router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
   try {
@@ -471,25 +592,15 @@ router.get("/portal/tickets", clientPortalMiddlewares, async (req, res) => {
     const offset = (page - 1) * limit;
 
     const where = { projectId: req.user.projectId };
-    if (status) {
-      where.status = status;
-    }
-    if (search) {
-      where.title = { [Op.iLike]: `%${search}%` };
-    }
+    if (status) where.status = status;
+    if (search) where.title = { [Op.iLike]: `%${search}%` };
 
     const { count, rows: tickets } = await Ticket.findAndCountAll({
       where,
       limit,
       offset,
       order: [["updatedAt", "DESC"]],
-      include: [
-        {
-          model: Client,
-          as: "Client",
-          attributes: ["name"],
-        },
-      ],
+      include: [{ model: Client, as: "Client", attributes: ["name"] }],
     });
 
     const totalPages = Math.ceil(count / limit);
@@ -522,11 +633,7 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
     const ticket = await Ticket.findOne({
       where: { id: req.params.id, projectId: req.user.projectId },
       include: [
-        {
-          model: Client,
-          as: "Client",
-          attributes: ["name"],
-        },
+        { model: Client, as: "Client", attributes: ["name"] },
         {
           model: Comment,
           include: [
@@ -537,20 +644,15 @@ router.get("/portal/tickets/:id", clientPortalMiddlewares, async (req, res) => {
       ],
       order: [[Comment, "createdAt", "ASC"]],
     });
-    if (!ticket) {
-      return res.status(404).render("errors/404", { context: "portal" });
-    }
+    if (!ticket) return res.status(404).render("errors/404", { context: "portal" });
+
     for (const comment of ticket.comments) {
-      if (comment.filename && comment.type.startsWith("image/")) {
-        const command = new GetObjectCommand({
-          Bucket: comment.folder,
-          Key: comment.path,
-        });
-        comment.previewUrl = await getSignedUrl(s3, command, {
-          expiresIn: 3600,
-        });
+      if (comment.filename && comment.type && comment.type.startsWith("image/")) {
+        const command = new GetObjectCommand({ Bucket: comment.folder, Key: comment.path });
+        comment.previewUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
       }
     }
+
     res.render("portal/ticket-detail", {
       user: req.user,
       ticket,
@@ -577,10 +679,7 @@ router.post(
         where: { id: ticketId, projectId: req.user.projectId },
         include: [{ model: User, as: "User" }],
       });
-
-      if (!ticket) {
-        return res.status(404).render("errors/404", { context: "portal" });
-      }
+      if (!ticket) return res.status(404).render("errors/404", { context: "portal" });
 
       const commentData = {
         content,
@@ -594,7 +693,7 @@ router.post(
           folder: process.env.AWS_BUCKET,
           type: mimetype,
           filename: originalname,
-          size: size,
+          size,
         });
       }
 
@@ -602,10 +701,11 @@ router.post(
 
       try {
         const client = req.user;
-        const recipients = new Set([process.env.ADMIN_EMAIL]);
-        if (ticket.User && ticket.User.email) {
-          recipients.add(ticket.User.email);
-        }
+        const teamEmails = await resolveTeamEmailsByProjectId(ticket.projectId);
+        const recipients = new Set(
+          (teamEmails || "").split(",").map((e) => e.trim()).filter(Boolean)
+        );
+        if (ticket.User && ticket.User.email) recipients.add(ticket.User.email);
 
         const emailHtml = await ejs.renderFile(
           path.join(__dirname, "../views/emails/newCommentByClient.ejs"),
@@ -614,9 +714,7 @@ router.post(
             ticketId: ticket.id,
             ticketTitle: ticket.title,
             commentContent: newComment.content,
-            adminTicketUrl: `${req.protocol}://${req.get(
-              "host"
-            )}/admin/resources/tickets/records/${ticket.id}/show`,
+            adminTicketUrl: `${process.env.BASE_URL || "http://localhost:5000"}/admin/resources/tickets/records/${ticket.id}/show`,
           }
         );
 
@@ -626,10 +724,7 @@ router.post(
           emailHtml
         );
       } catch (mailError) {
-        console.error(
-          "Falha ao enviar email de notificação de comentário do cliente:",
-          mailError
-        );
+        console.error("Falha ao enviar email de notificação de comentário:", mailError);
       }
 
       res.redirect(`/portal/tickets/${ticketId}`);
@@ -640,7 +735,7 @@ router.post(
         order: [[Comment, "createdAt", "ASC"]],
       });
       if (error instanceof yup.ValidationError) {
-        return res.status(400).render(`portal/ticket-detail`, {
+        return res.status(400).render("portal/ticket-detail", {
           user: req.user,
           ticket,
           error: error.message,
@@ -661,11 +756,28 @@ router.post(
     try {
       const { title, description, urgency, category } = req.body;
       const client = req.user;
-      const project = await Project.findByPk(client.projectId);
+      const project = await Project.findByPk(client.projectId, {
+        include: [
+          {
+            model: Group,
+            as: "Groups",
+            include: [{ model: User, as: "Users", attributes: ["id", "name", "email"] }],
+          },
+        ],
+      });
+
+      // Verificação de limite de horas usando TimeLog (fonte de verdade correta)
       if (project && project.support_hours_limit !== null) {
         const totalSpentSeconds =
-          (await Ticket.sum("time_spent_seconds", {
-            where: { projectId: project.id },
+          (await TimeLog.sum("seconds_spent", {
+            include: [
+              {
+                model: Ticket,
+                attributes: [],
+                where: { projectId: project.id },
+                required: true,
+              },
+            ],
           })) || 0;
         const limitInSeconds = project.support_hours_limit * 3600;
         if (totalSpentSeconds >= limitInSeconds) {
@@ -676,31 +788,38 @@ router.post(
           });
         }
       }
+
       await ticketSchema.validate({ title, description, urgency });
+
       const ticketData = {
         title,
         description,
         urgency,
         category,
-        type: "incident", // Os chamados do portal entram como incidentes por predefinição
+        type: "incident",
         clientId: client.id,
         projectId: client.projectId,
         status: "open",
       };
+
       if (req.file) {
         const { key, size, mimetype, originalname } = req.file;
         Object.assign(ticketData, {
           path: key,
           folder: process.env.AWS_BUCKET,
-          file_type: mimetype, // used file_type to match the refactored model
+          file_type: mimetype,
           filename: originalname,
-          size: size,
+          size,
         });
       }
+
       const newTicket = await Ticket.create(ticketData);
 
       try {
         const projectName = project ? project.name : "Não especificado";
+
+        const adminRecipients = resolveTeamEmailsFromProject(project);
+
         const emailHtmlAdmin = await ejs.renderFile(
           path.join(__dirname, "../views/emails/newTicketNotification.ejs"),
           {
@@ -708,19 +827,16 @@ router.post(
             clientEmail: client.email,
             ticketTitle: newTicket.title,
             ticketDescription: newTicket.description,
-            projectName: projectName,
+            projectName,
           }
         );
         await MailService.sendMail(
-          process.env.ADMIN_EMAIL,
+          adminRecipients,
           `Novo Chamado: ${newTicket.title} [Projeto: ${projectName}]`,
           emailHtmlAdmin
         );
       } catch (mailError) {
-        console.error(
-          "Falha ao enviar email de notificação para o Admin:",
-          mailError
-        );
+        console.error("Falha ao enviar email para o Admin:", mailError);
       }
 
       try {
@@ -730,9 +846,7 @@ router.post(
             clientName: client.name,
             ticketId: newTicket.id,
             ticketTitle: newTicket.title,
-            ticketUrl: `${req.protocol}://${req.get("host")}/portal/tickets/${
-              newTicket.id
-            }`,
+            ticketUrl: `${process.env.BASE_URL || "http://localhost:5000"}/portal/tickets/${newTicket.id}`,
           }
         );
         await MailService.sendMail(
@@ -741,10 +855,7 @@ router.post(
           emailHtmlClient
         );
       } catch (mailError) {
-        console.error(
-          "Falha ao enviar email de confirmação para o cliente:",
-          mailError
-        );
+        console.error("Falha ao enviar email de confirmação para o cliente:", mailError);
       }
 
       res.redirect("/portal/tickets");

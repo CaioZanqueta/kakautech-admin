@@ -43,6 +43,11 @@
       .login-link p { color: #868e96; }
       .login-link a { color: #1187bd; font-weight: 600; }
       .login-link a:hover { text-decoration: underline; }
+      .terms-group { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; margin-top: 4px; }
+      .terms-group input[type="checkbox"] { margin-top: 2px; width: 16px; height: 16px; accent-color: #1187BD; flex-shrink: 0; cursor: pointer; }
+      .terms-group label { font-size: 13px; color: #868e96; line-height: 1.5; cursor: pointer; }
+      .terms-group label a { color: #1187bd; font-weight: 600; }
+      .terms-group label a:hover { text-decoration: underline; }
       @media (max-width: 900px) { .login-wrapper { flex-direction: column; max-width: 480px; } .login-branding { display: none; } .login-form-wrapper { width: 100%; padding: 36px 28px; } }
     </style>
   </head>
@@ -71,7 +76,7 @@
           </div>
           <div class="form-group">
             <label for="password">Senha</label>
-            <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required />
+            <input type="password" id="password" name="password" placeholder="Mín. 8 caracteres, 1 maiúscula e 1 número" required />
           </div>
           <div class="form-group">
             <label for="projectId">Projeto</label>
@@ -83,6 +88,13 @@
               <% }) %>
               <% } %>
             </select>
+          </div>
+          <div class="terms-group">
+            <input type="checkbox" id="terms" name="terms" value="on" required />
+            <label for="terms">
+              Li e aceito os <a href="/portal/terms" target="_blank">Termos de Uso</a>
+              e a <a href="/portal/privacy" target="_blank">Política de Privacidade</a> da Kakau Tech.
+            </label>
           </div>
           <button type="submit" class="btn-submit">Solicitar Cadastro</button>
         </form>

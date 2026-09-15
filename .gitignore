@@ -1,3 +1,9 @@
 /node_modules
 .env
 dist
+src/database/database.sqlite
+*.sqlite
+*.sqlite3
+public/reports/*.csv
+public/reports/*.xlsx
+public/reports/*.pdf
