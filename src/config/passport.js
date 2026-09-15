@@ -130,7 +130,7 @@ passport.use(
           projectId:  null,
         });
 
-        return done(null, false, { message: "PENDING_APPROVAL" });
+        return done(null, false, { message: "Pendente de aprovação!" });
       } catch (error) {
         return done(error, false);
       }
@@ -183,7 +183,7 @@ passport.use(
           projectId:    null,
         });
 
-        return done(null, false, { message: "PENDING_APPROVAL" });
+        return done(null, false, { message: "Pendente de aprovação!" });
       } catch (error) {
         return done(error, false);
       }
@@ -222,8 +222,13 @@ passport.use(
             name:      profile.displayName,
             email:     email,
             google_id: profile.id,
+<<<<<<< HEAD
             role:      "developer",
             status:    "active",
+=======
+            role: "developer",
+            status: "active",
+>>>>>>> 7c0e2abe47412430b7d6476a61a276cf418da715
           });
         } else if (!adminUser.google_id) {
           adminUser.google_id = profile.id;
