@@ -10,89 +10,27 @@
   <a href="/admin/resources/tickets">← Voltar para Chamados</a>
 </p>
 
-<!-- HEADER -->
 <div class="ticket-header">
   <div>
     <h1 class="page-title"><%= ticket.title %></h1>
     <p class="page-subtitle">Chamado #<%= ticket.id %> · Criado em <%= new Date(ticket.createdAt).toLocaleString('pt-BR') %></p>
   </div>
   <% if (showAssignButton) { %>
-    <button class="btn btn-primary" id="assignBtn" onclick="assignToMe()">
-      👤 Atribuir a Mim
-    </button>
+    <button type="button" class="btn btn-primary" id="assignBtn">👤 Atribuir a Mim</button>
   <% } %>
 </div>
 
-<!-- DETALHES -->
 <div class="card">
   <div class="ticket-details">
-    <div class="detail-row">
-      <span class="detail-label">Cliente</span>
-      <% var tClient = ticket.Client || ticket.client; %>
-      <span class="detail-value"><%= tClient ? tClient.name : '—' %></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Projeto</span>
-      <% var tProject = ticket.Project || ticket.project; %>
-      <span class="detail-value"><%= tProject ? tProject.name : '—' %></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Responsável</span>
-      <% var tUser = ticket.User || ticket.user; %>
-      <span class="detail-value"><%= tUser ? tUser.name : '—' %></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Status</span>
-      <span class="detail-value">
-        <span class="badge <%= statusVariants[ticket.status] || 'badge-secondary' %>">
-          <%= statusTranslations[ticket.status] || ticket.status %>
-        </span>
-      </span>
-    </div>
-
-    <!-- ===== CAMPOS ITIL ===== -->
-    <div class="detail-row">
-      <span class="detail-label">Tipo</span>
-      <span class="detail-value">
-        <% 
-          var typeTranslations = { 'incident': 'Incidente', 'service_request': 'Requisição de Serviço' }; 
-          var tType = ticket.type || 'incident';
-        %>
-        <%= typeTranslations[tType] || tType %>
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Categoria</span>
-      <span class="detail-value"><%= ticket.category || '—' %></span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Urgência</span>
-      <span class="detail-value">
-        <% 
-          var urgencyTranslations = { 'low': 'Baixa', 'medium': 'Média', 'high': 'Alta' }; 
-          var tUrgency = ticket.urgency || 'medium';
-        %>
-        <%= urgencyTranslations[tUrgency] || tUrgency %>
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Impacto</span>
-      <span class="detail-value">
-        <% 
-          var impactTranslations = { 'low': 'Baixo', 'medium': 'Médio', 'high': 'Alto' }; 
-          var tImpact = ticket.impact || 'medium';
-        %>
-        <%= impactTranslations[tImpact] || tImpact %>
-      </span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Prioridade</span>
-      <span class="detail-value">
-        <% var pTrans = { 'low': 'Baixa', 'medium': 'Média', 'high': 'Alta', 'critical': 'Crítica' }; %>
-        <%= pTrans[ticket.priority] || priorityTranslations[ticket.priority] || ticket.priority || '—' %>
-      </span>
-    </div>
-    <!-- ======================= -->
+    <div class="detail-row"><span class="detail-label">Cliente</span><% var tClient = ticket.Client || ticket.client; %><span class="detail-value"><%= tClient ? tClient.name : '—' %></span></div>
+    <div class="detail-row"><span class="detail-label">Projeto</span><% var tProject = ticket.Project || ticket.project; %><span class="detail-value"><%= tProject ? tProject.name : '—' %></span></div>
+    <div class="detail-row"><span class="detail-label">Responsável</span><% var tUser = ticket.User || ticket.user; %><span class="detail-value"><%= tUser ? tUser.name : '—' %></span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="badge <%= statusVariants[ticket.status] || 'badge-secondary' %>"><%= statusTranslations[ticket.status] || ticket.status %></span></span></div>
+    <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value"><% var typeTranslations = { incident: 'Incidente', service_request: 'Requisição de Serviço' }; var tType = ticket.type || 'incident'; %><%= typeTranslations[tType] || tType %></span></div>
+    <div class="detail-row"><span class="detail-label">Categoria</span><span class="detail-value"><%= ticket.category || '—' %></span></div>
+    <div class="detail-row"><span class="detail-label">Urgência</span><span class="detail-value"><% var urgencyTranslations = { low: 'Baixa', medium: 'Média', high: 'Alta' }; var tUrgency = ticket.urgency || 'medium'; %><%= urgencyTranslations[tUrgency] || tUrgency %></span></div>
+    <div class="detail-row"><span class="detail-label">Impacto</span><span class="detail-value"><% var impactTranslations = { low: 'Baixo', medium: 'Médio', high: 'Alto' }; var tImpact = ticket.impact || 'medium'; %><%= impactTranslations[tImpact] || tImpact %></span></div>
+    <div class="detail-row"><span class="detail-label">Prioridade</span><span class="detail-value"><% var pTrans = { low: 'Baixa', medium: 'Média', high: 'Alta', critical: 'Crítica' }; %><%= pTrans[ticket.priority] || priorityTranslations[ticket.priority] || ticket.priority || '—' %></span></div>
   </div>
 
   <div class="ticket-description">
@@ -104,163 +42,177 @@
     <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
       <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-500); font-weight: 700; margin-bottom: 10px;">Anexo</div>
       <% if (ticket.file_type && ticket.file_type.startsWith('image/')) { %>
-        <div class="attachment-preview">
-          <img src="<%= ticket.signedUrl %>" alt="<%= ticket.filename %>" onclick="openModal(this.src)">
-        </div>
+        <div class="attachment-preview"><img class="js-open-image" src="<%= ticket.signedUrl %>" alt="<%= ticket.filename %>"></div>
       <% } else { %>
-        <a href="<%= ticket.signedUrl %>" target="_blank" class="attachment-chip">
-          📎 <span class="filename"><%= ticket.filename %></span> ⬇
-        </a>
+        <a href="<%= ticket.signedUrl %>" target="_blank" rel="noopener noreferrer" class="attachment-chip">📎 <span class="filename"><%= ticket.filename %></span> ⬇</a>
       <% } %>
     </div>
   <% } %>
 </div>
 
-<!-- AÇÕES -->
 <div style="margin: 16px 0 24px;">
   <div class="btn-group">
     <a href="/admin/resources/tickets/<%= ticket.id %>/edit" class="btn btn-primary">Editar</a>
-    <button class="btn btn-danger" onclick="deleteTicket()">Apagar</button>
+    <button type="button" id="deleteTicketBtn" class="btn btn-danger">Apagar</button>
   </div>
 </div>
 
-<!-- COMENTÁRIOS -->
 <div class="card comments-section">
   <h3>💬 Comentários</h3>
-  <div id="comments-container">
-    <p style="color: var(--gray-500);">Carregando...</p>
-  </div>
-
+  <div id="comments-container"><p style="color: var(--gray-500);">Carregando...</p></div>
   <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--gray-200);">
     <h3 style="font-size: 14px; margin-bottom: 12px;">Adicionar Resposta</h3>
     <form id="commentForm">
-      <div class="form-group">
-        <textarea id="commentContent" placeholder="Escreva seu comentário..." rows="3" required></textarea>
-      </div>
+      <div class="form-group"><textarea id="commentContent" placeholder="Escreva seu comentário..." rows="3" required></textarea></div>
       <div id="comment-error" style="display:none;" class="alert alert-error"></div>
       <button type="submit" class="btn btn-primary">Enviar</button>
     </form>
   </div>
 </div>
 
-<!-- TIMELINE -->
 <div class="card timeline-section">
   <h3>🔄 Histórico de Atividades</h3>
-  <div id="timeline-container">
-    <p style="color: var(--gray-500);">Carregando...</p>
-  </div>
+  <div id="timeline-container"><p style="color: var(--gray-500);">Carregando...</p></div>
 </div>
 
-<!-- Modal -->
-<div id="imageModal" class="modal-overlay" style="display:none;" onclick="closeModal()">
-  <span class="modal-close" onclick="closeModal()">&times;</span>
-  <img id="modalImage" src="" onclick="event.stopPropagation()">
+<div id="imageModal" class="modal-overlay" style="display:none;">
+  <button type="button" class="modal-close" id="closeImageModal" aria-label="Fechar imagem">&times;</button>
+  <img id="modalImage" src="" alt="Visualização do anexo">
 </div>
 
 <script>
 var ticketId = <%= ticket.id %>;
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/[&<>'"]/g, function(char) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char];
+  });
+}
+
 async function loadComments() {
   try {
-    var resp = await fetch('/admin/api/tickets/' + ticketId + '/comments');
-    var comments = await resp.json();
+    var response = await fetch('/admin/api/tickets/' + ticketId + '/comments');
+    if (!response.ok) throw new Error('Falha ao carregar comentários');
+    var comments = await response.json();
     var container = document.getElementById('comments-container');
-
-    if (comments.length === 0) {
+    if (!comments.length) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Nenhum comentário ainda</p></div>';
       return;
     }
-
-    container.innerHTML = comments.map(function(c) {
-      var isAdmin = !!c.user_id;
-      var userData = c.User || c.user;
-      var clientData = c.Client || c.client;
-      var authorName = (userData && userData.name) || (clientData && clientData.name) || 'Anônimo';
+    container.innerHTML = comments.map(function(comment) {
+      var isAdmin = !!comment.user_id;
+      var author = (comment.User && comment.User.name) || (comment.user && comment.user.name) || (comment.Client && comment.Client.name) || (comment.client && comment.client.name) || 'Anônimo';
       var badge = isAdmin ? ' · Equipe' : ' · Cliente';
-      var cls = isAdmin ? 'comment-admin' : 'comment-client';
-      var date = new Date(c.createdAt).toLocaleString('pt-BR');
-      var attachHtml = '';
-      if (c.filename && c.signedUrl) {
-        if (c.type && c.type.startsWith('image/')) {
-          attachHtml = '<div class="attachment-preview" style="margin-top:10px;"><img src="' + c.signedUrl + '" alt="' + c.filename + '" style="max-width:150px;" onclick="openModal(this.src)"></div>';
+      var className = isAdmin ? 'comment-admin' : 'comment-client';
+      var attachment = '';
+      if (comment.filename && comment.signedUrl) {
+        if (comment.type && comment.type.startsWith('image/')) {
+          attachment = '<div class="attachment-preview" style="margin-top:10px;"><img class="js-open-image" src="' + escapeHtml(comment.signedUrl) + '" alt="' + escapeHtml(comment.filename) + '" style="max-width:150px;"></div>';
         } else {
-          attachHtml = '<a href="' + c.signedUrl + '" target="_blank" class="attachment-chip" style="margin-top:10px;">📎 <span class="filename">' + c.filename + '</span> ⬇</a>';
+          attachment = '<a href="' + escapeHtml(comment.signedUrl) + '" target="_blank" rel="noopener noreferrer" class="attachment-chip" style="margin-top:10px;">📎 <span class="filename">' + escapeHtml(comment.filename) + '</span> ⬇</a>';
         }
       }
-      return '<div class="comment-box ' + cls + '">' +
-        '<div class="comment-author">' + authorName + '<span style="color:var(--gray-500);font-weight:400;">' + badge + '</span></div>' +
-        '<div class="comment-date">' + date + '</div>' +
-        '<div class="comment-content">' + (c.content || '') + '</div>' +
-        attachHtml + '</div>';
+      return '<div class="comment-box ' + className + '"><div class="comment-author">' + escapeHtml(author) + '<span style="color:var(--gray-500);font-weight:400;">' + badge + '</span></div><div class="comment-date">' + escapeHtml(new Date(comment.createdAt).toLocaleString('pt-BR')) + '</div><div class="comment-content">' + escapeHtml(comment.content || '') + '</div>' + attachment + '</div>';
     }).join('');
-  } catch (err) {
+  } catch (error) {
     document.getElementById('comments-container').innerHTML = '<p style="color:var(--danger)">Erro ao carregar comentários.</p>';
   }
 }
 
 async function loadTimeline() {
   try {
-    var resp = await fetch('/admin/api/tickets/' + ticketId + '/activity-logs');
-    var logs = await resp.json();
+    var response = await fetch('/admin/api/tickets/' + ticketId + '/activity-logs');
+    if (!response.ok) throw new Error('Falha ao carregar histórico');
+    var logs = await response.json();
     var container = document.getElementById('timeline-container');
-
-    if (logs.length === 0) {
+    if (!logs.length) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Nenhuma atividade registrada</p></div>';
       return;
     }
-
     container.innerHTML = logs.map(function(log) {
       var userName = (log.User && log.User.name) || 'Sistema';
-      var date = new Date(log.createdAt).toLocaleString('pt-BR');
-      return '<div class="timeline-item">' +
-        '<div class="timeline-icon">🔄</div>' +
-        '<div><div class="timeline-text"><strong>' + log.description + '</strong></div>' +
-        '<div class="timeline-meta">Por ' + userName + ' · ' + date + '</div></div>' +
-        '</div>';
+      return '<div class="timeline-item"><div class="timeline-icon">🔄</div><div><div class="timeline-text"><strong>' + escapeHtml(log.description) + '</strong></div><div class="timeline-meta">Por ' + escapeHtml(userName) + ' · ' + escapeHtml(new Date(log.createdAt).toLocaleString('pt-BR')) + '</div></div></div>';
     }).join('');
-  } catch (err) {
+  } catch (error) {
     document.getElementById('timeline-container').innerHTML = '<p style="color:var(--danger)">Erro ao carregar histórico.</p>';
   }
 }
 
-document.getElementById('commentForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
+document.getElementById('commentForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
   var content = document.getElementById('commentContent').value.trim();
   if (!content) return;
   var errorDiv = document.getElementById('comment-error');
   errorDiv.style.display = 'none';
   try {
-    var resp = await fetch('/api/tickets/' + ticketId + '/comments', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: content }),
-    });
-    if (resp.ok) { document.getElementById('commentContent').value = ''; loadComments(); }
-    else { var data = await resp.json(); errorDiv.textContent = data.message || 'Erro.'; errorDiv.style.display = 'flex'; }
-  } catch (err) { errorDiv.textContent = 'Erro de conexão.'; errorDiv.style.display = 'flex'; }
+    var response = await fetch('/api/tickets/' + ticketId + '/comments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: content }) });
+    if (response.ok) {
+      document.getElementById('commentContent').value = '';
+      await loadComments();
+      await loadTimeline();
+      return;
+    }
+    var data = await response.json();
+    errorDiv.textContent = data.message || 'Erro ao enviar comentário.';
+    errorDiv.style.display = 'flex';
+  } catch (error) {
+    errorDiv.textContent = 'Erro de conexão.';
+    errorDiv.style.display = 'flex';
+  }
 });
 
 async function assignToMe() {
-  var btn = document.getElementById('assignBtn');
-  btn.disabled = true; btn.textContent = 'Atribuindo...';
+  var button = document.getElementById('assignBtn');
+  if (!button) return;
+  button.disabled = true;
+  button.textContent = 'Atribuindo...';
   try {
-    var resp = await fetch('/api/tickets/' + ticketId + '/assign', { method: 'POST' });
-    if (resp.ok) { window.location.reload(); }
-    else { var data = await resp.json(); alert(data.message || 'Erro.'); btn.disabled = false; btn.textContent = '👤 Atribuir a Mim'; }
-  } catch (err) { alert('Erro de conexão.'); btn.disabled = false; btn.textContent = '👤 Atribuir a Mim'; }
+    var response = await fetch('/api/tickets/' + ticketId + '/assign', { method: 'POST' });
+    if (response.ok) return window.location.reload();
+    var data = await response.json();
+    alert(data.message || 'Erro ao atribuir chamado.');
+  } catch (error) {
+    alert('Erro de conexão ao atribuir chamado.');
+  }
+  button.disabled = false;
+  button.textContent = '👤 Atribuir a Mim';
 }
 
 async function deleteTicket() {
   if (!confirm('Tem certeza que deseja remover este chamado?')) return;
   try {
-    var resp = await fetch('/admin/api/tickets/' + ticketId, { method: 'DELETE' });
-    if (resp.ok) { window.location.href = '/admin/resources/tickets?success=' + encodeURIComponent('Chamado apagado!'); }
-    else { var data = await resp.json(); alert(data.message || 'Erro.'); }
-  } catch (err) { alert('Erro.'); }
+    var response = await fetch('/admin/api/tickets/' + ticketId, { method: 'DELETE' });
+    if (response.ok) return window.location.href = '/admin/resources/tickets?success=' + encodeURIComponent('Chamado apagado!');
+    var data = await response.json();
+    alert(data.message || 'Erro ao apagar chamado.');
+  } catch (error) {
+    alert('Erro de conexão ao apagar chamado.');
+  }
 }
 
-function openModal(src) { document.getElementById('modalImage').src = src; document.getElementById('imageModal').style.display = 'flex'; }
-function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+function openModal(source) {
+  document.getElementById('modalImage').src = source;
+  document.getElementById('imageModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('imageModal').style.display = 'none';
+  document.getElementById('modalImage').src = '';
+}
+
+var assignButton = document.getElementById('assignBtn');
+if (assignButton) assignButton.addEventListener('click', assignToMe);
+document.getElementById('deleteTicketBtn').addEventListener('click', deleteTicket);
+document.getElementById('closeImageModal').addEventListener('click', closeModal);
+document.getElementById('imageModal').addEventListener('click', function(event) {
+  if (event.target === event.currentTarget) closeModal();
+});
+document.addEventListener('click', function(event) {
+  var image = event.target.closest('.js-open-image');
+  if (image) openModal(image.src);
+});
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') closeModal();
+});
 
 loadComments();
 loadTimeline();
