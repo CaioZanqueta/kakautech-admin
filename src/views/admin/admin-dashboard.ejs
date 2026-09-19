@@ -8,9 +8,8 @@
   <p>Acompanhe seus projetos, tarefas e chamados em tempo real</p>
 </div>
 
-<div id="stats-container" class="stats-row">
-  <!-- preenchido via JS -->
-</div>
+<div id="dashboard-error" class="alert alert-error" style="display:none;"></div>
+<div id="stats-container" class="stats-row"></div>
 
 <div class="cards-row">
   <div class="card">
@@ -29,58 +28,45 @@
 
 <script src="https://www.gstatic.com/charts/loader.js"></script>
 <script>
-  google.charts.load('current', { packages: ['corechart'] });
-  google.charts.setOnLoadCallback(loadDashboard);
+  function setDashboardError(message) {
+    var errorElement = document.getElementById('dashboard-error');
+    errorElement.textContent = message;
+    errorElement.style.display = 'flex';
+  }
 
-  async function loadDashboard() {
-    try {
-      const resp = await fetch('/admin/api/dashboard');
-      const data = await resp.json();
-
-      // Stat cards
-      const statsHtml = [
-        { label: 'Total de Tarefas', value: data.tasks.total, cls: 'primary' },
-        { label: 'Total de Chamados', value: data.tickets.total, cls: 'primary' },
-        { label: 'Chamados em Aberto', value: (data.tickets.byStatus.open || 0) + (data.tickets.byStatus.pending || 0), cls: 'warning' },
-        { label: 'Concluídos', value: (data.tasks.byStatus.done || 0), cls: 'success' },
-      ].map(function(s) {
-        return '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value ' + s.cls + '">' + s.value + '</div></div>';
-      }).join('');
-      document.getElementById('stats-container').innerHTML = statsHtml;
-
-      // Tasks PieChart
-      var taskLabels = { backlog: 'Backlog', doing: 'Em Execução', done: 'Concluído' };
-      var taskColors = ['#1187BD', '#f5a623', '#2bb673'];
-      drawDonutChart('tasks-chart', data.tasks.byStatus, taskLabels, taskColors, 'Sem tarefas', '/admin/resources/tasks');
-
-      // Tickets PieChart
-      var ticketLabels = { open: 'Aberto', pending: 'Pendente', in_progress: 'Em Andamento', closed: 'Fechado' };
-      var ticketColors = ['#1187BD', '#f5a623', '#6c63ff', '#2bb673'];
-      drawDonutChart('tickets-chart', data.tickets.byStatus, ticketLabels, ticketColors, 'Sem chamados', '/admin/resources/tickets');
-    } catch (err) {
-      console.error('Dashboard error:', err);
-      document.getElementById('tasks-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar</p>';
-      document.getElementById('tickets-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar</p>';
+  function renderStatusFallback(containerId, byStatus, labels, emptyText, linkUrl) {
+    var element = document.getElementById(containerId);
+    var entries = Object.entries(byStatus || {}).filter(function(entry) { return Number(entry[1]) > 0; });
+    if (!entries.length) {
+      element.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>' + emptyText + '</p></div>';
+      return;
     }
+    element.style.display = 'block';
+    element.innerHTML = entries.map(function(entry) {
+      return '<a href="' + linkUrl + '?view=list&filter.status=' + encodeURIComponent(entry[0]) + '" class="detail-row" style="text-decoration:none;">' +
+        '<span class="detail-label">' + (labels[entry[0]] || entry[0]) + '</span>' +
+        '<strong class="detail-value">' + Number(entry[1]) + '</strong></a>';
+    }).join('');
   }
 
   function drawDonutChart(containerId, byStatus, labels, colors, emptyText, linkUrl) {
-    var el = document.getElementById(containerId);
-    var entries = Object.entries(byStatus || {}).filter(function(e) { return e[1] > 0; });
-
-    if (entries.length === 0) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>' + emptyText + '</p></div>';
+    var element = document.getElementById(containerId);
+    var entries = Object.entries(byStatus || {}).filter(function(entry) { return Number(entry[1]) > 0; });
+    if (!entries.length) {
+      element.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>' + emptyText + '</p></div>';
       return;
     }
-
+    if (!window.google || !google.visualization) {
+      renderStatusFallback(containerId, byStatus, labels, emptyText, linkUrl);
+      return;
+    }
     var chartData = [['Status', 'Quantidade']];
-    entries.forEach(function(e) { chartData.push([labels[e[0]] || e[0], e[1]]); });
-
+    entries.forEach(function(entry) {
+      chartData.push([labels[entry[0]] || entry[0], Number(entry[1])]);
+    });
     var textColor = window.getComputedStyle(document.body).getPropertyValue('--text-main').trim() || '#212529';
-    
     var dataTable = google.visualization.arrayToDataTable(chartData);
-    var chart = new google.visualization.PieChart(el);
-    
+    var chart = new google.visualization.PieChart(element);
     var options = {
       pieHole: 0.55,
       pieSliceText: 'value',
@@ -90,23 +76,61 @@
       pieSliceBorderColor: 'transparent',
       fontName: 'Inter',
       tooltip: { textStyle: { fontSize: 13 } },
-      backgroundColor: 'transparent',
+      backgroundColor: 'transparent'
     };
-
     chart.draw(dataTable, options);
-
-    el.style.cursor = 'pointer';
-    el.addEventListener('click', function() { window.location.href = linkUrl; });
-
-    // Redesenhar ao redimensionar ou trocar tema alternativo
-    window.addEventListener('resize', function() { chart.draw(dataTable, options); });
-    
-    // Observer para mudanças de tema
-    const observer = new MutationObserver(function() {
-      const newColor = window.getComputedStyle(document.body).getPropertyValue('--text-main').trim();
-      options.legend.textStyle.color = newColor;
+    element.style.cursor = 'pointer';
+    element.addEventListener('click', function() { window.location.href = linkUrl; });
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() { chart.draw(dataTable, options); }, 120);
+    });
+    var observer = new MutationObserver(function() {
+      options.legend.textStyle.color = window.getComputedStyle(document.body).getPropertyValue('--text-main').trim() || '#212529';
       chart.draw(dataTable, options);
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  async function loadDashboard() {
+    try {
+      var response = await fetch('/admin/api/dashboard', { headers: { Accept: 'application/json' } });
+      if (!response.ok) {
+        var errorData = await response.json().catch(function() { return {}; });
+        throw new Error(errorData.message || ('Falha HTTP ' + response.status));
+      }
+      var data = await response.json();
+      if (!data.tasks || !data.tickets) throw new Error('Resposta do dashboard inválida.');
+      var cards = [
+        { label: 'Total de Tarefas', value: data.tasks.total || 0, cls: 'primary' },
+        { label: 'Total de Chamados', value: data.tickets.total || 0, cls: 'primary' },
+        { label: 'Chamados em Aberto', value: (data.tickets.byStatus.open || 0) + (data.tickets.byStatus.pending || 0), cls: 'warning' },
+        { label: 'Concluídos', value: data.tasks.byStatus.done || 0, cls: 'success' }
+      ];
+      document.getElementById('stats-container').innerHTML = cards.map(function(card) {
+        return '<div class="stat-card"><div class="stat-label">' + card.label + '</div><div class="stat-value ' + card.cls + '">' + card.value + '</div></div>';
+      }).join('');
+      var taskLabels = { backlog: 'Backlog', doing: 'Em Execução', done: 'Concluído' };
+      var ticketLabels = { open: 'Aberto', pending: 'Pendente', in_progress: 'Em Andamento', closed: 'Fechado' };
+      drawDonutChart('tasks-chart', data.tasks.byStatus, taskLabels, ['#1187BD', '#f5a623', '#2bb673'], 'Sem tarefas', '/admin/resources/tasks');
+      drawDonutChart('tickets-chart', data.tickets.byStatus, ticketLabels, ['#1187BD', '#f5a623', '#6c63ff', '#2bb673'], 'Sem chamados', '/admin/resources/tickets');
+    } catch (error) {
+      console.error('Dashboard error:', error);
+      setDashboardError('Não foi possível carregar o dashboard: ' + error.message);
+      document.getElementById('stats-container').innerHTML = '';
+      document.getElementById('tasks-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar dados das tarefas.</p>';
+      document.getElementById('tickets-chart').innerHTML = '<p style="color:var(--danger)">Erro ao carregar dados dos chamados.</p>';
+    }
+  }
+
+  if (window.google && google.charts) {
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(loadDashboard);
+    setTimeout(function() {
+      if (!document.getElementById('stats-container').children.length) loadDashboard();
+    }, 3000);
+  } else {
+    loadDashboard();
   }
 </script>
