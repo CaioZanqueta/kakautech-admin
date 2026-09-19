@@ -1,1 +1,33 @@
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const root=path.resolve(__dirname,'..'),source=p=>fs.readFileSync(path.join(root,p),'utf8');for(const p of ['src/database/migrations/20260919000100-add-client-to-projects.js','src/database/migrations/20260919000200-enhance-tasks.js','src/database/migrations/20260919000300-create-task-collaboration.js','src/database/migrations/20260919000400-create-work-logs-and-generalize-activity.js']){const s=source(p);assert.match(s,/async up/);assert.match(s,/async down/)}assert.match(source('src/models/client.js'),/hasMany\(m\.Project/);assert.match(source('src/models/project.js'),/hasMany\(m\.Task/);assert.match(source('src/models/task.js'),/belongsToMany\(m\.User/);assert.match(source('src/routes/task-management.routes.js'),/duration_minutes/);assert.match(source('src/routes/task-management.routes.js'),/position/);assert.match(source('src/services/worklog-report.js'),/csvSafe/);console.log('project-hours tests: ok');
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const root = path.resolve(__dirname, "..");
+const source = (filePath) => fs.readFileSync(path.join(root, filePath), "utf8");
+
+const migration = source(
+  "src/database/migrations/20260919000100-project-task-work-management.js"
+);
+assert.match(migration, /async up/);
+assert.match(migration, /async down/);
+assert.match(migration, /client_id/);
+assert.match(migration, /task_assignees/);
+assert.match(migration, /task_comments/);
+assert.match(migration, /task_attachments/);
+assert.match(migration, /work_logs/);
+
+assert.match(source("src/models/client.js"), /hasMany\(m\.Project/);
+assert.match(source("src/models/project.js"), /hasMany\(m\.Task/);
+assert.match(source("src/models/task.js"), /belongsToMany\(m\.User/);
+assert.match(source("src/routes/task-management.routes.js"), /duration_minutes/);
+assert.match(source("src/routes/task-management.routes.js"), /position/);
+assert.match(source("src/services/worklog-report.js"), /csvSafe/);
+
+const server = source("src/server.js");
+assert.match(server, /scriptSrcAttr:\s*\["'unsafe-inline'"\]/);
+
+const dashboard = source("src/views/admin/admin-dashboard.ejs");
+assert.match(dashboard, /response\.ok/);
+assert.match(dashboard, /renderStatusFallback/);
+
+console.log("project-hours tests: ok");
